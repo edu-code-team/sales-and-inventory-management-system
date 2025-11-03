@@ -3,15 +3,19 @@ from tkinter import *
 #Functionality Part
 def employee_form():
     global back_image
-    employee_frame = Frame(window, width=1070, height=567, bg='#4b39e9')
+    employee_frame = Frame(window, width=1070, height=567, bg='#813ffe')
     employee_frame.place(x=200, y=100)
 
-    heading_label = Label(employee_frame,text='مدیریت کارمندان',font=('fonts/Persian-Yekan.ttf', 16, 'bold'),bg='#4b39e9',fg='white')
+    heading_label = Label(employee_frame,text='مدیریت کارمندان',font=('fonts/Persian-Yekan.ttf', 16, 'bold'),bg='#00198f',fg='white')
     heading_label.place(x=0, y=0, relwidth=1)
 
-    back_image = PhotoImage(file='images/back-button.png')
-    back_button = Button(employee_frame,image=back_image,bd=0,cursor='hand2', command=lambda: employee_frame.place_forget())
+    back_image = PhotoImage(file='images/back_button.png')
+    back_button = Button(employee_frame,image=back_image,bd=0,cursor='hand2',bg='white', command=lambda: employee_frame.place_forget())
     back_button.place(x=10, y=30)
+
+    top_Frame=Frame(employee_frame,bg='white')
+    top_Frame.place(x=0 ,y=70 , relwidth=1 , height=235)
+
 
 
 
