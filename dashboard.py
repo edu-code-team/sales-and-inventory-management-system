@@ -14,14 +14,23 @@ def employee_form():
     back_button = Button(employee_frame,image=back_image,bd=0,cursor='hand2',bg='white', command=lambda: employee_frame.place_forget())
     back_button.place(x=10, y=30)
 
-    top_Frame=Frame(employee_frame,bg='white')
+    top_Frame=Frame(employee_frame)
     top_Frame.place(x=0 ,y=70 , relwidth=1 , height=235)
     search_frame=Frame(top_Frame)
     search_frame.pack()
-    Search_combobox=ttk.Combobox(search_frame,values=('شماره پرسنلی','نام','نام خانوادگی','شماره تماس'))
-    Search_combobox.grid(row=0 , column=0)
+    Search_combobox=ttk.Combobox(search_frame,values=('شماره پرسنلی','نام','نام خانوادگی','شماره تماس'),font=('fonts/Persian-Yekan.ttf', 12),state='readonly',justify='center')
+    Search_combobox.set('جستجو بر اساس')
+    Search_combobox.grid(row=0 , column=0 ,padx=20)
+    search_entry=Entry(search_frame,font=('fonts/Persian-Yekan.ttf', 12),bg='lightblue')
+    search_entry.grid(row=0 , column=1)
+    search_button=Button(search_frame,text='جستجو',font=('fonts/Persian-Yekan.ttf', 12),fg='white',bg='#00198f')
+    search_button.grid(row=0 , column=2 , padx=20)
+    show_button=Button(search_frame,text='نمایش همه',font=('fonts/Persian-Yekan.ttf', 12),width=10,cursor='hand2',fg='white',bg='#00198f')
+    show_button.grid(row=0 , column=3)
 
-
+    
+    employee_treeview=ttk.Treeview(top_Frame)
+    employee_treeview.pack(pady=10)
 
 
 
