@@ -17,6 +17,13 @@ logoButten.place(x=1100,y=10)
 SubtitleLabel=Label(window,text='ادمین خوش آمدید\t\t تاریخ: 01-11-2025\t\t ساعت:14:36:17',font=('Yekan',15),bg='#4b39e9',fg='#fef9fb')
 SubtitleLabel.place(x=0,y=70,relwidth=1)
 
+leftFrame=Frame(window)
+leftFrame.place(x=0,y=107,width=200,height=560)
+
+LogoImage=PhotoImage(file='checklist-1.png')
+imageLable=Label(leftFrame,image=LogoImage)
+imageLable.grid(row=0,column=0)
+
 
 window.mainloop()
 
