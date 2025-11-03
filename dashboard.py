@@ -18,19 +18,61 @@ def employee_form():
     top_Frame.place(x=0 ,y=70 , relwidth=1 , height=235)
     search_frame=Frame(top_Frame)
     search_frame.pack()
-    Search_combobox=ttk.Combobox(search_frame,values=('شماره پرسنلی','نام','نام خانوادگی','شماره تماس'),font=('fonts/Persian-Yekan.ttf', 12),state='readonly',justify='center')
+    Search_combobox = ttk.Combobox(search_frame,
+                                   values=('شماره پرسنلی', 'نام و نام خانوادگی', 'شماره تماس'),
+                                   font=('fonts/Persian-Yekan.ttf', 12),
+                                   state='readonly', justify='center')
     Search_combobox.set('جستجو بر اساس')
-    Search_combobox.grid(row=0 , column=0 ,padx=20)
-    search_entry=Entry(search_frame,font=('fonts/Persian-Yekan.ttf', 12),bg='lightblue')
-    search_entry.grid(row=0 , column=1)
-    search_button=Button(search_frame,text='جستجو',font=('fonts/Persian-Yekan.ttf', 12),fg='white',bg='#00198f')
-    search_button.grid(row=0 , column=2 , padx=20)
-    show_button=Button(search_frame,text='نمایش همه',font=('fonts/Persian-Yekan.ttf', 12),width=10,cursor='hand2',fg='white',bg='#00198f')
-    show_button.grid(row=0 , column=3)
+    Search_combobox.grid(row=0, column=0, padx=20)
 
-    
-    employee_treeview=ttk.Treeview(top_Frame)
-    employee_treeview.pack(pady=10)
+    search_entry = Entry(search_frame, font=('fonts/Persian-Yekan.ttf', 12), bg='lightblue')
+    search_entry.grid(row=0, column=1)
+
+    search_button = Button(search_frame, text='جستجو',
+                           font=('fonts/Persian-Yekan.ttf', 12), fg='white', bg='#00198f')
+    search_button.grid(row=0, column=2, padx=20)
+
+    show_button = Button(search_frame, text='نمایش همه',
+                         font=('fonts/Persian-Yekan.ttf', 12), width=10,
+                         cursor='hand2', fg='white', bg='#00198f')
+    show_button.grid(row=0, column=3)
+
+    style = ttk.Style()
+    style.configure("Treeview.Heading", font=('fonts/Persian-Yekan.ttf', 12, 'bold'),
+                    background='#00198f', foreground='black')
+    style.configure("Treeview", font=('fonts/Persian-Yekan.ttf', 11), rowheight=25)
+
+    horizontal_scrollbar = Scrollbar(top_Frame, orient=HORIZONTAL)
+    vertical_scrollbar = Scrollbar(top_Frame, orient=VERTICAL)
+
+    employee_treeview = ttk.Treeview(
+        top_Frame,
+        columns=('empid', 'empname', 'empnumber', 'gender', 'work_shift', 'address'),
+        show='headings',
+        yscrollcommand=vertical_scrollbar.set,
+        xscrollcommand=horizontal_scrollbar.set
+    )
+
+    horizontal_scrollbar.config(command=employee_treeview.xview)
+    vertical_scrollbar.config(command=employee_treeview.yview)
+
+    horizontal_scrollbar.pack(side=BOTTOM, fill=X)
+    vertical_scrollbar.pack(side=RIGHT, fill=Y)
+    employee_treeview.pack(fill=BOTH, expand=True)
+
+    employee_treeview.heading('empid', text='شماره پرسنلی')
+    employee_treeview.heading('empname', text='نام و نام خانوادگی')
+    employee_treeview.heading('empnumber', text='شماره تماس')
+    employee_treeview.heading('gender', text='جنسیت')
+    employee_treeview.heading('work_shift', text='شیفت کاری')
+    employee_treeview.heading('address', text='آدرس')
+
+    employee_treeview.column('empid', width=100)
+    employee_treeview.column('empname', width=140)
+    employee_treeview.column('empnumber', width=100)
+    employee_treeview.column('gender', width=80)
+    employee_treeview.column('work_shift', width=200)
+    employee_treeview.column('address', width=300)
 
 
 
