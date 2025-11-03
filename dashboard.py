@@ -1,9 +1,10 @@
 from tkinter import *
+from tkinter import ttk
 
 #Functionality Part
 def employee_form():
     global back_image
-    employee_frame = Frame(window, width=1070, height=567, bg='#813ffe')
+    employee_frame = Frame(window, width=1070, height=567, bg='white')
     employee_frame.place(x=200, y=100)
 
     heading_label = Label(employee_frame,text='مدیریت کارمندان',font=('fonts/Persian-Yekan.ttf', 16, 'bold'),bg='#00198f',fg='white')
@@ -15,7 +16,10 @@ def employee_form():
 
     top_Frame=Frame(employee_frame,bg='white')
     top_Frame.place(x=0 ,y=70 , relwidth=1 , height=235)
-
+    search_frame=Frame(top_Frame)
+    search_frame.pack()
+    Search_combobox=ttk.Combobox(search_frame,values=('شماره پرسنلی','نام','نام خانوادگی','شماره تماس'))
+    Search_combobox.grid(row=0 , column=0)
 
 
 
