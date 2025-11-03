@@ -30,18 +30,32 @@ menuLabel.pack(fill=X)
 
 
 employee_icon=PhotoImage(file='employee.png')
-employee_button=Button(leftFrame,image=employee_icon,compound=LEFT,text='        کارمندان',font=('Yekan',15,'bold'))
+employee_button=Button(leftFrame,image=employee_icon,compound=LEFT,text='         کارمندان',font=('Yekan',15,'bold'))
 employee_button.pack(fill=X)
 
 
 supplier_icon=PhotoImage(file='supplier.png')
-supplier_button=Button(leftFrame,image=supplier_icon,compound=LEFT,text=' تامین کنندگان',font=('Yekan',15,'bold'))
+supplier_button=Button(leftFrame,image=supplier_icon,compound=LEFT,text='  تامین کنندگان',font=('Yekan',15,'bold'))
 supplier_button.pack(fill=X)
 
 
 category_icon=PhotoImage(file='category.png')
-category_button=Button(leftFrame,image=category_icon,compound=LEFT,text='       محصولات ',font=('Yekan',15,'bold'))
+category_button=Button(leftFrame,image=category_icon,compound=LEFT,text='       دسته بندی ',font=('Yekan',15,'bold'))
 category_button.pack(fill=X)
+
+products_icon=PhotoImage(file='products.png')
+products_button=Button(leftFrame,image=products_icon,compound=LEFT,text='         محصولات ',font=('Yekan',15,'bold'))
+products_button.pack(fill=X)
+
+sale_icon=PhotoImage(file='sale.png')
+sale_button=Button(leftFrame,image=sale_icon,compound=LEFT,text='          تخفیفات',font=('Yekan',15,'bold'))
+sale_button.pack(fill=X)
+
+exit_icon=PhotoImage(file='exit.png')
+exit_button=Button(leftFrame,image=exit_icon,compound=LEFT,text='             خروج',font=('Yekan',15,'bold'))
+exit_button.pack(fill=X)
+
+
 
 
 window.mainloop()
