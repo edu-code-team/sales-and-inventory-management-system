@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import ttk
+from tkcalendar import DateEntry
 
 #Functionality Part
 def employee_form():
@@ -77,7 +78,36 @@ def employee_form():
     employee_treeview.column('work_shift', width=200)
     employee_treeview.column('address', width=300)
 
+    detail_frame=Frame(employee_frame)
+    detail_frame.place(x=20,y=320)
 
+    empid_label=Label(detail_frame,text='نام و نام خانوادگی',font=('fonts/Persian-Yekan.ttf',12))
+    empid_label.grid(row=0,column=0,padx=20,pady=10)
+    empid_entry=Entry(detail_frame,font=('fonts/Persian-Yekan.ttf',12),bg='lightblue')
+    empid_entry.grid(row=0,column=1,padx=20,pady=10)
+
+    empname_label=Label(detail_frame,text='شماره پرسنلی',font=('fonts/Persian-Yekan.ttf',12))
+    empname_label.grid(row=0,column=2,padx=20,pady=10)
+    empid_entry=Entry(detail_frame,font=('fonts/Persian-Yekan.ttf',12),bg='lightblue')
+    empid_entry.grid(row=0,column=3,padx=20,pady=10)
+
+    empnumber_label=Label(detail_frame,text='شماره تماس',font=('fonts/Persian-Yekan.ttf',12))
+    empnumber_label.grid(row=0,column=4,padx=20,pady=10)
+    empid_entry=Entry(detail_frame,font=('fonts/Persian-Yekan.ttf',12),bg='lightblue')
+    empid_entry.grid(row=0,column=5,padx=20,pady=10)
+
+    gender_label=Label(detail_frame,text='جنسیت',font=('fonts/Persian-Yekan.ttf',12))
+    gender_label.grid(row=1,column=0,padx=20,pady=10)
+
+    gender_combobox=ttk.Combobox(detail_frame,values=('زن','مرد'),font=('fonts/Persian-Yekan.ttf',12),width=18,state='readonly')
+    gender_combobox.set('جنسیت را انتخاب کنید')
+    gender_combobox.grid(row=1,column=1)
+
+    workshift_label=Label(detail_frame,text='شیفت کاری',font=('fonts/Persian-Yekan.ttf',12))
+    workshift_label.grid(row=1,column=2,padx=20,pady=10)
+
+
+    
 
 #GUI Part
 window=Tk()
