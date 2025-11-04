@@ -48,7 +48,7 @@ def employee_form():
 
     employee_treeview = ttk.Treeview(
         top_Frame,
-        columns=('empid', 'empname', 'empnumber', 'gender', 'work_shift', 'address','email'),
+        columns=('empid', 'empname', 'empnumber', 'gender','dob','work_shift', 'address','email'),
         show='headings',
         yscrollcommand=vertical_scrollbar.set,
         xscrollcommand=horizontal_scrollbar.set
@@ -66,6 +66,7 @@ def employee_form():
     employee_treeview.heading('empname', text='نام و نام خانوادگی')
     employee_treeview.heading('empnumber', text='شماره تماس')
     employee_treeview.heading('gender', text='جنسیت')
+    employee_treeview.heading('dob', text='تاریخ تولد')
     employee_treeview.heading('work_shift', text='شیفت کاری')
     employee_treeview.heading('address', text='آدرس')
     employee_treeview.heading('email', text='ایمیل')
@@ -103,8 +104,11 @@ def employee_form():
     gender_combobox.set('جنسیت را انتخاب کنید')
     gender_combobox.grid(row=1,column=1)
 
-    workshift_label=Label(detail_frame,text='شیفت کاری',font=('fonts/Persian-Yekan.ttf',12))
-    workshift_label.grid(row=1,column=2,padx=20,pady=10)
+    work_shift_label=Label(detail_frame,text='شیفت کاری',font=('fonts/Persian-Yekan.ttf',12))
+    work_shift_label.grid(row=1,column=2,padx=20,pady=10)
+
+    dob_date_entry=DateEntry(detail_frame,width=18,font=('fonts/Persian-Yekan.ttf',12))
+    dob_date_entry.grid(row=1,column=3)
 
 
     
