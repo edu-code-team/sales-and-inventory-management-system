@@ -82,20 +82,20 @@ def employee_form():
     detail_frame=Frame(employee_frame)
     detail_frame.place(x=20,y=320)
 
-    empid_label=Label(detail_frame,text='نام و نام خانوادگی',font=('fonts/Persian-Yekan.ttf',12))
-    empid_label.grid(row=0,column=0,padx=20,pady=10)
+    empid_label=Label(detail_frame,text='شماره پرسنلی',font=('fonts/Persian-Yekan.ttf',12))
+    empid_label.grid(row=0,column=0,padx=20,pady=10,sticky='w')
     empid_entry=Entry(detail_frame,font=('fonts/Persian-Yekan.ttf',12),bg='lightblue')
     empid_entry.grid(row=0,column=1,padx=20,pady=10)
 
-    empname_label=Label(detail_frame,text='شماره پرسنلی',font=('fonts/Persian-Yekan.ttf',12))
+    empname_label=Label(detail_frame,text='نام و نام خانوادگی',font=('fonts/Persian-Yekan.ttf',12))
     empname_label.grid(row=0,column=2,padx=20,pady=10)
     empid_entry=Entry(detail_frame,font=('fonts/Persian-Yekan.ttf',12),bg='lightblue')
     empid_entry.grid(row=0,column=3,padx=20,pady=10)
 
     empnumber_label=Label(detail_frame,text='شماره تماس',font=('fonts/Persian-Yekan.ttf',12))
     empnumber_label.grid(row=0,column=4,padx=20,pady=10)
-    empid_entry=Entry(detail_frame,font=('fonts/Persian-Yekan.ttf',12),bg='lightblue')
-    empid_entry.grid(row=0,column=5,padx=20,pady=10)
+    empnumber_entry=Entry(detail_frame,font=('fonts/Persian-Yekan.ttf',12),bg='lightblue')
+    empnumber_entry.grid(row=0,column=5,padx=20,pady=10)
 
     gender_label=Label(detail_frame,text='جنسیت',font=('fonts/Persian-Yekan.ttf',12))
     gender_label.grid(row=1,column=0,padx=20,pady=10)
@@ -104,14 +104,32 @@ def employee_form():
     gender_combobox.set('جنسیت را انتخاب کنید')
     gender_combobox.grid(row=1,column=1)
 
-    work_shift_label=Label(detail_frame,text='شیفت کاری',font=('fonts/Persian-Yekan.ttf',12))
-    work_shift_label.grid(row=1,column=2,padx=20,pady=10)
+    dob_date_label=Label(detail_frame,text='تاریخ تولد',font=('fonts/Persian-Yekan.ttf',12))
+    dob_date_label.grid(row=1,column=2,padx=20,pady=10)
 
-    dob_date_entry=DateEntry(detail_frame,width=18,font=('fonts/Persian-Yekan.ttf',12))
+    dob_date_entry=DateEntry(detail_frame,width=18,font=('fonts/Persian-Yekan.ttf',12),stste='readonly',data_pattern='dd/mm/yyyy')
     dob_date_entry.grid(row=1,column=3)
 
+    work_shift_label=Label(detail_frame,text='شیفت کاری',font=('fonts/Persian-Yekan.ttf',12))
+    work_shift_label.grid(row=1,column=4,padx=20,pady=10)
+    
+    work_shift_combobox=ttk.Combobox(detail_frame,values=('تمام وقت','پاره وقت'),font=('fonts/Persian-Yekan.ttf',12),width=18,state='readonly')
+    work_shift_combobox.set('ساعت کاری را انتخاب کنید')
+    work_shift_combobox.grid(row=1,column=5)
 
     
+    email_label=Label(detail_frame,text='ایمیل',font=('fonts/Persian-Yekan.ttf',12))
+    email_label.grid(row=3,column=0,padx=20,pady=10)
+    email_entry=Entry(detail_frame,font=('fonts/Persian-Yekan.ttf',12),bg='lightblue')
+    email_entry.grid(row=3,column=1,padx=20,pady=10)
+
+    address_label=Label(detail_frame,text='آدرس',font=('fonts/Persian-Yekan.ttf',12))
+    address_label.grid(row=3,column=2,padx=20,pady=10)
+    address_text=Text(detail_frame,width=20,height=3,font=('fonts/Persian-Yekan.ttf',12),bg='lightblue')
+    address_text.grid(row=3,column=3)
+
+
+
 
 #GUI Part
 window=Tk()
