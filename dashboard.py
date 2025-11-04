@@ -12,11 +12,14 @@ def employee_form():
     heading_label.place(x=0, y=0, relwidth=1)
 
     back_image = PhotoImage(file='images/back_button.png')
-    back_button = Button(employee_frame,image=back_image,bd=0,cursor='hand2',bg='white', command=lambda: employee_frame.place_forget())
-    back_button.place(x=10, y=30)
+
 
     top_Frame=Frame(employee_frame)
-    top_Frame.place(x=0 ,y=70 , relwidth=1 , height=235)
+    top_Frame.place(x=0 ,y=40 , relwidth=1 , height=235)
+
+    back_button = Button(top_Frame,image=back_image,bd=0,cursor='hand2',bg='white', command=lambda: employee_frame.place_forget())
+    back_button.place(x=10, y=0)
+
     search_frame=Frame(top_Frame)
     search_frame.pack()
     Search_combobox = ttk.Combobox(search_frame,
@@ -80,7 +83,7 @@ def employee_form():
     employee_treeview.column('address', width=300)
 
     detail_frame=Frame(employee_frame,bg='white')
-    detail_frame.place(x=30,y=320)
+    detail_frame.place(x=30,y=280)
 
     empid_label=Label(detail_frame,text='شماره پرسنلی',font=('fonts/Persian-Yekan.ttf',12),bg='white')
     empid_label.grid(row=0,column=0,padx=20,pady=10,sticky='w')
@@ -128,8 +131,24 @@ def employee_form():
     address_text=Text(detail_frame,width=20,height=3,font=('fonts/Persian-Yekan.ttf',12),bg='lightblue')
     address_text.grid(row=3,column=3)
 
+    button_frame=Frame(employee_frame)
+    button_frame.place(x=200,y=470)
 
+    add_button = Button(button_frame, text='افزودن',
+                           font=('fonts/Persian-Yekan.ttf', 12), fg='white', bg='#00198f')
+    add_button.grid(row=0, column=0, padx=20)
+    
+    update_button = Button(button_frame, text='به روزرسانی',
+                           font=('fonts/Persian-Yekan.ttf', 12), fg='white', bg='#00198f')
+    update_button.grid(row=0, column=1, padx=20)
 
+    delete_button = Button(button_frame, text='حذف',
+                           font=('fonts/Persian-Yekan.ttf', 12), fg='white', bg='#00198f')
+    delete_button.grid(row=0, column=2, padx=20)
+
+    clear_button = Button(button_frame, text='پاک کردن',
+                           font=('fonts/Persian-Yekan.ttf', 12), fg='white', bg='#00198f')
+    clear_button.grid(row=0, column=3, padx=20)
 
 #GUI Part
 window=Tk()
