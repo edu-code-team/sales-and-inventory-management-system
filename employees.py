@@ -1,7 +1,32 @@
 from tkinter import *
 from tkinter import ttk
-from tkcalendar import DateEntry
+from tkinter import messagebox
+from warnings import catch_warnings
 
+from tkcalendar import DateEntry
+import pymysql
+
+
+def connect_database():
+    try:
+        connection = pymysql.connect(host='localhost', user='root', passwd='')
+        curser = connection.cursor()
+    except:
+        messagebox.showerror('خطا', ' اتصال به پایگاه داده ناموفق. لطفا mysql command line را باز کنید')
+        return
+    curser.execute('CREATE DATABASE IF NOT EXISTS inventory_system DEFAULT CHARACTER SET utf8')
+    curser.execute('USE inventory_system')
+    curser.execute('CREATE TABLE IF NOT EXISTS employee_data (empid INT PRIMARY KEY, name VARCHAR(100),'
+                   'email VARCHAR(100), gender VARCHAR(50), dob VARCHAR(30), contact VARCHAR(30), employee_type VARCHAR(50),'
+                   'work_shift VARCHAR(50), address VARCHAR(100), doj VARCHAR(30), salary VARCHAR(50), usertype VARCHAR(50),'
+                   'password VARCHAR(50))')
+
+
+connect_database()
+
+
+def add_employee(empid, name, email, gender, dob, contact, employment_type):
+    print(empid, name)
 
 
 def employee_form(window):
@@ -139,7 +164,10 @@ def employee_form(window):
     button_frame.place(x=200, y=470)
 
     add_button = Button(button_frame, text='افزودن',
-                        font=('fonts/Persian-Yekan.ttf', 12), fg='white', bg='#00198f')
+                        font=('fonts/Persian-Yekan.ttf', 12), fg='white',bg='#00198f',
+                        command=lambda: add_employee(empid_entry.get(), email_entry.get(), gender_combobox.get(),
+                                                     dob_date_entry.get(), empnumber_entry.get(),
+                                                     work_shift_combobox.get(), address_text.get(1.0, END)))
     add_button.grid(row=0, column=0, padx=20)
 
     update_button = Button(button_frame, text='به روزرسانی',
