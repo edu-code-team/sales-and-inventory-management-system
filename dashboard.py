@@ -51,7 +51,7 @@ def employee_form():
 
     employee_treeview = ttk.Treeview(
         top_Frame,
-        columns=('empid', 'empname', 'empnumber', 'gender','dob','work_shift', 'address','email'),
+        columns=('empid', 'empname', 'empnumber', 'gender','dob','work_shift', 'address','email','user_type'),
         show='headings',
         yscrollcommand=vertical_scrollbar.set,
         xscrollcommand=horizontal_scrollbar.set
@@ -69,10 +69,11 @@ def employee_form():
     employee_treeview.heading('empname', text='نام و نام خانوادگی')
     employee_treeview.heading('empnumber', text='شماره تماس')
     employee_treeview.heading('gender', text='جنسیت')
+    employee_treeview.heading('email', text='ایمیل')
     employee_treeview.heading('dob', text='تاریخ تولد')
     employee_treeview.heading('work_shift', text='شیفت کاری')
     employee_treeview.heading('address', text='آدرس')
-    employee_treeview.heading('email', text='ایمیل')
+    employee_treeview.heading('user_type', text='نوع کاربری')
 
     employee_treeview.column('empid', width=100)
     employee_treeview.column('empname', width=140)
@@ -81,6 +82,7 @@ def employee_form():
     employee_treeview.column('email', width=180)
     employee_treeview.column('work_shift', width=200)
     employee_treeview.column('address', width=300)
+    employee_treeview.column('user_type', width=300)
 
     detail_frame=Frame(employee_frame,bg='white')
     detail_frame.place(x=30,y=280)
@@ -131,8 +133,19 @@ def employee_form():
     address_text=Text(detail_frame,width=20,height=3,font=('fonts/Persian-Yekan.ttf',12),bg='lightblue')
     address_text.grid(row=3,column=3)
 
+    user_type_label=Label(detail_frame,text='نوع کاربری',font=('fonts/Persian-Yekan.ttf',12),bg='white')
+    user_type_label.grid(row=3,column=4,padx=20,pady=10,sticky='w')
+    user_type_combobox=ttk.Combobox(detail_frame,values=('ادمین','کارمند'),font=('fonts/Persian-Yekan.ttf',12),width=18,state='readonly')
+    user_type_combobox.set('نوع کاربری را انتخاب کنید')
+    user_type_combobox.grid(row=3,column=5)
+
+    password_label=Label(detail_frame,text='رمزعبور',font=('fonts/Persian-Yekan.ttf',12),bg='white')
+    password_label.grid(row=4,column=0,padx=20,pady=10,sticky='w')
+    password_entry=Entry(detail_frame,font=('fonts/Persian-Yekan.ttf',12),bg='lightblue')
+    password_entry.grid(row=4,column=1,padx=20,pady=10)
+
     button_frame=Frame(employee_frame)
-    button_frame.place(x=200,y=470)
+    button_frame.place(x=200,y=500)
 
     add_button = Button(button_frame, text='افزودن',
                            font=('fonts/Persian-Yekan.ttf', 12), fg='white', bg='#00198f')
