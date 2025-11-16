@@ -299,6 +299,9 @@ def employee_form(window):
     employee_treeview.column('address', width=270)
     employee_treeview.column('user_type', width=70)
 
+    #------------this function was moved from the last line to here------------
+    create_database_table()
+    #-------------------------------------------------------------------------
     treeview_data()
 
     detail_frame = Frame(employee_frame, bg='white')
@@ -403,4 +406,3 @@ def employee_form(window):
                                                                            empnumber_entry, work_shift_combobox,
                                                                            address_text, user_type_combobox,
                                                                            password_entry))
-    create_database_table()
