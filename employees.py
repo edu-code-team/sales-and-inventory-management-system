@@ -114,7 +114,8 @@ def clear_fields(empid_entry, empname_entry, email_entry, gender_combobox, dob_d
         employee_treeview.selection_remove(employee_treeview.selection())
 
 
-def update_employee(empid, name, email, gender, dob, contact, work_shift, address, usertype, password):
+def update_employee(empid, name, email, gender, dob, contact, work_shift, address,
+                    usertype, password):
     selected = employee_treeview.selection()
     if not selected:
         messagebox.showerror('خطا', 'هیچ ردیفی برای بروزرسانی انتخاب نشده')
@@ -169,6 +170,53 @@ def delete_employee(empid):
                 connection.close()
 
 
+def search_employee(search_option, value):
+    if search_option == 'جستجو بر اساس':
+        messagebox.showerror('خطا', 'هیچ گزینه ای انتخاب نشده است')
+    elif value == '':
+        messagebox.showerror('خطا', 'مقداری را برای جستجو وارد کنید')
+    else:
+        #------------map for search columns:------------
+        column_mapping = {
+            'شماره پرسنلی': 'empid',
+            'نام و نام خانوادگی': 'name',
+            'جنسیت': 'gender',
+            'تاریخ تولد': 'dob',
+            'شیفت کاری': 'work_shift',
+            'نوع کاربری': 'usertype'
+        }
+        db_column = column_mapping.get(search_option)
+        #-----------------------------------------------
+
+        cursor, connection = connect_database()
+        if not cursor or not connection:
+            return
+        try:
+            cursor.execute('USE inventory_system')
+            #-------------db_column query--------------
+            query = f'SELECT * FROM employee_data WHERE {db_column} LIKE %s'
+            cursor.execute(query, (f'%{value}%',))
+            #------------------------------------------
+            recordes = cursor.fetchall()
+            employee_treeview.delete(*employee_treeview.get_children())
+            for recorde in recordes:
+                employee_treeview.insert('', END, values=recorde)
+        except Exception as e:
+            messagebox.showerror('خطا', f'{e} خطای')
+        finally:
+            cursor.close()
+            connection.close()
+
+
+
+def show_all(search_entry_widget, search_combobox_widget):
+    treeview_data()
+    search_entry_widget.delete(0, END)
+    search_combobox_widget.set('جستجو بر اساس')
+
+
+
+
 def employee_form(window):
     global back_image, employee_treeview
     employee_frame = Frame(window, width=1070, height=567, bg='white')
@@ -190,22 +238,21 @@ def employee_form(window):
     search_frame = Frame(top_Frame)
     search_frame.pack()
     Search_combobox = ttk.Combobox(search_frame,
-                                   values=('شماره پرسنلی', 'نام و نام خانوادگی', 'شماره تماس'),
-                                   font=('fonts/Persian-Yekan.ttf', 12),
-                                   state='readonly', justify='center')
+                                   values=('شماره پرسنلی', 'نام و نام خانوادگی', 'جنسیت', 'تاریخ تولد', 'شیفت کاری',
+                                           'نوع کاربری'), font=('fonts/Persian-Yekan.ttf', 12), state='readonly',
+                                   justify='center')
     Search_combobox.set('جستجو بر اساس')
     Search_combobox.grid(row=0, column=0, padx=20)
 
     search_entry = Entry(search_frame, font=('fonts/Persian-Yekan.ttf', 12), bg='lightblue')
     search_entry.grid(row=0, column=1)
 
-    search_button = Button(search_frame, text='جستجو',
-                           font=('fonts/Persian-Yekan.ttf', 12), fg='white', bg='#00198f')
+    search_button = Button(search_frame, text='جستجو', font=('fonts/Persian-Yekan.ttf', 12), fg='white',
+                           bg='#00198f', command=lambda: show_all(search_entry, Search_combobox))
     search_button.grid(row=0, column=2, padx=20)
 
-    show_button = Button(search_frame, text='نمایش همه',
-                         font=('fonts/Persian-Yekan.ttf', 12), width=10,
-                         cursor='hand2', fg='white', bg='#00198f')
+    show_button = Button(search_frame, text='نمایش همه', font=('fonts/Persian-Yekan.ttf', 12), width=10, cursor='hand2',
+                         fg='white', bg='#00198f', command=lambda : show_all(search_entry ,Search_combobox))
     show_button.grid(row=0, column=3)
 
     style = ttk.Style()
