@@ -27,7 +27,7 @@ def treeview_data():
 
 def connect_database():
     try:
-        connection = pymysql.connect(host='localhost', user='root', passwd='', port=3306)
+        connection = pymysql.connect(host='localhost', user='root', passwd='')
         cursor = connection.cursor()
     except:
         messagebox.showerror('خطا', ' اتصال به پایگاه داده ناموفق. لطفا mysql را باز کنید')
@@ -46,21 +46,31 @@ def create_database_table():
 
 
 def select_data(event, empid_entry,
-                    empname_entry, email_entry,
-                    gender_combobox, dob_date_entry,
-                    empnumber_entry, work_shift_combobox,
-                    address_text, user_type_combobox,
-                    password_entry):
+                empname_entry, email_entry,
+                gender_combobox, dob_date_entry,
+                empnumber_entry, work_shift_combobox,
+                address_text, user_type_combobox,
+                password_entry):
     index = employee_treeview.selection()
     content = employee_treeview.item(index)
     row = content['values']
-    print(row)
+    clear_fields(empid_entry, empname_entry, email_entry, gender_combobox, dob_date_entry, empnumber_entry,
+                 work_shift_combobox, address_text, user_type_combobox, password_entry, False)
+    empid_entry.insert(0, row[0])
+    empname_entry.insert(0, row[1])
+    email_entry.insert(0, row[2])
+    gender_combobox.set(row[3])
+    dob_date_entry.set_date(row[4])
+    empnumber_entry.insert(0, row[5])
+    work_shift_combobox.set(row[6])
+    address_text.insert(1.0, row[7])
+    user_type_combobox.set(row[8])
+    password_entry.insert(0, row[9])
 
 
 def add_employee(empid, name, email, gender, dob, contact, work_shift, address, usertype, password):
-    if (
-            empid == '' or name == '' or email == '' or gender == 'جنسیت را انتخاب کنید' or dob == '' or contact == '' or
-            work_shift == 'ساعت کاری را انتخاب کنید' or address == '\n' or usertype == 'نوع کاربری را انتخاب کنید'):
+    if (empid == '' or name == '' or email == '' or gender == 'جنسیت را انتخاب کنید' or dob == '' or contact == ''
+            or work_shift == 'ساعت کاری را انتخاب کنید' or address == '\n' or usertype == 'نوع کاربری را انتخاب کنید'):
         messagebox.showerror('خطا', 'هیچ فیلدی نباید خالی باشد')
     else:
         cursor, connection = connect_database()
@@ -72,6 +82,7 @@ def add_employee(empid, name, email, gender, dob, contact, work_shift, address, 
             if cursor.fetchone():
                 messagebox.showerror('خطا', 'شماره پرسنلی از قبل موجود می باشد')
                 return
+            address = address.strip()  # removes \n at the end of the address
             cursor.execute('INSERT INTO employee_data VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)',
                            (empid, name, email, gender,
                             dob, contact, work_shift, address, usertype, password))
@@ -85,9 +96,9 @@ def add_employee(empid, name, email, gender, dob, contact, work_shift, address, 
             connection.close()
 
 
-def clear_fields(empid_entry, empname_entry, email_entry, gender_combobox, dob_date_entry, empnumber_entry,
-                 work_shift_combobox, address_text,
-                 user_type_combobox, password_entry):
+def clear_fields(empid_entry, empname_entry, email_entry, gender_combobox, dob_date_entry,
+                 empnumber_entry, work_shift_combobox, address_text, user_type_combobox,
+                 password_entry, check):
     empid_entry.delete(0, END)
     empname_entry.delete(0, END)
     email_entry.delete(0, END)
@@ -99,6 +110,63 @@ def clear_fields(empid_entry, empname_entry, email_entry, gender_combobox, dob_d
     address_text.delete(1.0, END)
     user_type_combobox.set('نوع کاربری را انتخاب کنید')
     password_entry.delete(0, END)
+    if check:
+        employee_treeview.selection_remove(employee_treeview.selection())
+
+
+def update_employee(empid, name, email, gender, dob, contact, work_shift, address, usertype, password):
+    selected = employee_treeview.selection()
+    if not selected:
+        messagebox.showerror('خطا', 'هیچ ردیفی برای بروزرسانی انتخاب نشده')
+    else:
+        cursor, connection = connect_database()
+        if not cursor or not connection:
+            return
+        try:
+            cursor.execute('USE inventory_system')
+            cursor.execute('SELECT * FROM employee_data WHERE empid = %s', (empid,))
+            current_data = cursor.fetchone()
+            current_data = current_data[1:]
+            address = address.strip()
+            new_data = (name, email, gender, dob, contact, work_shift, address, usertype, password)
+
+            if current_data == new_data:
+                messagebox.showinfo('توجه', 'تغییری در اطلاعات کارمند ایجاد نشده است')
+                return
+            cursor.execute('UPDATE employee_data SET name = %s, email = %s, gender = %s, dob = %s, contact = %s,'
+                           'work_shift = %s, address = %s, usertype = %s, password = %s WHERE empid = %s',
+                           (name, email, gender, dob, contact, work_shift, address, usertype, password, empid,))
+            connection.commit()
+            treeview_data()
+            messagebox.showinfo('عملیات موفق', 'اطلاعات کارمند مدنظر با موفقیت بروزرسانی شد')
+        except Exception as e:
+            messagebox.showerror('خطا', f'{e} خطای')
+        finally:
+            cursor.close()
+            connection.close()
+
+
+def delete_employee(empid):
+    selected = employee_treeview.selection()
+    if not selected:
+        messagebox.showerror('خطا', 'هیچ ردیفی برای حذف انتخاب نشده')
+    else:
+        result = messagebox.askyesno('تایید', 'آیا از حذف ردیف مورد نظر خود مطمئن هستید؟')
+        if result:
+            cursor, connection = connect_database()
+            if not cursor or not connection:
+                return
+            try:
+                cursor.execute('USE inventory_system')
+                cursor.execute('DELETE FROM employee_data WHERE empid = %s', (empid,))
+                connection.commit()
+                treeview_data()
+                messagebox.showinfo('عملیات موفق', 'اطلاعات کارمند با موفقیت حذف شذ')
+            except Exception as e:
+                messagebox.showerror('خطا', f'{e} خطای')
+            finally:
+                cursor.close()
+                connection.close()
 
 
 def employee_form(window):
@@ -175,13 +243,13 @@ def employee_form(window):
     employee_treeview.heading('user_type', text='نوع کاربری')
 
     employee_treeview.column('empid', width=100)
-    employee_treeview.column('empname', width=140)
-    employee_treeview.column('email', width=180)
+    employee_treeview.column('empname', width=150)
+    employee_treeview.column('email', width=200)
     employee_treeview.column('gender', width=50)
     employee_treeview.column('dob', width=80)
     employee_treeview.column('empnumber', width=120)
     employee_treeview.column('work_shift', width=80)
-    employee_treeview.column('address', width=250)
+    employee_treeview.column('address', width=270)
     employee_treeview.column('user_type', width=70)
 
     treeview_data()
@@ -260,12 +328,18 @@ def employee_form(window):
                                                      user_type_combobox.get(), password_entry.get()))
     add_button.grid(row=0, column=0, padx=20)
 
-    update_button = Button(button_frame, text='به روزرسانی',
-                           font=('fonts/Persian-Yekan.ttf', 12), fg='white', bg='#00198f')
+    update_button = Button(button_frame, text='به روزرسانی', font=('fonts/Persian-Yekan.ttf', 12), fg='white',
+                           bg='#00198f', command=lambda: update_employee(empid_entry.get(), empname_entry.get(),
+                                                                         email_entry.get(), gender_combobox.get(),
+                                                                         dob_date_entry.get(), empnumber_entry.get(),
+                                                                         work_shift_combobox.get(),
+                                                                         address_text.get(1.0, END),
+                                                                         user_type_combobox.get(),
+                                                                         password_entry.get()))
     update_button.grid(row=0, column=1, padx=20)
 
-    delete_button = Button(button_frame, text='حذف',
-                           font=('fonts/Persian-Yekan.ttf', 12), fg='white', bg='#00198f')
+    delete_button = Button(button_frame, text='حذف', font=('fonts/Persian-Yekan.ttf', 12), fg='white',
+                           bg='#00198f', command=lambda: delete_employee(empid_entry.get()))
     delete_button.grid(row=0, column=2, padx=20)
 
     clear_button = Button(button_frame, text='پاک کردن',
@@ -275,9 +349,11 @@ def employee_form(window):
                                                        gender_combobox, dob_date_entry,
                                                        empnumber_entry, work_shift_combobox,
                                                        address_text, user_type_combobox,
-                                                       password_entry))
+                                                       password_entry, True))
     clear_button.grid(row=0, column=3, padx=20)
-    employee_treeview.bind('<ButtonRelease-1 >', select_data(empid_entry, empname_entry, email_entry, gender_combobox,
-                                                             dob_date_entry, empnumber_entry, work_shift_combobox,
-                                                             address_text, user_type_combobox, password_entry))
+    employee_treeview.bind('<ButtonRelease-1 >', lambda event: select_data(event, empid_entry, empname_entry,
+                                                                           email_entry, gender_combobox, dob_date_entry,
+                                                                           empnumber_entry, work_shift_combobox,
+                                                                           address_text, user_type_combobox,
+                                                                           password_entry))
     create_database_table()
