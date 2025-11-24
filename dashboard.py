@@ -5,7 +5,6 @@ from employees import employee_form
 
 #GUI Part
 window=Tk()
-
 window.title('Dashboard')
 window.state('zoomed')
 window.resizable(0,0)
