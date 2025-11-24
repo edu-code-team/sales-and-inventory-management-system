@@ -228,7 +228,7 @@ def employee_form(window):
 
     back_image = PhotoImage(file='images/back_button.png')
 
-    top_Frame = Frame(employee_frame)
+    top_Frame = Frame(employee_frame,bg='white')
     top_Frame.place(x=0, y=40, relwidth=1, height=235)
 
     back_button = Button(top_Frame, image=back_image, bd=0, cursor='hand2', bg='white',
@@ -367,7 +367,7 @@ def employee_form(window):
     password_entry = Entry(detail_frame, font=('fonts/Persian-Yekan.ttf', 12), bg='lightblue')
     password_entry.grid(row=4, column=1, padx=20, pady=10)
 
-    button_frame = Frame(employee_frame)
+    button_frame = Frame(employee_frame,bg='white')
     button_frame.place(x=200, y=500)
 
     add_button = Button(button_frame, text='افزودن',
