@@ -219,7 +219,7 @@ def show_all(search_entry_widget, search_combobox_widget):
 
 def employee_form(window):
     global back_image, employee_treeview
-    employee_frame = Frame(window, width=1070, height=567, bg='white')
+    employee_frame = Frame(window, width=1165, height=567, bg='white')
     employee_frame.place(x=200, y=100)
 
     heading_label = Label(employee_frame, text='مدیریت کارمندان', font=('fonts/Persian-Yekan.ttf', 16, 'bold'),
