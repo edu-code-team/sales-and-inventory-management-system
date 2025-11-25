@@ -30,7 +30,7 @@ def connect_database():
         connection = pymysql.connect(host='localhost', user='root', passwd='')
         cursor = connection.cursor()
     except:
-        messagebox.showerror('خطا', ' اتصال به پایگاه داده ناموفق. لطفا mysql را باز کنید')
+        messagebox.showerror('خطا', ' اتصال به پایگاه داده ناموفق.  mysql را باز کنید')
         return None, None
 
     return cursor, connection
