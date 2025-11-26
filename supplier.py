@@ -1,5 +1,5 @@
 from tkinter import * 
-
+from tkinter import ttk
 
 def supplier_form(window):
      global back_image
@@ -87,3 +87,22 @@ def supplier_form(window):
      show_button = Button(search_frame, text='نمایش همه', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',cursor='hand2',
                            bg='#00198f')
      show_button.grid(row=0, column=3)
+
+     scrolly=Scrollbar(right_frame,orient=VERTICAL)
+     scrollx=Scrollbar(right_frame,orient=HORIZONTAL)
+     treeview=ttk.Treeview(right_frame,column=('Invoice','name','contact','description'),show='headings',
+                           yscrollcommand=scrolly.set,xscrollcommand=scrollx.set)
+     scrolly.pack(side=RIGHT,fill=Y)
+     scrollx.pack(side=BOTTOM,fill=X)
+     scrollx.config(command=treeview.xview)
+     scrolly.config(command=treeview.yview)
+     treeview.pack(fill=BOTH,expand=1)
+     treeview.heading('Invoice',text='شماره فاکتور')
+     treeview.heading('name',text='نام تامین کننده')
+     treeview.heading('contact',text='شماره تماس')
+     treeview.heading('description',text='توضیحات')
+
+     treeview.column('invoice',width=80)
+     treeview.column('name',width=160)
+     treeview.column('contact',width=120)
+     treeview.column('description',width=300)
