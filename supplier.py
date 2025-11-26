@@ -1,5 +1,33 @@
 from tkinter import * 
 from tkinter import ttk
+from tkinter import messagebox
+from employees import connect_database
+
+
+def treeview_data(treeview):
+    cursor,connection=connect_database()
+    if not cursor or not connection:
+        return
+    cursor.execute('Select * from supplier_data')
+    records=cursor.fetchall()
+    treeview.delete(*treeview.get_children())
+    for record in records:
+        treeview.insert('',END,values=record)
+
+def add_supplier(invoice,name,contact,description,treeview):
+    if invoice=='' or name=='' or contact=='' or description.strip()=='':
+          messagebox.showerror('خطا','پر کردن تمام فیلدهاالزامیست')
+    else:
+          cursor,connection=connect_database()
+          if not cursor or not connection:
+               return
+          cursor.execute('Use inventory_system')
+          cursor.execute('CREATE TABLE IF NOT EXISTS supplier_data (invoice INT PRIMARY KEY,name VARCHAR(100), contact VARCHAR(15), description TEXT)')
+
+          cursor.execute('INSERT INTO supplier_data VALUES(%s,%s,%s,%s)', (invoice, name, contact, description.strip()))
+          connection.commit()
+          messagebox.showinfo('اطلاعات',' با موفقیت وارد شد')
+          treeview_data(treeview)
 
 def supplier_form(window):
      global back_image
@@ -41,20 +69,22 @@ def supplier_form(window):
      button_frame.grid(row=4,columnspan=2,pady=20)
 
      add_button = Button(button_frame, text='افزودن', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',
-                           bg='#00198f')
+                         bg='#00198f',
+                         command=lambda: add_supplier(invoice_entry.get(),name_entry.get(),contact_entry.get(),
+                                                      description_text.get(1.0, END),treeview))
      add_button.grid(row=0, column=0, padx=20)
 
 
      update_button = Button(button_frame, text='به روزرسانی', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',
-                           bg='#00198f')
+                         bg='#00198f')
      update_button.grid(row=0, column=1)
 
-     delete_button = Button(button_frame, text='حذف', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',
-                           bg='#00198f')
+     delete_button = Button(button_frame, text='حذف', font=('fonts/Persian-Yekan.ttf', 12), width=8,fg='white',
+                         bg='#00198f')
      delete_button.grid(row=0, column=2, padx=20)
 
      clear_button = Button(button_frame, text='پاک کردن', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',
-                           bg='#00198f')
+                         bg='#00198f')
      clear_button.grid(row=0, column=3)
 
      right_frame=Frame(supplier_frame)
@@ -81,23 +111,26 @@ def supplier_form(window):
      search_entry.grid(row=0,column=1)
 
      search_button = Button(search_frame, text='جستجو', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',cursor='hand2',
-                           bg='#00198f')
+                         bg='#00198f')
      search_button.grid(row=0, column=2,padx=15)
 
      show_button = Button(search_frame, text='نمایش همه', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',cursor='hand2',
-                           bg='#00198f')
+                         bg='#00198f')
      show_button.grid(row=0, column=3)
+
 
      scrolly=Scrollbar(right_frame,orient=VERTICAL)
      scrollx=Scrollbar(right_frame,orient=HORIZONTAL)
-     treeview=ttk.Treeview(right_frame,column=('Invoice','name','contact','description'),show='headings',
-                           yscrollcommand=scrolly.set,xscrollcommand=scrollx.set)
+
+
+     treeview = ttk.Treeview(right_frame,column=('invoice', 'name', 'contact', 'description'), show='headings',
+                             yscrollcommand=scrolly.set,xscrollcommand=scrollx.set)
      scrolly.pack(side=RIGHT,fill=Y)
      scrollx.pack(side=BOTTOM,fill=X)
      scrollx.config(command=treeview.xview)
      scrolly.config(command=treeview.yview)
      treeview.pack(fill=BOTH,expand=1)
-     treeview.heading('Invoice',text='شماره فاکتور')
+     treeview.heading('invoice',text='شماره فاکتور')
      treeview.heading('name',text='نام تامین کننده')
      treeview.heading('contact',text='شماره تماس')
      treeview.heading('description',text='توضیحات')
