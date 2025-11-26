@@ -56,3 +56,34 @@ def supplier_form(window):
      clear_button = Button(button_frame, text='پاک کردن', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',
                            bg='#00198f')
      clear_button.grid(row=0, column=3)
+
+     right_frame=Frame(supplier_frame)
+     right_frame.place(x=565,y=115)
+
+     search_frame=Frame(right_frame,bg='white')
+     search_frame.pack()
+
+     num_lable=Label(search_frame,text='شماره فاکتور',font=('fonts/Persian-Yekan.ttf', 14, 'bold'), bg='white')
+     num_lable.grid(row=0,column=0,padx=10,sticky='w')
+     search_entry=Entry(search_frame,font=('fonts/Persian-Yekan.ttf', 16, 'bold'), bg='lightblue',width=12)
+     search_entry.grid(row=0,column=1)
+
+     right_frame=Frame(supplier_frame,bg='white')
+     right_frame.place(x=520,y=95,width=500,height=350)
+
+     search_frame=Frame(right_frame,bg='white')
+     search_frame.pack(pady=(0,10))
+
+     num_lable=Label(search_frame,text='شماره فاکتور',font=('fonts/Persian-Yekan.ttf', 14, 'bold'), bg='white')
+     num_lable.grid(row=0,column=0,padx=(0,15),sticky='w')
+
+     search_entry=Entry(search_frame,font=('fonts/Persian-Yekan.ttf', 16, 'bold'), bg='lightblue',width=12)
+     search_entry.grid(row=0,column=1)
+
+     search_button = Button(search_frame, text='جستجو', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',cursor='hand2',
+                           bg='#00198f')
+     search_button.grid(row=0, column=2,padx=15)
+
+     show_button = Button(search_frame, text='نمایش همه', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',cursor='hand2',
+                           bg='#00198f')
+     show_button.grid(row=0, column=3)
