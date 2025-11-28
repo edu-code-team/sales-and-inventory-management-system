@@ -3,30 +3,59 @@ from tkinter import ttk
 from tkinter import messagebox
 from employees import connect_database
 
-def update_supplier(invoice,name,contact,description,treeview):
-    index=treeview.selection()
+
+def delete_supplier(invoice,treeview):
+    index= treeview.selection()
     if not index:
          messagebox.showerror('خطا','هیچ ردیفی انتخاب نشده است')
          return
     cursor,connection=connect_database()
     if not cursor or not connection:
-        return
-    cursor.execute('use inventory_system')
-    cursor.execute(' SELECT * from supplier_data WHERE invoice=%s',invoice)
-    current_data=cursor.fetchone()
-    current_data=current_data[1:]
-    
-    new_data=(name,contact,description)
-    
-
-    if current_data==new_data:
-         messagebox.showinfo('اطلاعات','ابتدا تغییرات را اعمال کنید')
          return
+    try:
+       cursor.execute('use inventory_system')
+       cursor.execute(' DELETE FROM supplier_data WHERE invoice=%s',invoice)
+       connection.commit()
+       treeview_data(treeview)
+       messagebox.showinfo('اطلاعات','ردیف انتخاب شده حذف شد')
+    except Exception as e:
+        messagebox.showerror('خطا',f'خطا به دلیل {e}')
+    finally:
+        cursor.close()
+        connection.close()
+     
 
-    cursor.execute(' UPDATE supplier_data SET name=%s,contact=%s,description=%s WHERE invoice=%s',(name,contact,description,invoice))
-    connection.commit()
-    messagebox.showinfo('اطلاعات','اطلاعات به روز رسانی شد')
-    treeview_data(treeview)
+
+def update_supplier(invoice,name,contact,description,treeview):
+    index=treeview.selection()
+    if not index:
+         messagebox.showerror('خطا','هیچ ردیفی انتخاب نشده است')
+         return
+    try:
+     cursor,connection=connect_database()
+     if not cursor or not connection:
+         return
+     cursor.execute('use inventory_system')
+     cursor.execute(' SELECT * from supplier_data WHERE invoice=%s',invoice)
+     current_data=cursor.fetchone()
+     current_data=current_data[1:]
+    
+     new_data=(name,contact,description)
+    
+
+     if current_data==new_data:
+        messagebox.showinfo('اطلاعات','ابتدا تغییرات را اعمال کنید')
+        return
+
+     cursor.execute(' UPDATE supplier_data SET name=%s,contact=%s,description=%s WHERE invoice=%s',(name,contact,description,invoice))
+     connection.commit()
+     messagebox.showinfo('اطلاعات','اطلاعات به روز رسانی شد')
+     treeview_data(treeview)
+    except Exception as e:
+     messagebox.showerror('خطا',f'خطا به دلیل {e}')
+    finally:
+        cursor.close()
+        connection.close()
 
 
 def select_data(event,invoice_entry,name_entry,contact_entry,description_text,treeview):
@@ -139,7 +168,8 @@ def supplier_form(window):
      update_button.grid(row=0, column=1)
 
      delete_button = Button(button_frame, text='حذف', font=('fonts/Persian-Yekan.ttf', 12), width=8,fg='white',
-                         bg='#00198f')
+                         bg='#00198f',
+                         command=lambda :delete_supplier(invoice_entry.get(),treeview))
      delete_button.grid(row=0, column=2, padx=20)
 
      clear_button = Button(button_frame, text='پاک کردن', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',
