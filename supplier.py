@@ -40,12 +40,25 @@ def search_supplier(search_value,treeview):
         cursor,connection=connect_database()
         if not cursor or not connection:
          return
+    try:
         cursor.execute('use inventory_system')
         cursor.execute(' SELECT * from supplier_data WHERE invoice=%s',search_value)
         record=cursor.fetchone()
+        if not record:
+            messagebox.showerror('خطا','اطلاعاتی پیدا نشد!')
+            return
+
         treeview.delete(*treeview.get_children())
         treeview.insert('',END,values=record)
-     
+    except Exception as e:
+        messagebox.showerror('خطا',f'خطا به دلیل {e}')
+    finally:
+        cursor.close()
+        connection.close()
+
+def show_all(treeview,search_entry):
+    treeview_data(treeview)
+    search_entry.delete(0,END)
 
 
 def update_supplier(invoice,name,contact,description,treeview):
@@ -226,7 +239,7 @@ def supplier_form(window):
      search_button.grid(row=0, column=2,padx=15)
 
      show_button = Button(search_frame, text='نمایش همه', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',cursor='hand2',
-                         bg='#00198f')
+                         bg='#00198f',command=lambda :show_all(treeview,search_entry))
      show_button.grid(row=0, column=3)
 
 
