@@ -30,7 +30,7 @@ def connect_database():
         connection = pymysql.connect(host='localhost', user='root', passwd='')
         cursor = connection.cursor()
     except:
-        messagebox.showerror('خطا', ' اتصال به پایگاه داده ناموفق. لطفا mysql را باز کنید')
+        messagebox.showerror('خطا', ' اتصال به پایگاه داده ناموفق.  mysql را باز کنید')
         return None, None
 
     return cursor, connection
@@ -219,7 +219,7 @@ def show_all(search_entry_widget, search_combobox_widget):
 
 def employee_form(window):
     global back_image, employee_treeview
-    employee_frame = Frame(window, width=1070, height=567, bg='white')
+    employee_frame = Frame(window, width=1165, height=567, bg='white')
     employee_frame.place(x=200, y=100)
 
     heading_label = Label(employee_frame, text='مدیریت کارمندان', font=('fonts/Persian-Yekan.ttf', 16, 'bold'),
@@ -228,7 +228,7 @@ def employee_form(window):
 
     back_image = PhotoImage(file='images/back_button.png')
 
-    top_Frame = Frame(employee_frame)
+    top_Frame = Frame(employee_frame,bg='white')
     top_Frame.place(x=0, y=40, relwidth=1, height=235)
 
     back_button = Button(top_Frame, image=back_image, bd=0, cursor='hand2', bg='white',
@@ -367,7 +367,7 @@ def employee_form(window):
     password_entry = Entry(detail_frame, font=('fonts/Persian-Yekan.ttf', 12), bg='lightblue')
     password_entry.grid(row=4, column=1, padx=20, pady=10)
 
-    button_frame = Frame(employee_frame)
+    button_frame = Frame(employee_frame,bg='white')
     button_frame.place(x=200, y=500)
 
     add_button = Button(button_frame, text='افزودن',

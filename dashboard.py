@@ -1,6 +1,6 @@
 from tkinter import *
 from employees import employee_form
-
+from supplier import supplier_form
 
 
 #GUI Part
@@ -43,7 +43,7 @@ employee_button.pack(fill=X)
 
 supplier_icon=PhotoImage(file='images/supplier.png')
 supplier_button=Button(leftFrame,image=supplier_icon,compound=LEFT,text='   تامین کنندگان',
-                       font=('fonts/Persian-Yekan.ttf',15,'bold'))
+                       font=('fonts/Persian-Yekan.ttf',15,'bold'),padx=10,command=lambda:supplier_form(window))
 supplier_button.pack(fill=X)
 
 
