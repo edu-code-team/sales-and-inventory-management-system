@@ -3,6 +3,32 @@ from tkinter import ttk
 from tkinter import messagebox
 from employees import connect_database
 
+def update_supplier(invoice,name,contact,description,treeview):
+    index=treeview.selection()
+    if not index:
+         messagebox.showerror('خطا','هیچ ردیفی انتخاب نشده است')
+         return
+    cursor,connection=connect_database()
+    if not cursor or not connection:
+        return
+    cursor.execute('use inventory_system')
+    cursor.execute(' SELECT * from supplier_data WHERE invoice=%s',invoice)
+    current_data=cursor.fetchone()
+    current_data=current_data[1:]
+    
+    new_data=(name,contact,description)
+    
+
+    if current_data==new_data:
+         messagebox.showinfo('اطلاعات','ابتدا تغییرات را اعمال کنید')
+         return
+
+    cursor.execute(' UPDATE supplier_data SET name=%s,contact=%s,description=%s WHERE invoice=%s',(name,contact,description,invoice))
+    connection.commit()
+    messagebox.showinfo('اطلاعات','اطلاعات به روز رسانی شد')
+    treeview_data(treeview)
+
+
 def select_data(event,invoice_entry,name_entry,contact_entry,description_text,treeview):
     index=treeview.selection()
     content=treeview.item(index)
@@ -36,7 +62,7 @@ def treeview_data(treeview):
         connection.close()
 
 def add_supplier(invoice,name,contact,description,treeview):
-    if invoice=='' or name=='' or contact=='' or description.strip()=='':
+    if invoice=='' or name=='' or contact=='' or description =='':
           messagebox.showerror('خطا','پر کردن تمام فیلدها الزامیست')
     else:
           cursor,connection=connect_database()
@@ -50,7 +76,7 @@ def add_supplier(invoice,name,contact,description,treeview):
                  return
              cursor.execute('CREATE TABLE IF NOT EXISTS supplier_data (invoice INT PRIMARY KEY,name VARCHAR(100), contact VARCHAR(15), description TEXT)')
 
-             cursor.execute('INSERT INTO supplier_data VALUES(%s,%s,%s,%s)', (invoice, name, contact, description.strip()))
+             cursor.execute('INSERT INTO supplier_data VALUES(%s,%s,%s,%s)', (invoice, name, contact, description))
              connection.commit()
              messagebox.showinfo('اطلاعات',' با موفقیت وارد شد')
              treeview_data(treeview)
@@ -102,12 +128,14 @@ def supplier_form(window):
      add_button = Button(button_frame, text='افزودن', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',
                          bg='#00198f',
                          command=lambda: add_supplier(invoice_entry.get(),name_entry.get(),contact_entry.get(),
-                                                      description_text.get(1.0, END),treeview))
+                                                      description_text.get(1.0, END).strip(),treeview))
      add_button.grid(row=0, column=0, padx=20)
 
 
      update_button = Button(button_frame, text='به روزرسانی', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',
-                         bg='#00198f')
+                         bg='#00198f',
+                         command=lambda :update_supplier(invoice_entry.get(),name_entry.get(),contact_entry.get(),
+                                                        description_text.get(1.0, END).strip(),treeview))
      update_button.grid(row=0, column=1)
 
      delete_button = Button(button_frame, text='حذف', font=('fonts/Persian-Yekan.ttf', 12), width=8,fg='white',
