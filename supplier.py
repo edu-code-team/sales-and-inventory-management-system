@@ -43,7 +43,7 @@ def supplier_form(window):
                          command=lambda: supplier_frame.place_forget())
      back_button.place(x=10, y=30)
 
-     left_frame=Frame(supplier_frame,bg='white')
+     left_frame=Frame(supplier_frame)
      left_frame.place(x=10,y=100)
 
      invoice_lable=Label(left_frame,text='شماره فاکتور',font=('fonts/Persian-Yekan.ttf', 14, 'bold'), bg='white')
@@ -63,10 +63,10 @@ def supplier_form(window):
 
      description_lable=Label(left_frame,text='توضیحات',font=('fonts/Persian-Yekan.ttf', 14, 'bold') , bg='white')
      description_lable.grid(row=3,column=0,padx=(20,40),sticky='nw',pady=25)
-     description_text=Text(left_frame,width=30,height=6,bd=2,bg='lightblue')
+     description_text=Text(left_frame,width=20,height=6,bd=2,bg='lightblue')
      description_text.grid(row=3,column=1,pady=25)
 
-     button_frame=Frame(left_frame,bg='white')
+     button_frame=Frame(left_frame)
      button_frame.grid(row=4,columnspan=2,pady=20)
 
      add_button = Button(button_frame, text='افزودن', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',
