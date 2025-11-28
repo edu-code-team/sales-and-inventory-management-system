@@ -79,7 +79,7 @@ def update_supplier(invoice,name,contact,description,treeview):
     
 
      if current_data==new_data:
-        messagebox.showinfo('اطلاعات','ابتدا تغییرات را اعمال کنید')
+        messagebox.showinfo('اطلاعات',' تغییرات را اعمال کنید')
         return
 
      cursor.execute(' UPDATE supplier_data SET name=%s,contact=%s,description=%s WHERE invoice=%s',(name,contact,description,invoice))

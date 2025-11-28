@@ -6,9 +6,20 @@ from supplier import supplier_form
 #GUI Part
 window=Tk()
 
-window.title('Dashboard')
-window.state('zoomed')
-window.resizable(0,0)
+def toggle_window():
+    if window.state() == "zoomed":
+        window.state("normal")
+    else:
+        window.state("zoomed")
+        Button(window, 
+       text="🗕", 
+       font=("Yekan", 14, "bold"),
+       width=4, 
+       height=1,
+       bg="#00198f",
+       fg="white",
+       command=toggle_window
+).place(x=1250, y=10)
 window.config(bg='#fef9fb')
 
 bg_image=PhotoImage(file='images/inventory.png')
