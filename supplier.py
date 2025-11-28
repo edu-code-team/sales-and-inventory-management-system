@@ -33,7 +33,18 @@ def clear(invoice_entry,name_entry,contact_entry,description_text,treeview):
     treeview.selection_remove(treeview.selection())
 
 
-
+def search_supplier(search_value,treeview):
+    if search_value=='':
+       messagebox.showerror('خطا','لطفا شماره فاکتور را وارد کنید')
+    else:
+        cursor,connection=connect_database()
+        if not cursor or not connection:
+         return
+        cursor.execute('use inventory_system')
+        cursor.execute(' SELECT * from supplier_data WHERE invoice=%s',search_value)
+        record=cursor.fetchone()
+        treeview.delete(*treeview.get_children())
+        treeview.insert('',END,values=record)
      
 
 
