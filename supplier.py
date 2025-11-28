@@ -1,4 +1,4 @@
-from tkinter import * 
+from tkinter import *
 from tkinter import ttk
 from tkinter import messagebox
 from employees import connect_database
@@ -8,6 +8,7 @@ def treeview_data(treeview):
     cursor,connection=connect_database()
     if not cursor or not connection:
         return
+    cursor.execute('USE inventory_system')
     cursor.execute('Select * from supplier_data')
     records=cursor.fetchall()
     treeview.delete(*treeview.get_children())
@@ -31,7 +32,7 @@ def add_supplier(invoice,name,contact,description,treeview):
 
 def supplier_form(window):
      global back_image
-     supplier_frame = Frame(window, width=1165, height=567, bg='white') 
+     supplier_frame = Frame(window, width=1165, height=567, bg='white')
      supplier_frame.place(x=200, y=100)
      heading_label = Label(supplier_frame, text='مدیریت تامین کنندگان', font=('fonts/Persian-Yekan.ttf', 16, 'bold'),
                           bg='#00198f', fg='white')
@@ -139,3 +140,5 @@ def supplier_form(window):
      treeview.column('name',width=160)
      treeview.column('contact',width=120)
      treeview.column('description',width=300)
+
+     treeview_data(treeview)
