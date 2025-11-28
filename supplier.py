@@ -25,6 +25,17 @@ def delete_supplier(invoice,treeview):
         connection.close()
      
 
+def clear(invoice_entry,name_entry,contact_entry,description_text,treeview):
+    invoice_entry.delete(0,END)
+    name_entry.delete(0,END)
+    contact_entry.delete(0,END)
+    description_text.delete(1.0,END)
+    treeview.selection_remove(treeview.selection())
+
+
+
+     
+
 
 def update_supplier(invoice,name,contact,description,treeview):
     index=treeview.selection()
@@ -173,7 +184,7 @@ def supplier_form(window):
      delete_button.grid(row=0, column=2, padx=20)
 
      clear_button = Button(button_frame, text='پاک کردن', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',
-                         bg='#00198f')
+                         bg='#00198f',command=lambda :clear(invoice_entry,name_entry,contact_entry,description_text,treeview))
      clear_button.grid(row=0, column=3)
 
      right_frame=Frame(supplier_frame)
@@ -200,7 +211,7 @@ def supplier_form(window):
      search_entry.grid(row=0,column=1)
 
      search_button = Button(search_frame, text='جستجو', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',cursor='hand2',
-                         bg='#00198f')
+                         bg='#00198f',command=lambda :search_supplier(search_entry.get(),treeview))
      search_button.grid(row=0, column=2,padx=15)
 
      show_button = Button(search_frame, text='نمایش همه', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',cursor='hand2',
