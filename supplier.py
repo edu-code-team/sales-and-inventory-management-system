@@ -3,32 +3,62 @@ from tkinter import ttk
 from tkinter import messagebox
 from employees import connect_database
 
+def select_data(event,invoice_entry,name_entry,contact_entry,description_text,treeview):
+    index=treeview.selection()
+    content=treeview.item(index)
+    actual_content=content['values']
+    invoice_entry.delete(0,END)
+    name_entry.delete(0,END)
+    contact_entry.delete(0,END)
+    description_text.delete(1.0,END)
+    invoice_entry.insert(0,actual_content[0])
+    name_entry.insert(0,actual_content[1])
+    contact_entry.insert(0,actual_content[2])
+    description_text.insert(1.0,actual_content[3])
+
+
 
 def treeview_data(treeview):
     cursor,connection=connect_database()
     if not cursor or not connection:
         return
-    cursor.execute('USE inventory_system')
-    cursor.execute('Select * from supplier_data')
-    records=cursor.fetchall()
-    treeview.delete(*treeview.get_children())
-    for record in records:
-        treeview.insert('',END,values=record)
+    try:
+       cursor.execute('USE inventory_system')
+       cursor.execute('Select * from supplier_data')
+       records=cursor.fetchall()
+       treeview.delete(*treeview.get_children())
+       for record in records:
+           treeview.insert('',END,values=record)
+    except Exception as e:
+               messagebox.showerror('خطا',f'خطا به دلیل {e}')
+    finally:
+        cursor.close()
+        connection.close()
 
 def add_supplier(invoice,name,contact,description,treeview):
     if invoice=='' or name=='' or contact=='' or description.strip()=='':
-          messagebox.showerror('خطا','پر کردن تمام فیلدهاالزامیست')
+          messagebox.showerror('خطا','پر کردن تمام فیلدها الزامیست')
     else:
           cursor,connection=connect_database()
           if not cursor or not connection:
                return
-          cursor.execute('Use inventory_system')
-          cursor.execute('CREATE TABLE IF NOT EXISTS supplier_data (invoice INT PRIMARY KEY,name VARCHAR(100), contact VARCHAR(15), description TEXT)')
+          try:
+             cursor.execute('Use inventory_system')
+             cursor.execute('Select * from supplier_data where invoice=%s',invoice)
+             if cursor.fetchone():
+                 messagebox.showerror('خطا','شماره فاکتور تکراری است')
+                 return
+             cursor.execute('CREATE TABLE IF NOT EXISTS supplier_data (invoice INT PRIMARY KEY,name VARCHAR(100), contact VARCHAR(15), description TEXT)')
 
-          cursor.execute('INSERT INTO supplier_data VALUES(%s,%s,%s,%s)', (invoice, name, contact, description.strip()))
-          connection.commit()
-          messagebox.showinfo('اطلاعات',' با موفقیت وارد شد')
-          treeview_data(treeview)
+             cursor.execute('INSERT INTO supplier_data VALUES(%s,%s,%s,%s)', (invoice, name, contact, description.strip()))
+             connection.commit()
+             messagebox.showinfo('اطلاعات',' با موفقیت وارد شد')
+             treeview_data(treeview)
+          except Exception as e:
+             messagebox.showerror('خطا',f'خطا به دلیل {e}')
+          finally:
+             cursor.close()
+             connection.close()
 
 def supplier_form(window):
      global back_image
@@ -142,3 +172,4 @@ def supplier_form(window):
      treeview.column('description',width=300)
 
      treeview_data(treeview)
+     treeview.bind('<ButtonRelease-1>',lambda event:select_data(event,invoice_entry,name_entry,contact_entry,description_text,treeview))
