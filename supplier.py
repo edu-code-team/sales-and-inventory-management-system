@@ -161,7 +161,7 @@ def supplier_form(window):
 
      back_button = Button(supplier_frame, image=back_image, bd=0, cursor='hand2', bg='white',
                          command=lambda: supplier_frame.place_forget())
-     back_button.place(x=10, y=30)
+     back_button.place(x=10, y=45)
 
      left_frame=Frame(supplier_frame)
      left_frame.place(x=10,y=100)
