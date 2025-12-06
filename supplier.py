@@ -134,11 +134,14 @@ def add_supplier(invoice,name,contact,description,treeview):
                return
           try:
              cursor.execute('Use inventory_system')
+            
+             cursor.execute('CREATE TABLE IF NOT EXISTS supplier_data (invoice INT PRIMARY KEY,name VARCHAR(100), contact VARCHAR(15), description TEXT)')
+
              cursor.execute('Select * from supplier_data where invoice=%s',invoice)
              if cursor.fetchone():
                  messagebox.showerror('خطا','شماره فاکتور تکراری است')
                  return
-             cursor.execute('CREATE TABLE IF NOT EXISTS supplier_data (invoice INT PRIMARY KEY,name VARCHAR(100), contact VARCHAR(15), description TEXT)')
+
 
              cursor.execute('INSERT INTO supplier_data VALUES(%s,%s,%s,%s)', (invoice, name, contact, description))
              connection.commit()

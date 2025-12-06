@@ -1,5 +1,56 @@
 from tkinter import *
 from tkinter import  ttk
+from tkinter import messagebox
+from employees import connect_database
+
+def treeview_data(treeview):
+    cursor,connection=connect_database()
+    if not cursor or not connection:
+        return
+    try:
+       cursor.execute('USE inventory_system')
+       cursor.execute('Select * from category_data')
+       records=cursor.fetchall()
+       treeview.delete(*treeview.get_children())
+       for record in records:
+           treeview.insert('',END,values=record)
+    except Exception as e:
+               messagebox.showerror('خطا',f'خطا به دلیل {e}')
+    finally:
+        cursor.close()
+        connection.close()
+
+
+
+def add_category(id,name,description,treeview):
+    if id=='' or name=='' or description=='':
+        messagebox.showerror('خطا','پر کردن تمام فیلدها الزامیست')
+    else:
+          cursor,connection=connect_database()
+          if not cursor or not connection:
+            return
+          try:
+             cursor.execute('Use inventory_system')
+             cursor.execute('CREATE TABLE IF NOT EXISTS category_data (id INT PRIMARY KEY,name VARCHAR(100), description TEXT)')
+
+             cursor.execute('Select * from category_data WHERE id=%s',id)
+             if cursor.fetchone():
+                 messagebox.showerror('خطا','شماره محصول تکراری است')
+                 return
+             cursor.execute('INSERT INTO category_data VALUES(%s,%s,%s)', (id, name, description))
+             connection.commit()
+             messagebox.showinfo('اطلاعات',' با موفقیت وارد شد')
+             treeview_data(treeview)
+
+          except Exception as e:
+             messagebox.showerror('خطا',f'خطا به دلیل {e}')
+    
+          finally:
+              cursor.close()
+              connection.close()   
+ 
+
+
 def category_form(window):
     global back_image,logo
     category_frame = Frame(window, width=1165, height=567, bg='white')
@@ -22,16 +73,16 @@ def category_form(window):
     details_frame=Frame(category_frame,bg='white')
     details_frame.place(x=620,y=70)
 
-    id_label=Label(details_frame,text='شماره محصول',font=('fonts/Persian-Yekan.ttf', 14, 'bold'), bg='white')
+    id_label=Label(details_frame,text='شماره ',font=('fonts/Persian-Yekan.ttf', 14, 'bold'), bg='white')
     id_label.grid(row=0,column=0,padx=20,sticky='w')
     id_entry=Entry(details_frame,font=('fonts/Persian-Yekan.ttf', 16, 'bold'), bg='lightblue')
     id_entry.grid(row=0,column=1)
 
     
-    category_name_label=Label(details_frame,text='نام محصول',font=('fonts/Persian-Yekan.ttf', 14, 'bold'), bg='white')
+    category_name_label=Label(details_frame,text='نام دسته بندی',font=('fonts/Persian-Yekan.ttf', 14, 'bold'), bg='white')
     category_name_label.grid(row=1,column=0,padx=20,sticky='w')
-    category_name_label_entry=Entry(details_frame,font=('fonts/Persian-Yekan.ttf', 16, 'bold'), bg='lightblue')
-    category_name_label_entry.grid(row=1,column=1, pady=20)
+    category_name_entry=Entry(details_frame,font=('fonts/Persian-Yekan.ttf', 16, 'bold'), bg='lightblue')
+    category_name_entry.grid(row=1,column=1, pady=20)
 
     description_label=Label(details_frame,text='توضیحات',font=('fonts/Persian-Yekan.ttf', 14, 'bold'), bg='white')
     description_label.grid(row=2,column=0,padx=20,sticky='nw')
@@ -43,7 +94,7 @@ def category_form(window):
     button_frame.place(x=760,y=280)
 
     add_button = Button(button_frame, text='افزودن', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',
-                         bg='#00198f')
+                         bg='#00198f',command=lambda :add_category(id_entry.get(),category_name_entry.get(),description_text.get(1.0,END).strip(),treeview))
     add_button.grid(row=0, column=0, padx=20)
 
     delete_button= Button(button_frame, text='حذف', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',
@@ -66,8 +117,8 @@ def category_form(window):
     scrolly.config(command=treeview.yview)
     treeview.pack(fill=BOTH,expand=1)
 
-    treeview.heading('id',text='شماره محصول')
-    treeview.heading('name',text='نام محصول ')
+    treeview.heading('id',text='شماره ')
+    treeview.heading('name',text='نام دسته بندی ')
     treeview.heading('description',text='توضیحات')
 
     treeview.column('id',width=80)
