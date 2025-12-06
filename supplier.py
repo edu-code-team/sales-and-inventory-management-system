@@ -163,7 +163,7 @@ def supplier_form(window):
                          command=lambda: supplier_frame.place_forget())
      back_button.place(x=10, y=45)
 
-     left_frame=Frame(supplier_frame)
+     left_frame=Frame(supplier_frame,bg='white')
      left_frame.place(x=10,y=100)
 
      invoice_lable=Label(left_frame,text='شماره فاکتور',font=('fonts/Persian-Yekan.ttf', 14, 'bold'), bg='white')
