@@ -3,12 +3,36 @@ from tkinter import  ttk
 from tkinter import messagebox
 from employees import connect_database
 
+
+def delete_category(treeview):
+    index= treeview.selection()
+    content=treeview.item(index)
+    row=content['values']
+    id=row[0]
+    if not index:
+         messagebox.showerror('خطا','هیچ ردیفی انتخاب نشده است')
+         return
+    cursor,connection=connect_database()
+    if not cursor or not connection:
+         return
+    try:
+       cursor.execute('use inventory_system')
+       cursor.execute(' DELETE FROM category_data WHERE id=%s',id)
+       connection.commit()
+       treeview_data(treeview)
+       messagebox.showinfo('اطلاعات','ردیف انتخاب شده حذف شد')
+    except Exception as e:
+        messagebox.showerror('خطا',f'خطا به دلیل {e}')
+    finally:
+        cursor.close()
+        connection.close()
+
+
+
 def clear(id_entry,category_name_entry,description_text): 
     id_entry.delete(0,END)
     category_name_entry.delete(0,END)
     description_text.delete(1.0,END)
-
-
 
 
 
@@ -108,7 +132,7 @@ def category_form(window):
     add_button.grid(row=0, column=0, padx=20)
 
     delete_button= Button(button_frame, text='حذف', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',
-                         bg='#00198f')
+                         bg='#00198f', command=lambda :delete_category(treeview))
     delete_button.grid(row=0, column=1, padx=20)
 
     clear_button= Button(button_frame, text='پاک کردن', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',
