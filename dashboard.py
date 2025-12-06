@@ -1,7 +1,7 @@
 from tkinter import *
 from employees import employee_form
 from supplier import supplier_form
-
+from category import category_form
 
 #GUI Part
 window=Tk()
@@ -60,7 +60,7 @@ supplier_button.pack(fill=X)
 
 category_icon=PhotoImage(file='images/category.png')
 category_button=Button(leftFrame,image=category_icon,compound=LEFT,text='       دسته بندی ',
-                       font=('fonts/Persian-Yekan.ttf',15,'bold'))
+                       font=('fonts/Persian-Yekan.ttf',15,'bold'),command=lambda :category_form(window))
 category_button.pack(fill=X)
 
 products_icon=PhotoImage(file='images/products.png')
