@@ -3,6 +3,16 @@ from tkinter import  ttk
 from tkinter import messagebox
 from employees import connect_database
 
+def clear(id_entry,category_name_entry,description_text): 
+    id_entry.delete(0,END)
+    category_name_entry.delete(0,END)
+    description_text.delete(1.0,END)
+
+
+
+
+
+
 def treeview_data(treeview):
     cursor,connection=connect_database()
     if not cursor or not connection:
@@ -71,7 +81,7 @@ def category_form(window):
     label.place(x=30,y=100)
 
     details_frame=Frame(category_frame,bg='white')
-    details_frame.place(x=620,y=70)
+    details_frame.place(x=670,y=70)
 
     id_label=Label(details_frame,text='شماره ',font=('fonts/Persian-Yekan.ttf', 14, 'bold'), bg='white')
     id_label.grid(row=0,column=0,padx=20,sticky='w')
@@ -91,7 +101,7 @@ def category_form(window):
     description_text.grid(row=2,column=1)
 
     button_frame=Frame(category_frame,bg='white')
-    button_frame.place(x=760,y=280)
+    button_frame.place(x=690,y=280)
 
     add_button = Button(button_frame, text='افزودن', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',
                          bg='#00198f',command=lambda :add_category(id_entry.get(),category_name_entry.get(),description_text.get(1.0,END).strip(),treeview))
@@ -100,6 +110,10 @@ def category_form(window):
     delete_button= Button(button_frame, text='حذف', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',
                          bg='#00198f')
     delete_button.grid(row=0, column=1, padx=20)
+
+    clear_button= Button(button_frame, text='پاک کردن', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',
+                         bg='#00198f',command=lambda :clear(id_entry,category_name_entry,description_text))
+    clear_button.grid(row=0, column=2, padx=20)
 
     treeview_frame=Frame(category_frame,bg='#00198f')
     treeview_frame.place(x=530,y=340,height=200, width=500)
@@ -124,5 +138,6 @@ def category_form(window):
     treeview.column('id',width=80)
     treeview.column('name',width=140)
     treeview.column('description',width=300)
+    treeview_data(treeview)
 
     
