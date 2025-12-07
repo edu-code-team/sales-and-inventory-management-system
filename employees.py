@@ -176,7 +176,7 @@ def search_employee(search_option, value):
     elif value == '':
         messagebox.showerror('خطا', 'مقداری را برای جستجو وارد کنید')
     else:
-        #------------map for search columns:------------
+        # ------------map for search columns:------------
         column_mapping = {
             'شماره پرسنلی': 'empid',
             'نام و نام خانوادگی': 'name',
@@ -186,21 +186,34 @@ def search_employee(search_option, value):
             'نوع کاربری': 'usertype'
         }
         db_column = column_mapping.get(search_option)
-        #-----------------------------------------------
+        # -----------------------------------------------
 
         cursor, connection = connect_database()
         if not cursor or not connection:
             return
         try:
             cursor.execute('USE inventory_system')
-            #-------------db_column query--------------
-            query = f'SELECT * FROM employee_data WHERE {db_column} LIKE %s'
-            cursor.execute(query, (f'%{value}%',))
-            #------------------------------------------
+
+            # -------------db_column query--------------
+            #show all matches not just the exact ones
+            like_value = f"%{value.strip()}%"
+            query = f"SELECT * FROM employee_data WHERE {db_column} LIKE %s"
+            cursor.execute(query, (like_value,))
+            # ------------------------------------------
+
             recordes = cursor.fetchall()
+
             employee_treeview.delete(*employee_treeview.get_children())
+
+            # ------------check empty results------------
+            if not recordes:
+                messagebox.showinfo('نتیجه جستجو', 'هیچ رکوردی یافت نشد')
+                return
+            # ------------------------------------------
+
             for recorde in recordes:
                 employee_treeview.insert('', END, values=recorde)
+
         except Exception as e:
             messagebox.showerror('خطا', f'{e} خطای')
         finally:
@@ -248,7 +261,7 @@ def employee_form(window):
     search_entry.grid(row=0, column=1)
 
     search_button = Button(search_frame, text='جستجو', font=('fonts/Persian-Yekan.ttf', 12), fg='white',
-                           bg='#00198f', command=lambda: show_all(search_entry, Search_combobox))
+                           bg='#00198f', command=lambda: search_employee(Search_combobox.get(),search_entry.get()))
     search_button.grid(row=0, column=2, padx=20)
 
     show_button = Button(search_frame, text='نمایش همه', font=('fonts/Persian-Yekan.ttf', 12), width=10, cursor='hand2',
