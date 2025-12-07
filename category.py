@@ -43,6 +43,7 @@ def treeview_data(treeview):
         return
     try:
        cursor.execute('USE inventory_system')
+       cursor.execute('CREATE TABLE IF NOT EXISTS category_data (id INT PRIMARY KEY,name VARCHAR(100), description TEXT)')
        cursor.execute('Select * from category_data')
        records=cursor.fetchall()
        treeview.delete(*treeview.get_children())
@@ -65,8 +66,6 @@ def add_category(id,name,description,treeview):
             return
           try:
              cursor.execute('Use inventory_system')
-             cursor.execute('CREATE TABLE IF NOT EXISTS category_data (id INT PRIMARY KEY,name VARCHAR(100), description TEXT)')
-
              cursor.execute('Select * from category_data WHERE id=%s',id)
              if cursor.fetchone():
                  messagebox.showerror('خطا','شماره محصول تکراری است')
@@ -128,7 +127,8 @@ def category_form(window):
     button_frame.place(x=690,y=280)
 
     add_button = Button(button_frame, text='افزودن', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',
-                         bg='#00198f',command=lambda :add_category(id_entry.get(),category_name_entry.get(),description_text.get(1.0,END).strip(),treeview))
+                         bg='#00198f',command=lambda :add_category(id_entry.get(),category_name_entry.get(),
+                                                                   description_text.get(1.0,END).strip(),treeview))
     add_button.grid(row=0, column=0, padx=20)
 
     delete_button= Button(button_frame, text='حذف', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',
@@ -163,5 +163,3 @@ def category_form(window):
     treeview.column('name',width=140)
     treeview.column('description',width=300)
     treeview_data(treeview)
-
-    
