@@ -2,6 +2,8 @@ from tkinter import *
 from employees import employee_form
 from supplier import supplier_form
 from category import category_form
+from products import product_form
+
 
 #GUI Part
 window=Tk()
@@ -65,7 +67,7 @@ category_button.pack(fill=X)
 
 products_icon=PhotoImage(file='images/products.png')
 products_button=Button(leftFrame,image=products_icon,compound=LEFT,text='         محصولات ',
-                       font=('fonts/Persian-Yekan.ttf',15,'bold'))
+                       font=('fonts/Persian-Yekan.ttf',15,'bold'),command= lambda:product_form(window))
 products_button.pack(fill=X)
 
 sale_icon=PhotoImage(file='images/sale.png')
