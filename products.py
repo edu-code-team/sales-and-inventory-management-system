@@ -1,12 +1,76 @@
 from tkinter import *
 from tkinter import ttk
 from tkinter import messagebox
+from employees import connect_database, treeview_data
+
+
+
+def treeview_data(treeview):
+    cursor,connection=connect_database()
+    if not cursor or not connection:
+        return
+    try:
+       cursor.execute('USE inventory_system')
+       cursor.execute('Select * from product_data')
+       records=cursor.fetchall()
+       treeview.delete(*treeview.get_children())
+       for record in records:
+           treeview.insert('',END,values=record)
+    except Exception as e:
+               messagebox.showerror('خطا',f'خطا به دلیل {e}')
+    finally:
+        cursor.close()
+        connection.close()
+
+
+
+def fetch_supplier_category(category_combobox, supplier_combobox):
+    category_option = []
+    supplier_option = []
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return
+    cursor.execute('USE inventory_system')
+    cursor.execute('SELECT name FROM category_data')
+    names = cursor.fetchall()
+    if len(names) > 0:
+        category_combobox.set('انتخاب کنید')
+        for name in names:
+            category_option.append(name[0])
+        category_combobox.config(value=category_option)
+
+    cursor.execute('SELECT name FROM supplier_data')
+    names = cursor.fetchall()
+    if len (names) > 0:
+        supplier_combobox.set('انتخاب کنید')
+        for name in names:
+            supplier_option.append(name[0])
+        supplier_combobox.config(value=supplier_option)
+
+
 
 def add_product(category,supplier,name,price,quantity,status):
     if category=='خالی':
          messagebox.showerror('خطا','لطفا دسته بندی را اضافه کنید')
     elif supplier=='خالی': 
          messagebox.showerror('خطا','لطفا تامین کننده را اضافه کنید')
+    elif (category=='انتخاب کنید' or supplier=='انتخاب کنید' or name=='' or price=='' or quantity=='' or
+          status=='یک مورد را انتخاب کنید'):
+        messagebox.showerror('خطا','پر کردن تمامی فیلد ها الزامی است')
+    else:
+        cursor, connection = connect_database()
+        if not cursor or not connection:
+            return
+        cursor.execute('USE inventory_system')
+        cursor.execute(
+            'CREATE TABLE IF NOT EXISTS product_data (id INT AUTO_INCREMENT PRIMARY KEY, category VARCHAR(50), '
+            'supplier VARCHAR(50), name VARCHAR(100), price DECIMAL(10,2),quantity INT,status VARCHAR(50))')
+        cursor.execute('INSERT INTO product_data (category, supplier, name, price, quantity, status) '
+            'VALUES (%s, %s, %s, %s, %s, %s)',(category, supplier, name, price, quantity, status))
+        cursor.connection.commit()
+        messagebox.showinfo('عمل موفق','محصول با موفقیت افزوده شد')
+        treeview_data(treeviw)
+
          
 def product_form(window):
     global back_image
@@ -155,6 +219,8 @@ def product_form(window):
     treeview.column('price', width=80)
     treeview.column('quantity', width=80)
     treeview.column('state', width=80)
+
+    fetch_supplier_category(category_combobox, supplier_combobox)
 
     # ------------------------ حرکت با Enter ------------------------
     def focus_next(event, widget):
