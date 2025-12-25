@@ -3,9 +3,28 @@ from tkinter import ttk
 from tkinter import messagebox
 from employees import connect_database, treeview_data
 
+def select_data(event):
+    selected = treeview.selection()
+    if not selected:
+        return
+
+    item = treeview.item(selected[0])
+    content = item["values"]
+
+    name_entry.delete(0, END)
+    price_entry.delete(0, END)
+    quantity_entry.delete(0, END)
+
+    category_combobox.set(content[0])
+    supplier_combobox.set(content[1])
+    name_entry.insert(0, content[2])
+    price_entry.insert(0, content[3])
+    quantity_entry.insert(0, content[4])
+    status_combobox.set(content[5])
 
 
-def treeview_data(treeview):
+
+def load_product_data(treeview):
     cursor,connection=connect_database()
     if not cursor or not connection:
         return
@@ -15,7 +34,7 @@ def treeview_data(treeview):
        records=cursor.fetchall()
        treeview.delete(*treeview.get_children())
        for record in records:
-           treeview.insert('',END,values=record)
+           treeview.insert('', END, values=record[1:])
     except Exception as e:
                messagebox.showerror('خطا',f'خطا به دلیل {e}')
     finally:
@@ -69,10 +88,14 @@ def add_product(category,supplier,name,price,quantity,status):
             'VALUES (%s, %s, %s, %s, %s, %s)',(category, supplier, name, price, quantity, status))
         cursor.connection.commit()
         messagebox.showinfo('عمل موفق','محصول با موفقیت افزوده شد')
-        treeview_data(treeviw)
+        load_product_data(treeview)
+
 
          
 def product_form(window):
+    global treeview
+    global name_entry, price_entry, quantity_entry
+    global category_combobox, supplier_combobox, status_combobox
     global back_image
 
     product_frame = Frame(window, width=1165, height=567, bg='white')
@@ -221,6 +244,11 @@ def product_form(window):
     treeview.column('state', width=80)
 
     fetch_supplier_category(category_combobox, supplier_combobox)
+
+    load_product_data(treeview)
+
+    treeview.bind('<ButtonRelease-1>', select_data)
+
 
     # ------------------------ حرکت با Enter ------------------------
     def focus_next(event, widget):
