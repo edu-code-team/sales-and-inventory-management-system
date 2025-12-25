@@ -23,7 +23,6 @@ def select_data(event):
     status_combobox.set(content[5])
 
 
-
 def load_product_data(treeview):
     cursor,connection=connect_database()
     if not cursor or not connection:
@@ -40,7 +39,6 @@ def load_product_data(treeview):
     finally:
         cursor.close()
         connection.close()
-
 
 
 def fetch_supplier_category(category_combobox, supplier_combobox):
@@ -67,7 +65,6 @@ def fetch_supplier_category(category_combobox, supplier_combobox):
         supplier_combobox.config(value=supplier_option)
 
 
-
 def add_product(category,supplier,name,price,quantity,status):
     if category=='خالی':
          messagebox.showerror('خطا','لطفا دسته بندی را اضافه کنید')
@@ -89,7 +86,6 @@ def add_product(category,supplier,name,price,quantity,status):
         cursor.connection.commit()
         messagebox.showinfo('عمل موفق','محصول با موفقیت افزوده شد')
         load_product_data(treeview)
-
 
          
 def product_form(window):
@@ -249,7 +245,6 @@ def product_form(window):
 
     treeview.bind('<ButtonRelease-1>', select_data)
 
-
     # ------------------------ حرکت با Enter ------------------------
     def focus_next(event, widget):
         widget.focus()
@@ -262,3 +257,4 @@ def product_form(window):
     status_combobox.bind("<Return>", lambda e: focus_next(e, add_button))
 
     add_button.bind("<Return>", lambda e: add_button.invoke())
+
