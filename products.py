@@ -5,6 +5,34 @@ from employees import treeview_data
 from employees import connect_database
 
 
+def delete_product(treeview):
+    selected = treeview.selection()
+    if not selected:
+        messagebox.showerror('خطا', 'هیچ ردیفی انتخاب نشده است')
+        return
+
+    item = treeview.item(selected[0])
+    content = item["values"]
+    id = content[0]
+
+    ans = messagebox.askyesno('تاییدیه', 'آیا از حذف ردیف منتخب اطمینان دارید؟')
+    if ans:
+        cursor, connection = connect_database()
+        if not cursor or not connection:
+            return
+        try:
+            cursor.execute('use inventory_system')
+            cursor.execute(' DELETE FROM product_data WHERE id=%s', (id,))
+            connection.commit()
+            load_product_data(treeview)
+            messagebox.showinfo('اطلاعات', 'ردیف انتخاب شده حذف شد')
+        except Exception as e:
+            messagebox.showerror('خطا', f'خطا به دلیل {e}')
+        finally:
+            cursor.close()
+            connection.close()
+
+
 def update_product(category, supplier, name, price, quantity, status, treeview):
     selected = treeview.selection()
     item = treeview.item(selected[0])
@@ -21,10 +49,10 @@ def update_product(category, supplier, name, price, quantity, status, treeview):
     current_data = cursor.fetchone()
     current_data = current_data[1:]
     current_data = list(current_data)
-    current_data[3]=str(current_data[3])
-    current_data=tuple(current_data)
+    current_data[3] = str(current_data[3])
+    current_data = tuple(current_data)
 
-    quantity=int(quantity)
+    quantity = int(quantity)
     new_data = (category, supplier, name, price, quantity, status)
 
     if current_data == new_data:
@@ -32,7 +60,7 @@ def update_product(category, supplier, name, price, quantity, status, treeview):
         return
 
     cursor.execute(' UPDATE product_data SET category=%s, supplier=%s, name=%s, price=%s, quantity=%s, status=%s '
-                   'WHERE id=%s',(category, supplier, name, price, quantity, status, id))
+                   'WHERE id=%s', (category, supplier, name, price, quantity, status, id))
     connection.commit()
     messagebox.showinfo('اطلاعات', 'اطلاعات به روز رسانی شد')
     load_product_data(treeview)
@@ -228,7 +256,7 @@ def product_form(window):
     update_button.grid(row=0, column=1, padx=10)
 
     delete_button = Button(button_frame, text='حذف', font=('fonts/Persian-Yekan.ttf', 12),
-                           width=8, fg='white', bg='#00198f')
+                           width=8, fg='white', bg='#00198f', command=lambda: delete_product(treeview))
     delete_button.grid(row=0, column=2, padx=10)
 
     clear_button = Button(button_frame, text='پاک کردن', font=('fonts/Persian-Yekan.ttf', 12),
