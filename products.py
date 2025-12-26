@@ -1,7 +1,8 @@
 from tkinter import *
 from tkinter import ttk
 from tkinter import messagebox
-from employees import connect_database, treeview_data
+#from employees import connect_database, treeview_data
+from employees import connect_database
 
 def select_data(event):
     selected = treeview.selection()
@@ -65,7 +66,7 @@ def fetch_supplier_category(category_combobox, supplier_combobox):
         supplier_combobox.config(value=supplier_option)
 
 
-def add_product(category,supplier,name,price,quantity,status):
+def add_product(category,supplier,name,price,quantity,status,treeview):
     if category=='خالی':
          messagebox.showerror('خطا','لطفا دسته بندی را اضافه کنید')
     elif supplier=='خالی': 
@@ -83,8 +84,9 @@ def add_product(category,supplier,name,price,quantity,status):
             'supplier VARCHAR(50), name VARCHAR(100), price DECIMAL(10,2),quantity INT,status VARCHAR(50))')
         cursor.execute('INSERT INTO product_data (category, supplier, name, price, quantity, status) '
             'VALUES (%s, %s, %s, %s, %s, %s)',(category, supplier, name, price, quantity, status))
-        cursor.connection.commit()
+        connection.commit()
         messagebox.showinfo('عمل موفق','محصول با موفقیت افزوده شد')
+        #treeview_data(treeview)
         load_product_data(treeview)
 
          
@@ -165,7 +167,8 @@ def product_form(window):
                             name_entry.get(),
                             price_entry.get(),
                             quantity_entry.get(),
-                            status_combobox.get()
+                            status_combobox.get(),
+                            treeview
                         ))
     add_button.grid(row=0, column=0, padx=10)
 
