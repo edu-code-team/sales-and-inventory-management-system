@@ -74,6 +74,8 @@ def update_product(category, supplier, name, price, quantity, status, treeview):
     connection.commit()
     messagebox.showinfo('اطلاعات', 'اطلاعات به روز رسانی شد')
     load_product_data(treeview)
+    clear_fields(category_combobox, supplier_combobox, name_entry, price_entry,
+                 quantity_entry, status_combobox)
 
 
 def select_data(event, treeview, category_combobox, supplier_combobox, name_entry, price_entry,
@@ -169,6 +171,8 @@ def add_product(category, supplier, name, price, quantity, status, treeview):
         messagebox.showinfo('عمل موفق', 'محصول با موفقیت افزوده شد')
         # treeview_data(treeview)
         load_product_data(treeview)
+        clear_fields(category_combobox, supplier_combobox, name_entry, price_entry,
+                     quantity_entry, status_combobox)
 
 
 def product_form(window):
