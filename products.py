@@ -1,11 +1,20 @@
 from tkinter import *
 from tkinter import ttk
 from tkinter import messagebox
-from employees import treeview_data
+from employees import treeview_data, clear_fields
 from employees import connect_database
 
 
-def delete_product(treeview):
+def clear_fields(category_combobox, supplier_combobox, name_entry, price_entry, quantity_entry, status_combobox):
+    category_combobox.set('انتخاب کنید')
+    supplier_combobox.set('انتخاب کنید')
+    name_entry.delete(0,END)
+    price_entry.delete(0,END)
+    quantity_entry.delete(0,END)
+    status_combobox.set('یک مورد را انتخاب کنید')
+
+
+def delete_product(treeview, category_combobox, supplier_combobox, name_entry, price_entry, quantity_entry, status_combobox):
     selected = treeview.selection()
     if not selected:
         messagebox.showerror('خطا', 'هیچ ردیفی انتخاب نشده است')
@@ -26,6 +35,7 @@ def delete_product(treeview):
             connection.commit()
             load_product_data(treeview)
             messagebox.showinfo('اطلاعات', 'ردیف انتخاب شده حذف شد')
+            clear_fields(category_combobox, supplier_combobox, name_entry, price_entry, quantity_entry, status_combobox)
         except Exception as e:
             messagebox.showerror('خطا', f'خطا به دلیل {e}')
         finally:
@@ -45,7 +55,7 @@ def update_product(category, supplier, name, price, quantity, status, treeview):
     if not cursor or not connection:
         return
     cursor.execute('use inventory_system')
-    cursor.execute(' SELECT * from product_data WHERE id=%s', id)
+    cursor.execute(' SELECT * from product_data WHERE id=%s', (id,))
     current_data = cursor.fetchone()
     current_data = current_data[1:]
     current_data = list(current_data)
@@ -256,11 +266,18 @@ def product_form(window):
     update_button.grid(row=0, column=1, padx=10)
 
     delete_button = Button(button_frame, text='حذف', font=('fonts/Persian-Yekan.ttf', 12),
-                           width=8, fg='white', bg='#00198f', command=lambda: delete_product(treeview))
+                           width=8, fg='white', bg='#00198f', command=lambda: delete_product(treeview,
+                                                                                             category_combobox,
+                                                                                             supplier_combobox,
+                                                                                             name_entry, price_entry,
+                                                                                             quantity_entry,
+                                                                                             status_combobox))
     delete_button.grid(row=0, column=2, padx=10)
 
     clear_button = Button(button_frame, text='پاک کردن', font=('fonts/Persian-Yekan.ttf', 12),
-                          width=8, fg='white', bg='#00198f')
+                          width=8, fg='white', bg='#00198f',
+                          command=lambda: clear_fields(category_combobox, supplier_combobox, name_entry, price_entry,
+                                                       quantity_entry, status_combobox))
     clear_button.grid(row=0, column=3, padx=10)
 
     # ------------------------ جستجو ------------------------
