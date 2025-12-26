@@ -1,10 +1,45 @@
 from tkinter import *
 from tkinter import ttk
 from tkinter import messagebox
-#from employees import connect_database, treeview_data
+from employees import treeview_data
 from employees import connect_database
 
-def select_data(event):
+
+def update_product(category, supplier, name, price, quantity, status, treeview):
+    selected = treeview.selection()
+    item = treeview.item(selected[0])
+    content = item["values"]
+    id = content[0]
+    if not selected:
+        messagebox.showerror('خطا', 'هیچ ردیفی انتخاب نشده است')
+        return
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return
+    cursor.execute('use inventory_system')
+    cursor.execute(' SELECT * from product_data WHERE id=%s', id)
+    current_data = cursor.fetchone()
+    current_data = current_data[1:]
+    current_data = list(current_data)
+    current_data[3]=str(current_data[3])
+    current_data=tuple(current_data)
+
+    quantity=int(quantity)
+    new_data = (category, supplier, name, price, quantity, status)
+
+    if current_data == new_data:
+        messagebox.showinfo('اطلاعات', ' تغییرات را اعمال کنید')
+        return
+
+    cursor.execute(' UPDATE product_data SET category=%s, supplier=%s, name=%s, price=%s, quantity=%s, status=%s '
+                   'WHERE id=%s',(category, supplier, name, price, quantity, status, id))
+    connection.commit()
+    messagebox.showinfo('اطلاعات', 'اطلاعات به روز رسانی شد')
+    load_product_data(treeview)
+
+
+def select_data(event, treeview, category_combobox, supplier_combobox, name_entry, price_entry,
+                quantity_entry, status_combobox):
     selected = treeview.selection()
     if not selected:
         return
@@ -16,27 +51,27 @@ def select_data(event):
     price_entry.delete(0, END)
     quantity_entry.delete(0, END)
 
-    category_combobox.set(content[0])
-    supplier_combobox.set(content[1])
-    name_entry.insert(0, content[2])
-    price_entry.insert(0, content[3])
-    quantity_entry.insert(0, content[4])
-    status_combobox.set(content[5])
+    category_combobox.set(content[1])
+    supplier_combobox.set(content[2])
+    name_entry.insert(0, content[3])
+    price_entry.insert(0, content[4])
+    quantity_entry.insert(0, content[5])
+    status_combobox.set(content[6])
 
 
 def load_product_data(treeview):
-    cursor,connection=connect_database()
+    cursor, connection = connect_database()
     if not cursor or not connection:
         return
     try:
-       cursor.execute('USE inventory_system')
-       cursor.execute('Select * from product_data')
-       records=cursor.fetchall()
-       treeview.delete(*treeview.get_children())
-       for record in records:
-           treeview.insert('', END, values=record[1:])
+        cursor.execute('USE inventory_system')
+        cursor.execute('Select * from product_data')
+        records = cursor.fetchall()
+        treeview.delete(*treeview.get_children())
+        for record in records:
+            treeview.insert('', END, values=record)
     except Exception as e:
-               messagebox.showerror('خطا',f'خطا به دلیل {e}')
+        messagebox.showerror('خطا', f'خطا به دلیل {e}')
     finally:
         cursor.close()
         connection.close()
@@ -59,21 +94,21 @@ def fetch_supplier_category(category_combobox, supplier_combobox):
 
     cursor.execute('SELECT name FROM supplier_data')
     names = cursor.fetchall()
-    if len (names) > 0:
+    if len(names) > 0:
         supplier_combobox.set('انتخاب کنید')
         for name in names:
             supplier_option.append(name[0])
         supplier_combobox.config(value=supplier_option)
 
 
-def add_product(category,supplier,name,price,quantity,status,treeview):
-    if category=='خالی':
-         messagebox.showerror('خطا','لطفا دسته بندی را اضافه کنید')
-    elif supplier=='خالی': 
-         messagebox.showerror('خطا','لطفا تامین کننده را اضافه کنید')
-    elif (category=='انتخاب کنید' or supplier=='انتخاب کنید' or name=='' or price=='' or quantity=='' or
-          status=='یک مورد را انتخاب کنید'):
-        messagebox.showerror('خطا','پر کردن تمامی فیلد ها الزامی است')
+def add_product(category, supplier, name, price, quantity, status, treeview):
+    if category == 'خالی':
+        messagebox.showerror('خطا', 'لطفا دسته بندی را اضافه کنید')
+    elif supplier == 'خالی':
+        messagebox.showerror('خطا', 'لطفا تامین کننده را اضافه کنید')
+    elif (category == 'انتخاب کنید' or supplier == 'انتخاب کنید' or name == '' or price == '' or quantity == '' or
+          status == 'یک مورد را انتخاب کنید'):
+        messagebox.showerror('خطا', 'پر کردن تمامی فیلد ها الزامی است')
     else:
         cursor, connection = connect_database()
         if not cursor or not connection:
@@ -82,14 +117,22 @@ def add_product(category,supplier,name,price,quantity,status,treeview):
         cursor.execute(
             'CREATE TABLE IF NOT EXISTS product_data (id INT AUTO_INCREMENT PRIMARY KEY, category VARCHAR(50), '
             'supplier VARCHAR(50), name VARCHAR(100), price DECIMAL(10,2),quantity INT,status VARCHAR(50))')
+
+        cursor.execute('SELECT * FROM product_data WHERE category=%s AND supplier=%s AND name=%s',
+                       (category, supplier, name))
+        existing_product = cursor.fetchone()
+        if existing_product:
+            messagebox.showerror('خطا!', 'محصول از قبل وجود دارد!')
+            return
+
         cursor.execute('INSERT INTO product_data (category, supplier, name, price, quantity, status) '
-            'VALUES (%s, %s, %s, %s, %s, %s)',(category, supplier, name, price, quantity, status))
+                       'VALUES (%s, %s, %s, %s, %s, %s)', (category, supplier, name, price, quantity, status))
         connection.commit()
-        messagebox.showinfo('عمل موفق','محصول با موفقیت افزوده شد')
-        #treeview_data(treeview)
+        messagebox.showinfo('عمل موفق', 'محصول با موفقیت افزوده شد')
+        # treeview_data(treeview)
         load_product_data(treeview)
 
-         
+
 def product_form(window):
     global treeview
     global name_entry, price_entry, quantity_entry
@@ -113,7 +156,7 @@ def product_form(window):
     heading_label.grid(row=0, columnspan=2, sticky='we')
 
     # ----- دسته‌بندی -----
-    Label(left_frame, text='دسته‌بندی:', font=('fonts/Persian-Yekan.ttf', 14, 'bold'), bg='white')\
+    Label(left_frame, text='دسته‌بندی:', font=('fonts/Persian-Yekan.ttf', 14, 'bold'), bg='white') \
         .grid(row=1, column=0, padx=20, sticky='w')
     category_combobox = ttk.Combobox(left_frame, font=('fonts/Persian-Yekan.ttf', 14),
                                      width=18, state='readonly')
@@ -121,7 +164,7 @@ def product_form(window):
     category_combobox.set('خالی')
 
     # ----- تأمین‌کننده -----
-    Label(left_frame, text='تأمین‌کننده:', font=('fonts/Persian-Yekan.ttf', 14, 'bold'), bg='white')\
+    Label(left_frame, text='تأمین‌کننده:', font=('fonts/Persian-Yekan.ttf', 14, 'bold'), bg='white') \
         .grid(row=2, column=0, padx=20, sticky='w')
     supplier_combobox = ttk.Combobox(left_frame, font=('fonts/Persian-Yekan.ttf', 14),
                                      width=18, state='readonly')
@@ -129,25 +172,25 @@ def product_form(window):
     supplier_combobox.set('خالی')
 
     # ----- نام -----
-    Label(left_frame, text='نام:', font=('fonts/Persian-Yekan.ttf', 14, 'bold'), bg='white')\
+    Label(left_frame, text='نام:', font=('fonts/Persian-Yekan.ttf', 14, 'bold'), bg='white') \
         .grid(row=3, column=0, padx=20, sticky='w')
     name_entry = Entry(left_frame, font=('fonts/Persian-Yekan.ttf', 16, 'bold'), bg='lightblue')
     name_entry.grid(row=3, column=1, pady=15)
 
     # ----- قیمت -----
-    Label(left_frame, text='قیمت:', font=('fonts/Persian-Yekan.ttf', 14, 'bold'), bg='white')\
+    Label(left_frame, text='قیمت:', font=('fonts/Persian-Yekan.ttf', 14, 'bold'), bg='white') \
         .grid(row=4, column=0, padx=20, sticky='w')
     price_entry = Entry(left_frame, font=('fonts/Persian-Yekan.ttf', 16, 'bold'), bg='lightblue')
     price_entry.grid(row=4, column=1, pady=15)
 
     # ----- مقدار -----
-    Label(left_frame, text='مقدار:', font=('fonts/Persian-Yekan.ttf', 14, 'bold'), bg='white')\
+    Label(left_frame, text='مقدار:', font=('fonts/Persian-Yekan.ttf', 14, 'bold'), bg='white') \
         .grid(row=5, column=0, padx=20, sticky='w')
     quantity_entry = Entry(left_frame, font=('fonts/Persian-Yekan.ttf', 16, 'bold'), bg='lightblue')
     quantity_entry.grid(row=5, column=1, pady=15)
 
     # ----- وضعیت -----
-    Label(left_frame, text='وضعیت:', font=('fonts/Persian-Yekan.ttf', 14, 'bold'), bg='white')\
+    Label(left_frame, text='وضعیت:', font=('fonts/Persian-Yekan.ttf', 14, 'bold'), bg='white') \
         .grid(row=6, column=0, padx=20, sticky='w')
     status_combobox = ttk.Combobox(left_frame, values=('فعال', 'غیرفعال'),
                                    font=('fonts/Persian-Yekan.ttf', 14),
@@ -173,7 +216,15 @@ def product_form(window):
     add_button.grid(row=0, column=0, padx=10)
 
     update_button = Button(button_frame, text='بروزرسانی', font=('fonts/Persian-Yekan.ttf', 12),
-                           width=8, fg='white', bg='#00198f')
+                           width=8, fg='white', bg='#00198f', command=lambda: update_product(
+            category_combobox.get(),
+            supplier_combobox.get(),
+            name_entry.get(),
+            price_entry.get(),
+            quantity_entry.get(),
+            status_combobox.get(),
+            treeview
+        ))
     update_button.grid(row=0, column=1, padx=10)
 
     delete_button = Button(button_frame, text='حذف', font=('fonts/Persian-Yekan.ttf', 12),
@@ -181,7 +232,7 @@ def product_form(window):
     delete_button.grid(row=0, column=2, padx=10)
 
     clear_button = Button(button_frame, text='پاک کردن', font=('fonts/Persian-Yekan.ttf', 12),
-                           width=8, fg='white', bg='#00198f')
+                          width=8, fg='white', bg='#00198f')
     clear_button.grid(row=0, column=3, padx=10)
 
     # ------------------------ جستجو ------------------------
@@ -215,7 +266,7 @@ def product_form(window):
 
     treeview = ttk.Treeview(
         treeview_frame,
-        columns=('category', 'supplier', 'name', 'price', 'quantity', 'state'),
+        columns=('id', 'category', 'supplier', 'name', 'price', 'quantity', 'state'),
         show='headings',
         yscrollcommand=scrolly.set,
         xscrollcommand=scrollx.set
@@ -227,6 +278,7 @@ def product_form(window):
     scrolly.config(command=treeview.yview)
     treeview.pack(fill=BOTH, expand=1)
 
+    treeview.heading('id', text='شناسه')
     treeview.heading('category', text='دسته‌بندی')
     treeview.heading('supplier', text='تأمین‌کننده')
     treeview.heading('name', text='نام')
@@ -246,7 +298,9 @@ def product_form(window):
 
     load_product_data(treeview)
 
-    treeview.bind('<ButtonRelease-1>', select_data)
+    treeview.bind('<ButtonRelease-1>', lambda event: select_data(event, treeview, category_combobox, supplier_combobox,
+                                                                 name_entry, price_entry, quantity_entry,
+                                                                 status_combobox))
 
     # ------------------------ حرکت با Enter ------------------------
     def focus_next(event, widget):
@@ -260,4 +314,3 @@ def product_form(window):
     status_combobox.bind("<Return>", lambda e: focus_next(e, add_button))
 
     add_button.bind("<Return>", lambda e: add_button.invoke())
-
