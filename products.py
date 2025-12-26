@@ -456,7 +456,7 @@ def product_form(window):
 
     # ------------------------ فیلتر ------------------------
     filter_frame = Frame(product_frame, bg="white", bd=1, relief=SOLID)
-    filter_frame.place(x=480, y=70, width=570, height=50)  # دقیقاً هم‌عرض TreeView
+    filter_frame.place(x=480, y=40, width=570, height=50)  # دقیقاً هم‌عرض TreeView
 
     # فونت
     f_font = ("fonts/Persian-Yekan.ttf", 11)
@@ -498,10 +498,19 @@ def product_form(window):
             filter_status.get(),
         ),
     ).place(x=410, y=20)
+    # دکمه نمایش همه
+    Button(
+        filter_frame,
+        text="نمایش همه",
+        bg="#7a7a7a",
+        fg="white",
+        width=9,
+        command=lambda: load_product_data(treeview),
+    ).place(x=485, y=20)
 
     # ------------------------ TreeView ------------------------
     treeview_frame = Frame(product_frame)
-    treeview_frame.place(x=480, y=125, width=570, height=430)
+    treeview_frame.place(x=480, y=100, width=570, height=430)
 
     scrolly = Scrollbar(treeview_frame, orient=VERTICAL)
     scrollx = Scrollbar(treeview_frame, orient=HORIZONTAL)
