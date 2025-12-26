@@ -114,6 +114,8 @@ def treeview_data(treeview):
         return
     try:
        cursor.execute('USE inventory_system')
+       cursor.execute('CREATE TABLE IF NOT EXISTS supplier_data (invoice INT PRIMARY KEY,name VARCHAR(100),'
+                      'contact VARCHAR(15), description TEXT)')
        cursor.execute('Select * from supplier_data')
        records=cursor.fetchall()
        treeview.delete(*treeview.get_children())
@@ -134,8 +136,6 @@ def add_supplier(invoice,name,contact,description,treeview):
                return
           try:
              cursor.execute('Use inventory_system')
-            
-             cursor.execute('CREATE TABLE IF NOT EXISTS supplier_data (invoice INT PRIMARY KEY,name VARCHAR(100), contact VARCHAR(15), description TEXT)')
 
              cursor.execute('Select * from supplier_data where invoice=%s',invoice)
              if cursor.fetchone():

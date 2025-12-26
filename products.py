@@ -105,6 +105,8 @@ def load_product_data(treeview):
         return
     try:
         cursor.execute('USE inventory_system')
+        cursor.execute('CREATE TABLE IF NOT EXISTS product_data (id INT AUTO_INCREMENT PRIMARY KEY, category VARCHAR(50), '
+                       'supplier VARCHAR(50), name VARCHAR(100), price DECIMAL(10,2),quantity INT,status VARCHAR(50))')
         cursor.execute('Select * from product_data')
         records = cursor.fetchall()
         treeview.delete(*treeview.get_children())
@@ -154,9 +156,6 @@ def add_product(category, supplier, name, price, quantity, status, treeview):
         if not cursor or not connection:
             return
         cursor.execute('USE inventory_system')
-        cursor.execute(
-            'CREATE TABLE IF NOT EXISTS product_data (id INT AUTO_INCREMENT PRIMARY KEY, category VARCHAR(50), '
-            'supplier VARCHAR(50), name VARCHAR(100), price DECIMAL(10,2),quantity INT,status VARCHAR(50))')
 
         cursor.execute('SELECT * FROM product_data WHERE category=%s AND supplier=%s AND name=%s',
                        (category, supplier, name))
