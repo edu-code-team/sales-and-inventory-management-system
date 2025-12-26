@@ -3,6 +3,7 @@ from employees import employee_form
 from supplier import supplier_form
 from category import category_form
 from products import product_form
+from datetime import datetime
 
 
 # GUI Part
@@ -26,6 +27,17 @@ def toggle_window():
         ).place(x=1250, y=10)
 
 
+def update_datetime():
+    now = datetime.now()
+    date_str = now.strftime("%Y-%m-%d")
+    time_str = now.strftime("%H:%M:%S")
+
+    SubtitleLabel.config(
+        text=f"ادمین خوش آمدید\t\t تاریخ: {date_str}\t\t ساعت: {time_str}"
+    )
+    window.after(1000, update_datetime)
+
+
 window.config(bg="#fef9fb")
 
 bg_image = PhotoImage(file="images/inventory.png")
@@ -43,8 +55,14 @@ titleLable = Label(
 titleLable.place(x=0, y=0, relwidth=1)
 
 logoButten = Button(
-    window, text="  خروج  ", bg="#4b39e9", font=("Yekan", 16, "bold"), fg="#fef9fb"
+    window,
+    text="  خروج  ",
+    bg="#4b39e9",
+    font=("Yekan", 16, "bold"),
+    fg="#fef9fb",
+    command=window.destroy,
 )
+
 logoButten.place(x=1100, y=10)
 
 SubtitleLabel = Label(
@@ -55,6 +73,7 @@ SubtitleLabel = Label(
     fg="#fef9fb",
 )
 SubtitleLabel.place(x=0, y=70, relwidth=1)
+update_datetime()
 
 leftFrame = Frame(window)
 leftFrame.place(x=0, y=120, width=200, height=560)
