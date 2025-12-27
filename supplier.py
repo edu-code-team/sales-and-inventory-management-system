@@ -153,6 +153,10 @@ def add_supplier(invoice,name,contact,description,treeview):
              cursor.close()
              connection.close()
 
+def move_focus(widget):
+    widget.focus_set()
+    return "break"
+
 def supplier_form(window):
      global back_image
      supplier_frame = Frame(window, width=1165, height=567, bg='white')
@@ -188,6 +192,9 @@ def supplier_form(window):
      description_lable.grid(row=3,column=0,padx=(20,40),sticky='nw',pady=25)
      description_text=Text(left_frame,width=20,height=6,bd=2,bg='lightblue')
      description_text.grid(row=3,column=1,pady=25)
+     description_text.bind("<Tab>", lambda e: move_focus(add_button))
+     description_text.bind("<Shift-Tab>", lambda e: move_focus(contact_entry))
+
 
      button_frame=Frame(left_frame)
      button_frame.grid(row=4,columnspan=2,pady=20)
@@ -213,6 +220,24 @@ def supplier_form(window):
      clear_button = Button(button_frame, text='پاک کردن', font=('fonts/Persian-Yekan.ttf', 12), width=8, fg='white',
                          bg='#00198f',command=lambda :clear(invoice_entry,name_entry,contact_entry,description_text,treeview))
      clear_button.grid(row=0, column=3)
+
+     # ---------- TAB FIX (FINAL) ----------
+
+     invoice_entry.focus_set()
+
+     invoice_entry.bind("<Tab>", lambda e: move_focus(name_entry))
+     name_entry.bind("<Tab>", lambda e: move_focus(contact_entry))
+     contact_entry.bind("<Tab>", lambda e: move_focus(description_text))
+
+     description_text.bind("<Tab>", lambda e: move_focus(add_button))
+     description_text.bind("<Shift-Tab>", lambda e: move_focus(contact_entry))
+
+     add_button.bind("<Tab>", lambda e: move_focus(update_button))
+     update_button.bind("<Tab>", lambda e: move_focus(delete_button))
+       
+     delete_button.bind("<Tab>", lambda e: move_focus(clear_button))
+     clear_button.bind("<Tab>", lambda e: move_focus(invoice_entry))
+
 
      right_frame=Frame(supplier_frame)
      right_frame.place(x=565,y=115)
@@ -266,6 +291,7 @@ def supplier_form(window):
      treeview.column('name',width=160)
      treeview.column('contact',width=120)
      treeview.column('description',width=300)
+
 
      treeview_data(treeview)
      treeview.bind('<ButtonRelease-1>',lambda event:select_data(event,invoice_entry,name_entry,contact_entry,description_text,treeview))
