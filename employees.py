@@ -422,6 +422,55 @@ def employee_form(window):
                                                        address_text, user_type_combobox,
                                                        password_entry, True))
     clear_button.grid(row=0, column=3, padx=20)
+
+        # ================= KEYBOARD SHORTCUTS =================
+
+    def search_shortcut(event):
+        search_button.invoke()
+
+    def show_all_shortcut(event):
+        show_button.invoke()
+
+    def add_shortcut(event=None):
+        add_button.invoke()
+
+    def update_shortcut(event=None):
+        update_button.invoke()
+
+    def delete_shortcut(event=None):
+        delete_button.invoke()
+
+    def clear_shortcut(event=None):
+        clear_button.invoke()
+
+    def focus_search(event=None):
+        search_entry.focus_set()
+   
+
+
+# bind to window (or employee_frame)
+    window.bind('<s>', search_shortcut)      # s = search
+    window.bind('<S>', search_shortcut)
+
+    window.bind('<a>', add_shortcut)         # a = add
+    window.bind('<A>', add_shortcut)
+
+    window.bind('<u>', update_shortcut)      # u = update
+    window.bind('<U>', update_shortcut)
+
+    window.bind('<d>', delete_shortcut)      # d = delete
+    window.bind('<D>', delete_shortcut)
+
+    window.bind('<c>', clear_shortcut)       # c = clear
+    window.bind('<C>', clear_shortcut)
+
+    window.bind('<f>', focus_search)         # f = focus search
+    window.bind('<F>', focus_search)
+
+    window.bind('<Return>', search_shortcut) # Enter = search
+
+    employee_frame.focus_set()
+
     
     employee_treeview.bind('<ButtonRelease-1 >', lambda event: select_data(event, empid_entry, empname_entry,
                                                                            email_entry, gender_combobox, dob_date_entry,
@@ -473,6 +522,8 @@ def employee_form(window):
         w.bind("<Shift-Tab>", focus_prev)
 
     Search_combobox.focus_set()
+
+
     
 
 
