@@ -4,6 +4,10 @@ from tkinter import messagebox
 from employees import treeview_data, clear_fields
 from employees import connect_database
 
+def move_focus(widget):
+    widget.focus_set()
+    return "break"
+
 
 def filter_products(treeview, category, supplier, status):
     cursor, connection = connect_database()
@@ -365,6 +369,13 @@ def product_form(window):
         font=("fonts/Persian-Yekan.ttf", 14, "bold"),
         bg="white",
     ).grid(row=6, column=0, padx=20, sticky="w")
+
+    # جلوگیری از فوکوس گرفتن Label های فرم سمت چپ
+    for widget in left_frame.winfo_children():
+        if isinstance(widget, Label):
+            widget.configure(takefocus=0)
+
+
     status_combobox = ttk.Combobox(
         left_frame,
         values=("فعال", "غیرفعال"),
@@ -475,6 +486,12 @@ def product_form(window):
 
     # وضعیت
     Label(filter_frame, text="وضعیت", bg="white", font=f_font).place(x=290, y=2)
+
+    # جلوگیری از فوکوس گرفتن Label های فیلتر بالا
+    for widget in filter_frame.winfo_children():
+        if isinstance(widget, Label):
+            widget.configure(takefocus=0)
+
     filter_status = ttk.Combobox(
         filter_frame,
         values=("همه", "فعال", "غیرفعال"),
@@ -485,28 +502,31 @@ def product_form(window):
     filter_status.set("همه")
 
     # دکمه اعمال
-    Button(
-        filter_frame,
-        text=" جستجو",
-        bg="#00198f",
-        fg="white",
-        width=9,
-        command=lambda: filter_products(
-            treeview,
-            filter_category.get(),
-            filter_supplier.get(),
-            filter_status.get(),
-        ),
-    ).place(x=410, y=20)
-    # دکمه نمایش همه
-    Button(
-        filter_frame,
-        text="نمایش همه",
-        bg="#7a7a7a",
-        fg="white",
-        width=9,
-        command=lambda: load_product_data(treeview),
-    ).place(x=485, y=20)
+    search_button = Button(
+    filter_frame,
+    text=" جستجو",
+    bg="#00198f",
+    fg="white",
+    width=9,
+    command=lambda: filter_products(
+        treeview,
+        filter_category.get(),
+        filter_supplier.get(),
+        filter_status.get(),
+    ),
+)
+    search_button.place(x=410, y=20)
+
+    show_all_button = Button(
+    filter_frame,
+    text="نمایش همه",
+    bg="#00198f",
+    fg="white",
+    width=9,
+    command=lambda: load_product_data(treeview),
+)
+    show_all_button.place(x=485, y=20)
+
 
     # ------------------------ TreeView ------------------------
     treeview_frame = Frame(product_frame)
@@ -564,16 +584,32 @@ def product_form(window):
             status_combobox,
         ),
     )
+    # ================= TAB FIX (PRODUCTS) =================
 
-    # ------------------------ حرکت با Enter ------------------------
-    def focus_next(event, widget):
-        widget.focus()
+    category_combobox.focus_set()
 
-    category_combobox.bind("<Return>", lambda e: focus_next(e, supplier_combobox))
-    supplier_combobox.bind("<Return>", lambda e: focus_next(e, name_entry))
-    name_entry.bind("<Return>", lambda e: focus_next(e, price_entry))
-    price_entry.bind("<Return>", lambda e: focus_next(e, quantity_entry))
-    quantity_entry.bind("<Return>", lambda e: focus_next(e, status_combobox))
-    status_combobox.bind("<Return>", lambda e: focus_next(e, add_button))
+    category_combobox.bind("<Tab>", lambda e: move_focus(supplier_combobox))
+    supplier_combobox.bind("<Tab>", lambda e: move_focus(name_entry))
+    name_entry.bind("<Tab>", lambda e: move_focus(price_entry))
+    price_entry.bind("<Tab>", lambda e: move_focus(quantity_entry))
+    quantity_entry.bind("<Tab>", lambda e: move_focus(status_combobox))
+    status_combobox.bind("<Tab>", lambda e: move_focus(add_button))
 
-    add_button.bind("<Return>", lambda e: add_button.invoke())
+    add_button.bind("<Tab>", lambda e: move_focus(update_button))
+    update_button.bind("<Tab>", lambda e: move_focus(delete_button))
+    delete_button.bind("<Tab>", lambda e: move_focus(clear_button))
+
+# ---- رفتن به فیلتر بالا ----
+    clear_button.bind("<Tab>", lambda e: move_focus(filter_category))
+
+    filter_category.bind("<Tab>", lambda e: move_focus(filter_supplier))
+    filter_supplier.bind("<Tab>", lambda e: move_focus(filter_status))
+    filter_status.bind("<Tab>", lambda e: move_focus(search_button))
+
+    search_button.bind("<Tab>", lambda e: move_focus(show_all_button))
+    show_all_button.bind("<Tab>", lambda e: move_focus(treeview))
+
+# ---- جدول ----
+    treeview.bind("<Tab>", lambda e: move_focus(category_combobox))
+
+
