@@ -94,6 +94,9 @@ def delete_product(
                 quantity_entry,
                 status_combobox,
             )
+            
+            category_combobox.focus_set()
+
         except Exception as e:
             messagebox.showerror("خطا", f"خطا به دلیل {e}")
         finally:

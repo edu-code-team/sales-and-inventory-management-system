@@ -147,7 +147,7 @@ def update_employee(empid, name, email, gender, dob, contact, work_shift, addres
             connection.close()
 
 
-def delete_employee(empid):
+def delete_employee(empid,empname_entry):
     selected = employee_treeview.selection()
     if not selected:
         messagebox.showerror('خطا', 'هیچ ردیفی برای حذف انتخاب نشده')
@@ -163,6 +163,7 @@ def delete_employee(empid):
                 connection.commit()
                 treeview_data()
                 messagebox.showinfo('عملیات موفق', 'اطلاعات کارمند با موفقیت حذف شذ')
+                empname_entry.focus_set()
             except Exception as e:
                 messagebox.showerror('خطا', f'{e} خطای')
             finally:
@@ -409,8 +410,13 @@ def employee_form(window):
                                                                          password_entry.get()))
     update_button.grid(row=0, column=1, padx=20)
 
-    delete_button = Button(button_frame, text='حذف', font=('fonts/Persian-Yekan.ttf', 12), fg='white',
-                           bg='#00198f', command=lambda: delete_employee(empid_entry.get()))
+    delete_button = Button(
+    button_frame,
+    text='حذف',
+    font=('fonts/Persian-Yekan.ttf', 12),
+    fg='white',
+    bg='#00198f',
+    command=lambda: delete_employee(empid_entry.get(), empname_entry))
     delete_button.grid(row=0, column=2, padx=20)
 
     clear_button = Button(button_frame, text='پاک کردن',

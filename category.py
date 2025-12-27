@@ -98,8 +98,11 @@ def update_category(id_entry, name_entry, description_text, treeview, clear_func
         connection.close()
 
 
-def delete_category(treeview, clear_func):
+def delete_category(treeview, clear_func, id_entry):
     index = treeview.selection()
+    command=lambda: delete_category(treeview, clear_func, id_entry)
+    first_entry.focus_set()
+
     if not index:
         messagebox.showerror('خطا', 'هیچ ردیفی انتخاب نشده است')
         return
@@ -123,6 +126,8 @@ def delete_category(treeview, clear_func):
         treeview_data(treeview)
         messagebox.showinfo('اطلاعات', 'ردیف انتخاب شده حذف شد')
         clear_func()
+        id_entry.focus_set()
+
 
     except Exception as e:
         messagebox.showerror('خطا', f'خطا به دلیل {e}')
@@ -282,6 +287,10 @@ def category_form(window):
 
     clear_func = lambda: clear_fields(id_entry, category_name_entry, description_text)
 
+    clear_func()
+    id_entry.focus_set()
+
+
     add_button = Button(button_frame, text='افزودن',
                         font=('fonts/Persian-Yekan.ttf', 12), width=12, fg='white',
                         bg='#00198f',
@@ -298,8 +307,7 @@ def category_form(window):
     update_button = Button(button_frame, text='ویرایش',
                            font=('fonts/Persian-Yekan.ttf', 12), width=12, fg='white',
                            bg='#00198f',
-                           command=lambda: update_category(id_entry, category_name_entry,
-                                                           description_text, treeview, clear_func))
+                           command=lambda: delete_category(treeview, clear_func, id_entry))
     update_button.grid(row=0, column=2, padx=5, pady=5, sticky='ew')
 
     clear_button = Button(button_frame, text='پاک کردن',

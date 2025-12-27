@@ -26,12 +26,12 @@ def delete_supplier(invoice,treeview):
      
 
 def clear(invoice_entry,name_entry,contact_entry,description_text,treeview):
+    invoice_entry.focus_set()
     invoice_entry.delete(0,END)
     name_entry.delete(0,END)
     contact_entry.delete(0,END)
     description_text.delete(1.0,END)
     treeview.selection_remove(treeview.selection())
-
 
 def search_supplier(search_value,treeview):
     if search_value=='':
