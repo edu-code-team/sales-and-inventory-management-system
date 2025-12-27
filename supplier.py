@@ -221,9 +221,55 @@ def supplier_form(window):
                          bg='#00198f',command=lambda :clear(invoice_entry,name_entry,contact_entry,description_text,treeview))
      clear_button.grid(row=0, column=3)
 
-     
-     
+     # ================= KEYBOARD SHORTCUTS (SUPPLIER) =================
 
+     def search_shortcut(event=None):
+        search_button.invoke()
+
+     def show_all_shortcut(event=None):
+        show_button.invoke()
+
+     def add_shortcut(event=None):
+        add_button.invoke()
+
+     def update_shortcut(event=None):
+        update_button.invoke()
+
+     def delete_shortcut(event=None):
+        delete_button.invoke()
+
+     def clear_shortcut(event=None):
+        clear_button.invoke()
+
+     def focus_search(event=None):
+        search_entry.focus_set()
+
+     def close_form(event=None):
+        supplier_frame.place_forget()
+
+# Bind shortcuts
+     window.bind('<s>', search_shortcut)
+     window.bind('<S>', search_shortcut)
+     window.bind('<Return>', search_shortcut)
+
+     window.bind('<a>', add_shortcut)
+     window.bind('<A>', add_shortcut)
+
+     window.bind('<u>', update_shortcut)
+     window.bind('<U>', update_shortcut)
+
+     window.bind('<d>', delete_shortcut)
+     window.bind('<D>', delete_shortcut)
+
+     window.bind('<c>', clear_shortcut)
+     window.bind('<C>', clear_shortcut)
+
+     window.bind('<f>', focus_search)
+     window.bind('<F>', focus_search)
+
+     window.bind('<Escape>', close_form)
+
+     supplier_frame.focus_set()
 
      right_frame=Frame(supplier_frame)
      right_frame.place(x=565,y=115)

@@ -445,9 +445,10 @@ def employee_form(window):
 
     def focus_search(event=None):
         search_entry.focus_set()
+
+    def close_form(event=None):
+        employee_frame.place_forget()
    
-
-
 # bind to window (or employee_frame)
     window.bind('<s>', search_shortcut)      # s = search
     window.bind('<S>', search_shortcut)
@@ -468,6 +469,8 @@ def employee_form(window):
     window.bind('<F>', focus_search)
 
     window.bind('<Return>', search_shortcut) # Enter = search
+
+    window.bind('<Escape>', close_form)
 
     employee_frame.focus_set()
 
