@@ -371,6 +371,9 @@ def employee_form(window):
     address_label.grid(row=3, column=2, padx=20, pady=10)
     address_text = Text(detail_frame, width=20, height=3, font=('fonts/Persian-Yekan.ttf', 12), bg='lightblue')
     address_text.grid(row=3, column=3)
+    address_text.unbind_class("Text", "<Tab>")
+    address_text.unbind_class("Text", "<Shift-Tab>")
+
 
     user_type_label = Label(detail_frame, text='نوع کاربری', font=('fonts/Persian-Yekan.ttf', 12), bg='white')
     user_type_label.grid(row=3, column=4, padx=20, pady=10, sticky='w')
@@ -425,9 +428,16 @@ def employee_form(window):
                                                                            empnumber_entry, work_shift_combobox,
                                                                            address_text, user_type_combobox,
                                                                            password_entry))
-    
+    for widget in detail_frame.winfo_children():
+        if isinstance(widget, Label):
+            widget.configure(takefocus=0)
+
     # ================= TAB ORDER (100% FIX) =================
     widgets_order = [
+        Search_combobox,
+        search_entry,
+        search_button,
+        show_button,
         empid_entry,
         empname_entry,
         empnumber_entry,
@@ -437,24 +447,32 @@ def employee_form(window):
         email_entry,
         address_text,
         user_type_combobox,
-        password_entry
+        password_entry,
+        add_button,
+        update_button,
+        delete_button,
+        clear_button
     ]
 
     def focus_next(event):
-        idx = widgets_order.index(event.widget)
-        widgets_order[(idx + 1) % len(widgets_order)].focus_set()
+        widget = event.widget
+        if widget in widgets_order:
+            idx = widgets_order.index(widget)
+            widgets_order[(idx + 1) % len(widgets_order)].focus_set()
         return "break"
 
     def focus_prev(event):
-        idx = widgets_order.index(event.widget)
-        widgets_order[idx - 1].focus_set()
+        widget = event.widget
+        if widget in widgets_order:
+            idx = widgets_order.index(widget)
+            widgets_order[idx - 1].focus_set()
         return "break"
 
     for w in widgets_order:
         w.bind("<Tab>", focus_next)
         w.bind("<Shift-Tab>", focus_prev)
 
-    empid_entry.focus_set()
+    Search_combobox.focus_set()
     
 
 

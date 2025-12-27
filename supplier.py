@@ -221,22 +221,8 @@ def supplier_form(window):
                          bg='#00198f',command=lambda :clear(invoice_entry,name_entry,contact_entry,description_text,treeview))
      clear_button.grid(row=0, column=3)
 
-     # ---------- TAB FIX (FINAL) ----------
-
-     invoice_entry.focus_set()
-
-     invoice_entry.bind("<Tab>", lambda e: move_focus(name_entry))
-     name_entry.bind("<Tab>", lambda e: move_focus(contact_entry))
-     contact_entry.bind("<Tab>", lambda e: move_focus(description_text))
-
-     description_text.bind("<Tab>", lambda e: move_focus(add_button))
-     description_text.bind("<Shift-Tab>", lambda e: move_focus(contact_entry))
-
-     add_button.bind("<Tab>", lambda e: move_focus(update_button))
-     update_button.bind("<Tab>", lambda e: move_focus(delete_button))
-       
-     delete_button.bind("<Tab>", lambda e: move_focus(clear_button))
-     clear_button.bind("<Tab>", lambda e: move_focus(invoice_entry))
+     
+     
 
 
      right_frame=Frame(supplier_frame)
@@ -295,3 +281,26 @@ def supplier_form(window):
 
      treeview_data(treeview)
      treeview.bind('<ButtonRelease-1>',lambda event:select_data(event,invoice_entry,name_entry,contact_entry,description_text,treeview))
+
+     # ================= TAB FIX (LEFT + RIGHT) =================
+
+     invoice_entry.focus_set()
+
+     invoice_entry.bind("<Tab>", lambda e: move_focus(name_entry))
+     name_entry.bind("<Tab>", lambda e: move_focus(contact_entry))
+     contact_entry.bind("<Tab>", lambda e: move_focus(description_text))
+
+     description_text.bind("<Tab>", lambda e: move_focus(add_button))
+     description_text.bind("<Shift-Tab>", lambda e: move_focus(contact_entry))
+
+     add_button.bind("<Tab>", lambda e: move_focus(update_button))
+     update_button.bind("<Tab>", lambda e: move_focus(delete_button))
+     delete_button.bind("<Tab>", lambda e: move_focus(clear_button))
+
+     clear_button.bind("<Tab>", lambda e: move_focus(search_entry))
+
+     search_entry.bind("<Tab>", lambda e: move_focus(search_button))
+     search_button.bind("<Tab>", lambda e: move_focus(show_button))
+     show_button.bind("<Tab>", lambda e: move_focus(treeview))
+
+     treeview.bind("<Tab>", lambda e: move_focus(invoice_entry))

@@ -5,6 +5,9 @@ from employees import connect_database
 from tkinter import filedialog
 import csv
 
+def move_focus(widget):
+    widget.focus_set()
+    return "break"
 
 def export_to_excel(treeview):
     """
@@ -264,6 +267,10 @@ def category_form(window):
     description_text = Text(details_frame, width=25, height=4, bd=2,
                             bg='lightblue', font=('fonts/Persian-Yekan.ttf', 12))
     description_text.grid(row=2, column=0, padx=(20, 10), pady=10, sticky='nsew')
+    # غیرفعال کردن Tab پیش‌فرض Text
+    description_text.unbind_class("Text", "<Tab>")
+    description_text.unbind_class("Text", "<Shift-Tab>")
+
 
     details_frame.grid_rowconfigure(2, weight=1)
     details_frame.grid_columnconfigure(0, weight=1)
@@ -300,6 +307,22 @@ def category_form(window):
                           bg='#00198f',
                           command=clear_func)
     clear_button.grid(row=0, column=3, padx=5, pady=5, sticky='ew')
+
+    # ---------- TAB ORDER (CATEGORY FORM) ----------
+
+    id_entry.focus_set()
+
+    id_entry.bind("<Tab>", lambda e: move_focus(category_name_entry))
+    category_name_entry.bind("<Tab>", lambda e: move_focus(description_text))
+
+    description_text.bind("<Tab>", lambda e: move_focus(add_button))
+    description_text.bind("<Shift-Tab>", lambda e: move_focus(category_name_entry))
+
+    add_button.bind("<Tab>", lambda e: move_focus(delete_button))
+    delete_button.bind("<Tab>", lambda e: move_focus(update_button))
+    update_button.bind("<Tab>", lambda e: move_focus(clear_button))
+    clear_button.bind("<Tab>", lambda e: move_focus(id_entry))
+
 
     for i in range(4):
         button_frame.grid_columnconfigure(i, weight=1)
