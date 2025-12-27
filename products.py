@@ -465,6 +465,59 @@ def product_form(window):
     )
     clear_button.grid(row=0, column=3, padx=10)
 
+    # ================= KEYBOARD SHORTCUTS (PRODUCTS) =================
+
+    def add_shortcut(event=None):
+        add_button.invoke()
+
+    def update_shortcut(event=None):
+        update_button.invoke()
+
+    def delete_shortcut(event=None):
+        delete_button.invoke()
+
+    def clear_shortcut(event=None):
+        clear_button.invoke()
+
+    def search_shortcut(event=None):
+        search_button.invoke()
+
+    def show_all_shortcut(event=None):
+        show_all_button.invoke()
+
+    def focus_category(event=None):
+        category_combobox.focus_set()
+
+    def close_form(event=None):
+        product_frame.place_forget()
+
+# Bind shortcuts
+    window.bind('<a>', add_shortcut)
+    window.bind('<A>', add_shortcut)
+
+    window.bind('<u>', update_shortcut)
+    window.bind('<U>', update_shortcut)
+
+    window.bind('<d>', delete_shortcut)
+    window.bind('<D>', delete_shortcut)
+
+    window.bind('<c>', clear_shortcut)
+    window.bind('<C>', clear_shortcut)
+
+    window.bind('<s>', search_shortcut)
+    window.bind('<S>', search_shortcut)
+    window.bind('<Return>', search_shortcut)
+
+    window.bind('<r>', show_all_shortcut)
+    window.bind('<R>', show_all_shortcut)
+
+    window.bind('<f>', focus_category)
+    window.bind('<F>', focus_category)
+
+    window.bind('<Escape>', close_form)
+
+    product_frame.focus_set()
+
     # ------------------------ فیلتر ------------------------
     filter_frame = Frame(product_frame, bg="white", bd=1, relief=SOLID)
     filter_frame.place(x=480, y=40, width=570, height=50)  # دقیقاً هم‌عرض TreeView
