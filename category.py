@@ -308,6 +308,54 @@ def category_form(window):
                           command=clear_func)
     clear_button.grid(row=0, column=3, padx=5, pady=5, sticky='ew')
 
+    # ================= KEYBOARD SHORTCUTS (CATEGORY) =================
+
+    def add_shortcut(event=None):
+        add_button.invoke()
+
+    def update_shortcut(event=None):
+        update_button.invoke()
+
+    def delete_shortcut(event=None):
+        delete_button.invoke()
+
+    def clear_shortcut(event=None):
+        clear_button.invoke()
+
+    def focus_id(event=None):
+        id_entry.focus_set()
+
+    def export_shortcut(event=None):
+        export_button.invoke()
+
+    def close_form(event=None):
+        category_frame.place_forget()
+
+# Bind shortcuts
+    window.bind('<a>', add_shortcut)
+    window.bind('<A>', add_shortcut)
+
+    window.bind('<u>', update_shortcut)
+    window.bind('<U>', update_shortcut)
+
+    window.bind('<d>', delete_shortcut)
+    window.bind('<D>', delete_shortcut)
+
+    window.bind('<c>', clear_shortcut)
+    window.bind('<C>', clear_shortcut)
+
+    window.bind('<f>', focus_id)
+    window.bind('<F>', focus_id)
+
+    window.bind('<e>', export_shortcut)
+    window.bind('<E>', export_shortcut)
+
+    window.bind('<Escape>', close_form)
+    window.bind('<Return>', add_shortcut)
+
+    category_frame.focus_set()
+
+
     # ---------- TAB ORDER (CATEGORY FORM) ----------
 
     id_entry.focus_set()
