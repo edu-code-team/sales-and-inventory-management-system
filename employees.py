@@ -232,6 +232,7 @@ def show_all(search_entry_widget, search_combobox_widget):
 
 def employee_form(window):
     global back_image, employee_treeview
+
     employee_frame = Frame(window, width=1165, height=567, bg='white')
     employee_frame.place(x=200, y=100)
 
@@ -342,6 +343,7 @@ def employee_form(window):
                                    state='readonly')
     gender_combobox.set('جنسیت را انتخاب کنید')
     gender_combobox.grid(row=1, column=1)
+    gender_combobox.configure(takefocus=1)
 
     dob_date_label = Label(detail_frame, text='تاریخ تولد', font=('fonts/Persian-Yekan.ttf', 12), bg='white')
     dob_date_label.grid(row=1, column=2, padx=20, pady=10)
@@ -349,6 +351,7 @@ def employee_form(window):
     dob_date_entry = DateEntry(detail_frame, width=18, font=('fonts/Persian-Yekan.ttf', 12), state='readonly',
                                data_pattern='dd/mm/yyyy')
     dob_date_entry.grid(row=1, column=3)
+    dob_date_entry.configure(takefocus=1)
 
     work_shift_label = Label(detail_frame, text='شیفت کاری', font=('fonts/Persian-Yekan.ttf', 12), bg='white')
     work_shift_label.grid(row=1, column=4, padx=20, pady=10)
@@ -357,6 +360,7 @@ def employee_form(window):
                                        font=('fonts/Persian-Yekan.ttf', 12), width=18, state='readonly')
     work_shift_combobox.set('ساعت کاری را انتخاب کنید')
     work_shift_combobox.grid(row=1, column=5)
+    work_shift_combobox.configure(takefocus=1)
 
     email_label = Label(detail_frame, text='ایمیل', font=('fonts/Persian-Yekan.ttf', 12), bg='white')
     email_label.grid(row=3, column=0, padx=20, pady=10)
@@ -374,6 +378,7 @@ def employee_form(window):
                                       width=18, state='readonly')
     user_type_combobox.set('نوع کاربری را انتخاب کنید')
     user_type_combobox.grid(row=3, column=5)
+    user_type_combobox.configure(takefocus=1)
 
     password_label = Label(detail_frame, text='رمزعبور', font=('fonts/Persian-Yekan.ttf', 12), bg='white')
     password_label.grid(row=4, column=0, padx=20, pady=10, sticky='w')
@@ -414,8 +419,42 @@ def employee_form(window):
                                                        address_text, user_type_combobox,
                                                        password_entry, True))
     clear_button.grid(row=0, column=3, padx=20)
+    
     employee_treeview.bind('<ButtonRelease-1 >', lambda event: select_data(event, empid_entry, empname_entry,
                                                                            email_entry, gender_combobox, dob_date_entry,
                                                                            empnumber_entry, work_shift_combobox,
                                                                            address_text, user_type_combobox,
                                                                            password_entry))
+    
+    # ================= TAB ORDER (100% FIX) =================
+    widgets_order = [
+        empid_entry,
+        empname_entry,
+        empnumber_entry,
+        gender_combobox,
+        dob_date_entry,
+        work_shift_combobox,
+        email_entry,
+        address_text,
+        user_type_combobox,
+        password_entry
+    ]
+
+    def focus_next(event):
+        idx = widgets_order.index(event.widget)
+        widgets_order[(idx + 1) % len(widgets_order)].focus_set()
+        return "break"
+
+    def focus_prev(event):
+        idx = widgets_order.index(event.widget)
+        widgets_order[idx - 1].focus_set()
+        return "break"
+
+    for w in widgets_order:
+        w.bind("<Tab>", focus_next)
+        w.bind("<Shift-Tab>", focus_prev)
+
+    empid_entry.focus_set()
+    
+
+
