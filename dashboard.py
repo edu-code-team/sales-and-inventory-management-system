@@ -8,6 +8,12 @@ from datetime import datetime
 
 # GUI Part
 window = Tk()
+window.rowconfigure(0, weight=0)
+window.rowconfigure(1, weight=0)
+window.rowconfigure(2, weight=1)
+
+window.columnconfigure(0, weight=1)
+
 
 
 def toggle_window():
@@ -52,7 +58,7 @@ titleLable = Label(
     anchor="w",
     padx=20,
 )
-titleLable.place(x=0, y=0, relwidth=1)
+titleLable.grid(row=0, column=0, sticky="ew")
 
 logoButten = Button(
     window,
@@ -72,11 +78,30 @@ SubtitleLabel = Label(
     bg="#4b39e9",
     fg="#fef9fb",
 )
-SubtitleLabel.place(x=0, y=70, relwidth=1)
+SubtitleLabel.grid(row=1, column=0, sticky="ew")
 update_datetime()
 
-leftFrame = Frame(window)
-leftFrame.place(x=0, y=120, width=200, height=560)
+main_frame = Frame(window, bg="#fef9fb")
+main_frame.grid(row=2, column=0, sticky="nsew")
+
+main_frame.columnconfigure(0, weight=0)
+main_frame.columnconfigure(1, weight=1)
+main_frame.rowconfigure(0, weight=1)
+
+
+leftFrame = Frame(main_frame)
+leftFrame.grid(row=0, column=0, sticky="ns")
+
+content = Frame(main_frame, bg="#fef9fb")
+content.grid(row=0, column=1, sticky="nsew")
+
+for i in range(3):
+    content.rowconfigure(i, weight=1)
+
+for j in range(2):
+    content.columnconfigure(j, weight=1)
+
+
 
 LogoImage = PhotoImage(file="images/checklist-1.png")
 imageLable = Label(leftFrame, image=LogoImage)
@@ -163,8 +188,8 @@ exit_button = Button(
 exit_button.pack(fill=X)
 
 
-emp_frame = Frame(window, bg="#00198f", bd=4, relief=RIDGE)
-emp_frame.place(x=400, y=125, height=170, width=280)
+emp_frame = Frame(content, bg="#00198f", bd=4, relief=RIDGE)
+emp_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 totl_emp_icon = PhotoImage(file="images/total_employee.png")
 totl_emp_icon_label = Label(emp_frame, image=totl_emp_icon, bg="#00198f")
 totl_emp_icon_label.pack(pady=8)
@@ -188,8 +213,8 @@ totl_emp_count = Label(
 totl_emp_count.pack()
 
 
-sup_frame = Frame(window, bg="#00198f", bd=4, relief=RIDGE)
-sup_frame.place(x=800, y=125, height=170, width=280)
+sup_frame = Frame(content, bg="#00198f", bd=4, relief=RIDGE)
+sup_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
 totl_sup_icon = PhotoImage(file="images/total_sup.png")
 totl_sup_icon_label = Label(sup_frame, image=totl_sup_icon, bg="#00198f")
 totl_sup_icon_label.pack(pady=8)
@@ -213,8 +238,8 @@ totl_sup_count = Label(
 totl_sup_count.pack()
 
 
-category_frame = Frame(window, bg="#00198f", bd=4, relief=RIDGE)
-category_frame.place(x=400, y=310, height=170, width=280)
+category_frame = Frame(content, bg="#00198f", bd=4, relief=RIDGE)
+category_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
 totl_category_icon = PhotoImage(file="images/total_category.png")
 totl_category_icon_label = Label(category_frame, image=totl_category_icon, bg="#00198f")
 totl_category_icon_label.pack(pady=8)
@@ -238,8 +263,8 @@ totl_category_count = Label(
 totl_category_count.pack()
 
 
-product_frame = Frame(window, bg="#00198f", bd=4, relief=RIDGE)
-product_frame.place(x=800, y=310, height=170, width=280)
+product_frame = Frame(content, bg="#00198f", bd=4, relief=RIDGE)
+product_frame.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
 totl_product_icon = PhotoImage(file="images/total_product.png")
 totl_product_icon_label = Label(product_frame, image=totl_product_icon, bg="#00198f")
 totl_product_icon_label.pack(pady=8)
@@ -263,8 +288,8 @@ totl_product_count = Label(
 totl_product_count.pack()
 
 
-sale_frame = Frame(window, bg="#00198f", bd=4, relief=RIDGE)
-sale_frame.place(x=600, y=495, height=170, width=280)
+sale_frame = Frame(content, bg="#00198f", bd=4, relief=RIDGE)
+sale_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
 totl_sale_icon = PhotoImage(file="images/total_sale.png")
 totl_sale_icon_label = Label(sale_frame, image=totl_sale_icon, bg="#00198f")
 totl_sale_icon_label.pack(pady=8)
