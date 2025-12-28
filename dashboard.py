@@ -6,6 +6,7 @@ from supplier import supplier_form
 from category import category_form
 from products import product_form
 from datetime import datetime
+import jdatetime
 from shift import shift_form
 from user_type import user_type_form
 from check_permissions import can_access
@@ -41,14 +42,14 @@ def main(user_info=None):
             window.state("zoomed")
 
     def update_datetime():
-        now = datetime.now()
-        date_str = now.strftime("%Y-%m-%d")
-        time_str = now.strftime("%H:%M:%S")
+        now = jdatetime.datetime.now()  # استفاده از تاریخ شمسی
+        date_str = now.strftime("%d-%m-%Y")  # فرمت تاریخ شمسی
+        time_str = now.strftime("%H:%M:%S")  # زمان به فرمت میلادی
 
         SubtitleLabel.config(
             text=f"{current_user['name']} خوش آمدید ({current_user['user_type']}) \t\t تاریخ: {date_str}\t\t ساعت: {time_str}"
         )
-        window.after(1000, update_datetime)
+        window.after(1000, update_datetime)  # به‌روزرسانی هر ثانیه
 
     window.config(bg="#fef9fb")
 
@@ -69,6 +70,15 @@ def main(user_info=None):
     )
     titleLable.grid(row=0, column=0, sticky="ew")
 
+    # تنظیم key binding برای خروج از سیستم با فشار دادن Escape
+    window.bind("<Escape>", lambda e: logout(window))
+
+    def on_focus_in(event):
+        event.widget.config(bg="#28a745", fg="white")  # رنگ سبز
+
+    def on_focus_out(event):
+        event.widget.config(bg="#f0f8ff", fg="black")  # رنگ پیش‌فرض
+
     # دکمه خروج (برای خروج از برنامه)
     logoButten = Button(
         window,
@@ -76,20 +86,38 @@ def main(user_info=None):
         bg="#dc3545",
         font=("Yekan", 14, "bold"),
         fg="#fef9fb",
+        relief=FLAT,
+        padx=18,
+        pady=6,
+        cursor="hand2",
+        takefocus=True,
         command=lambda: logout(window),
     )
+    logoButten.bind("<FocusIn>", on_focus_in)
+    logoButten.bind("<FocusOut>", on_focus_out)
+    logoButten.bind("<Return>", lambda e: logoButten.invoke())
     logoButten.place(x=1100, y=10)
 
     # دکمه تغییر کاربر
+    btn_font = ("fonts/Yekan.ttf", 14, "bold")
+
     change_user_button = Button(
         window,
-        text="  تغییر کاربر  ",
-        bg="#4b39e9",
-        font=("Yekan", 14, "bold"),
-        fg="#fef9fb",
+        text="تغییر کاربر",
+        bg="#5a4ae3",
+        fg="white",
+        font=btn_font,
+        relief=FLAT,
+        padx=18,
+        pady=6,
+        takefocus=True,
+        cursor="hand2",
         command=lambda: change_user(window),
     )
-    change_user_button.place(x=950, y=10)
+    change_user_button.bind("<FocusIn>", on_focus_in)
+    change_user_button.bind("<FocusOut>", on_focus_out)
+    change_user_button.bind("<Return>", lambda e: change_user_button.invoke())
+    change_user_button.place(x=960, y=12)
 
     SubtitleLabel = Label(
         window,
@@ -99,20 +127,19 @@ def main(user_info=None):
         fg="#fef9fb",
     )
     SubtitleLabel.grid(row=1, column=0, sticky="ew")
-    update_datetime()
+    update_datetime()  # فراخوانی تابع به‌روزرسانی تاریخ و زمان
 
     main_frame = Frame(window, bg="#fef9fb")
     main_frame.grid(row=2, column=0, sticky="nsew")
 
-    main_frame.columnconfigure(0, weight=0)
-    main_frame.columnconfigure(1, weight=1)
+    main_frame.columnconfigure(0, weight=1)  # محتوا
+    main_frame.columnconfigure(1, weight=0)  # منو
     main_frame.rowconfigure(0, weight=1)
 
     leftFrame = Frame(main_frame)
-    leftFrame.grid(row=0, column=0, sticky="ns")
-
     content = Frame(main_frame, bg="#fef9fb")
-    content.grid(row=0, column=1, sticky="nsew")
+    content.grid(row=0, column=0, sticky="nsew")
+    leftFrame.grid(row=0, column=1, sticky="ns")
 
     for i in range(3):
         content.rowconfigure(i, weight=1)
@@ -143,18 +170,31 @@ def main(user_info=None):
         font=("fonts/Persian-Yekan.ttf", 15, "bold"),
         anchor="w",
         padx=10,
+        takefocus=True,
         command=lambda: employee_form(window),
     )
+    employee_button.bind("<FocusIn>", on_focus_in)
+    employee_button.bind("<FocusOut>", on_focus_out)
+    employee_button.bind("<Return>", lambda e: employee_button.invoke())
 
     # ============ دکمه تعریف شیفت ============
+    try:
+        shift_icon = PhotoImage(file="images/shift.png")
+    except:
+        user_type_icon = None
     shift_button = Button(
         leftFrame,
+        image=shift_icon,
         compound=LEFT,
         text="       تعریف شیفت",
         font=("fonts/Persian-Yekan.ttf", 15, "bold"),
         padx=10,
+        takefocus=True,
         command=lambda: shift_form(window),
     )
+    shift_button.bind("<FocusIn>", on_focus_in)
+    shift_button.bind("<FocusOut>", on_focus_out)
+    shift_button.bind("<Return>", lambda e: shift_button.invoke())
 
     # ============ دکمه تعریف کاربری ============
     try:
@@ -169,8 +209,12 @@ def main(user_info=None):
         text="       تعریف کاربری",
         font=("fonts/Persian-Yekan.ttf", 15, "bold"),
         padx=10,
+        takefocus=True,
         command=lambda: user_type_form(window),
     )
+    user_type_button.bind("<FocusIn>", on_focus_in)
+    user_type_button.bind("<FocusOut>", on_focus_out)
+    user_type_button.bind("<Return>", lambda e: user_type_button.invoke())
 
     user_type_button.image = user_type_icon
 
@@ -182,8 +226,12 @@ def main(user_info=None):
         text="   تامین کنندگان",
         font=("fonts/Persian-Yekan.ttf", 15, "bold"),
         padx=10,
+        takefocus=True,
         command=lambda: supplier_form(window),
     )
+    supplier_button.bind("<FocusIn>", on_focus_in)
+    supplier_button.bind("<FocusOut>", on_focus_out)
+    supplier_button.bind("<Return>", lambda e: supplier_button.invoke())
 
     category_icon = PhotoImage(file="images/category.png")
     category_button = Button(
@@ -192,8 +240,12 @@ def main(user_info=None):
         compound=LEFT,
         text="       دسته بندی ",
         font=("fonts/Persian-Yekan.ttf", 15, "bold"),
+        takefocus=True,
         command=lambda: category_form(window),
     )
+    category_button.bind("<FocusIn>", on_focus_in)
+    category_button.bind("<FocusOut>", on_focus_out)
+    category_button.bind("<Return>", lambda e: category_button.invoke())
 
     products_icon = PhotoImage(file="images/products.png")
     products_button = Button(
@@ -202,8 +254,12 @@ def main(user_info=None):
         compound=LEFT,
         text="         محصولات ",
         font=("fonts/Persian-Yekan.ttf", 15, "bold"),
+        takefocus=True,
         command=lambda: product_form(window),
     )
+    products_button.bind("<FocusIn>", on_focus_in)
+    products_button.bind("<FocusOut>", on_focus_out)
+    products_button.bind("<Return>", lambda e: products_button.invoke())
 
     # ============ دکمه صدور فاکتور ============
     try:
@@ -213,28 +269,38 @@ def main(user_info=None):
 
     invoice_button = Button(
         leftFrame,
+        image=invoice_icon,
         compound=LEFT,
         text="       صدور فاکتور",
         font=("fonts/Persian-Yekan.ttf", 15, "bold"),
+        takefocus=True,
         padx=10,
     )
+    invoice_button.bind("<FocusIn>", on_focus_in)
+    invoice_button.bind("<FocusOut>", on_focus_out)
+    invoice_button.bind("<Return>", lambda e: invoice_button.invoke())
 
     if invoice_icon:
         invoice_button.config(image=invoice_icon, compound=LEFT)
 
     # ============ دکمه تاریخچه فاکتور ============
     try:
-        invoice_history_icon = PhotoImage(file="images/invoice_history.png")
+        invoice_history_icon = PhotoImage(file="images/history.png")
     except:
         invoice_history_icon = None
 
     invoice_history_button = Button(
         leftFrame,
+        image=invoice_history_icon,
         compound=LEFT,
         text="   تاریخچه فاکتور",
         font=("fonts/Persian-Yekan.ttf", 15, "bold"),
+        takefocus=True,
         padx=10,
     )
+    invoice_history_button.bind("<FocusIn>", on_focus_in)
+    invoice_history_button.bind("<FocusOut>", on_focus_out)
+    invoice_history_button.bind("<Return>", lambda e: invoice_history_button.invoke())
 
     if invoice_history_icon:
         invoice_history_button.config(image=invoice_history_icon, compound=LEFT)
@@ -248,8 +314,12 @@ def main(user_info=None):
         compound=LEFT,
         text="             خروج",
         font=("fonts/Persian-Yekan.ttf", 15, "bold"),
+        takefocus=True,
         command=lambda: logout(window),
     )
+    exit_button.bind("<FocusIn>", on_focus_in)
+    exit_button.bind("<FocusOut>", on_focus_out)
+    exit_button.bind("<Return>", lambda e: exit_button.invoke())
 
     def create_menu_for_user():
         """ایجاد منو بر اساس دسترسی کاربر"""
