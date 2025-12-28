@@ -1,9 +1,11 @@
+# employees.py
 from tkinter import *
 from tkinter import ttk
 from tkinter import messagebox
 from tkcalendar import DateEntry
 import pymysql
-from database import connect_database, get_shifts_from_db  # از database.py import کنید
+from database import connect_database, get_shifts_from_db
+from user_type import get_user_types_for_combobox  # اضافه کردن import جدید
 
 
 def treeview_data():
@@ -31,9 +33,21 @@ def create_database_table():
     cursor, connection = connect_database()
     cursor.execute('CREATE DATABASE IF NOT EXISTS inventory_system DEFAULT CHARACTER SET utf8')
     cursor.execute('USE inventory_system')
-    cursor.execute('CREATE TABLE IF NOT EXISTS employee_data (empid INT PRIMARY KEY, name VARCHAR(100),'
-                   'email VARCHAR(100), gender VARCHAR(50),dob VARCHAR(30), contact VARCHAR(30),'
-                   'work_shift VARCHAR(50), address VARCHAR(100), usertype VARCHAR(50), password VARCHAR(50))')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS employee_data (
+            empid INT PRIMARY KEY, 
+            name VARCHAR(100),
+            email VARCHAR(100), 
+            gender VARCHAR(50),
+            dob VARCHAR(30), 
+            contact VARCHAR(30),
+            work_shift VARCHAR(50), 
+            address VARCHAR(100), 
+            usertype VARCHAR(50), 
+            password VARCHAR(50)
+        )''')
+    connection.commit()
+    cursor.close()
+    connection.close()
 
 
 def select_data(event, empid_entry,
@@ -61,7 +75,7 @@ def select_data(event, empid_entry,
 
 def add_employee(empid, name, email, gender, dob, contact, work_shift, address, usertype, password):
     if (empid == '' or name == '' or email == '' or gender == 'جنسیت را انتخاب کنید' or dob == '' or contact == ''
-            or work_shift == 'ساعت کاری را انتخاب کنید' or address == '\n' or usertype == 'نوع کاربری را انتخاب کنید'):
+            or work_shift == 'شیفت کاری را انتخاب کنید' or address == '\n' or usertype == 'نوع کاربری را انتخاب کنید'):
         messagebox.showerror('خطا', 'هیچ فیلدی نباید خالی باشد')
     else:
         cursor, connection = connect_database()  # از database.py
@@ -97,7 +111,7 @@ def clear_fields(empid_entry, empname_entry, email_entry, gender_combobox, dob_d
     from datetime import date
     dob_date_entry.set_date(date.today())
     empnumber_entry.delete(0, END)
-    work_shift_combobox.set('ساعت کاری را انتخاب کنید')
+    work_shift_combobox.set('شیفت کاری را انتخاب کنید')
     address_text.delete(1.0, END)
     user_type_combobox.set('نوع کاربری را انتخاب کنید')
     password_entry.delete(0, END)
@@ -368,9 +382,21 @@ def employee_form(window):
 
     user_type_label = Label(detail_frame, text='نوع کاربری', font=('fonts/Persian-Yekan.ttf', 12), bg='white')
     user_type_label.grid(row=3, column=4, padx=20, pady=10, sticky='w')
-    user_type_combobox = ttk.Combobox(detail_frame, values=('ادمین', 'کارمند'), font=('fonts/Persian-Yekan.ttf', 12),
-                                      width=18, state='readonly')
-    user_type_combobox.set('نوع کاربری را انتخاب کنید')
+
+    # دریافت لیست انواع کاربری از user_type.py
+    user_types_list = get_user_types_for_combobox()
+
+    user_type_combobox = ttk.Combobox(detail_frame,
+                                      values=user_types_list,
+                                      font=('fonts/Persian-Yekan.ttf', 12),
+                                      width=18,
+                                      state='readonly')
+
+    if user_types_list:
+        user_type_combobox.set('نوع کاربری را انتخاب کنید')
+    else:
+        user_type_combobox.set('ادمین')  # مقدار پیش‌فرض
+
     user_type_combobox.grid(row=3, column=5)
 
     password_label = Label(detail_frame, text='رمزعبور', font=('fonts/Persian-Yekan.ttf', 12), bg='white')
@@ -412,6 +438,7 @@ def employee_form(window):
                                                        address_text, user_type_combobox,
                                                        password_entry, True))
     clear_button.grid(row=0, column=3, padx=20)
+
     employee_treeview.bind('<ButtonRelease-1 >', lambda event: select_data(event, empid_entry, empname_entry,
                                                                            email_entry, gender_combobox, dob_date_entry,
                                                                            empnumber_entry, work_shift_combobox,

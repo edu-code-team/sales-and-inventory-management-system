@@ -1,0 +1,475 @@
+# user_type.py
+from tkinter import *
+from tkinter import ttk, messagebox
+from database import connect_database
+import json
+
+
+def move_focus(widget):
+    widget.focus_set()
+    return "break"
+
+
+def create_user_types_table():
+    """ایجاد جدول انواع کاربری"""
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return False
+
+    try:
+        cursor.execute('USE inventory_system')
+        cursor.execute('''CREATE TABLE IF NOT EXISTS user_types (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            type_name VARCHAR(100) UNIQUE NOT NULL,
+            can_employees BOOLEAN DEFAULT 0,
+            can_shifts BOOLEAN DEFAULT 0,
+            can_user_types BOOLEAN DEFAULT 0,
+            can_suppliers BOOLEAN DEFAULT 0,
+            can_categories BOOLEAN DEFAULT 0,
+            can_products BOOLEAN DEFAULT 0,
+            can_sales BOOLEAN DEFAULT 0,
+            can_invoices BOOLEAN DEFAULT 0,
+            is_admin BOOLEAN DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )''')
+
+        # اضافه کردن نوع کاربری ادمین پیش‌فرض
+        cursor.execute('''
+            INSERT IGNORE INTO user_types 
+            (type_name, can_employees, can_shifts, can_user_types, can_suppliers, 
+             can_categories, can_products, can_sales, can_invoices, is_admin)
+            VALUES ('ادمین', 1, 1, 1, 1, 1, 1, 1, 1, 1)
+        ''')
+
+        connection.commit()
+        return True
+    except Exception as e:
+        print(f"خطا در ایجاد جدول user_types: {e}")
+        return False
+    finally:
+        cursor.close()
+        connection.close()
+
+
+# تابع load_user_types را به‌روزرسانی کنید:
+def load_user_types(treeview):
+    """بارگذاری انواع کاربری در جدول"""
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return
+
+    try:
+        cursor.execute('USE inventory_system')
+        cursor.execute('''
+            SELECT id, type_name, 
+                   can_employees, can_shifts, can_user_types,
+                   can_suppliers, can_categories, can_products,
+                   can_sales, can_invoices, can_invoice_history, is_admin
+            FROM user_types 
+            ORDER BY is_admin DESC, type_name
+        ''')
+        records = cursor.fetchall()
+
+        treeview.delete(*treeview.get_children())
+        for record in records:
+            # نمایش حالت فارسی برای دسترسی‌ها
+            display_record = list(record[:2])  # id و type_name
+
+            # تبدیل 0/1 به ❌/✅
+            for i in range(2, len(record) - 1):  # همه دسترسی‌ها بجز is_admin
+                display_record.append('✅' if record[i] == 1 else '❌')
+
+            # نمایش ادمین بودن
+            display_record.append('✅' if record[-1] == 1 else '❌')
+
+            treeview.insert('', END, values=display_record, tags=(record[0],))
+
+    except Exception as e:
+        messagebox.showerror('خطا', f'خطا در بارگذاری انواع کاربری: {e}')
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def get_user_types_for_combobox():
+    """دریافت لیست انواع کاربری برای کامبوباکس"""
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return []
+
+    try:
+        cursor.execute('USE inventory_system')
+        cursor.execute('SELECT type_name FROM user_types ORDER BY type_name')
+        types = cursor.fetchall()
+        return [type[0] for type in types]
+    except:
+        return []
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def add_user_type(type_name, permissions, treeview):
+    """اضافه کردن نوع کاربری جدید"""
+    if not type_name.strip():
+        messagebox.showerror('خطا', 'نام نوع کاربری را وارد کنید')
+        return
+
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return
+
+    try:
+        cursor.execute('USE inventory_system')
+
+        # بررسی تکراری نبودن
+        cursor.execute('SELECT * FROM user_types WHERE type_name = %s', (type_name,))
+        if cursor.fetchone():
+            messagebox.showerror('خطا', 'این نوع کاربری قبلاً وجود دارد')
+            return
+
+        # اضافه کردن رکورد جدید (حالا 9 دسترسی داریم)
+        cursor.execute('''
+            INSERT INTO user_types 
+            (type_name, can_employees, can_shifts, can_user_types, can_suppliers,
+             can_categories, can_products, can_sales, can_invoices, can_invoice_history, is_admin)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0)
+        ''', (type_name, *permissions))
+
+        connection.commit()
+        messagebox.showinfo('موفقیت', 'نوع کاربری با موفقیت اضافه شد')
+        load_user_types(treeview)
+
+    except Exception as e:
+        messagebox.showerror('خطا', f'خطا در اضافه کردن نوع کاربری: {e}')
+    finally:
+        cursor.close()
+        connection.close()
+
+
+# تابع update_user_type را به‌روزرسانی کنید:
+def update_user_type(selected_id, type_name, permissions, treeview):
+    """ویرایش نوع کاربری"""
+    if not selected_id:
+        messagebox.showerror('خطا', 'هیچ نوع کاربری انتخاب نشده است')
+        return
+
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return
+
+    try:
+        cursor.execute('USE inventory_system')
+
+        # بررسی ادمین بودن (غیرقابل ویرایش)
+        cursor.execute('SELECT is_admin FROM user_types WHERE id = %s', (selected_id,))
+        result = cursor.fetchone()
+        if result and result[0] == 1:
+            messagebox.showerror('خطا', 'نوع کاربری ادمین قابل ویرایش نیست')
+            return
+
+        # به‌روزرسانی (حالا 9 دسترسی داریم)
+        cursor.execute('''
+            UPDATE user_types 
+            SET type_name = %s, 
+                can_employees = %s, can_shifts = %s, can_user_types = %s,
+                can_suppliers = %s, can_categories = %s, can_products = %s,
+                can_sales = %s, can_invoices = %s, can_invoice_history = %s
+            WHERE id = %s
+        ''', (type_name, *permissions, selected_id))
+
+        connection.commit()
+        messagebox.showinfo('موفقیت', 'نوع کاربری با موفقیت ویرایش شد')
+        load_user_types(treeview)
+
+    except Exception as e:
+        messagebox.showerror('خطا', f'خطا در ویرایش نوع کاربری: {e}')
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def delete_user_type(selected_id, treeview):
+    """حذف نوع کاربری"""
+    if not selected_id:
+        messagebox.showerror('خطا', 'هیچ نوع کاربری انتخاب نشده است')
+        return
+
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return
+
+    try:
+        cursor.execute('USE inventory_system')
+
+        # بررسی ادمین بودن (غیرقابل حذف)
+        cursor.execute('SELECT is_admin FROM user_types WHERE id = %s', (selected_id,))
+        result = cursor.fetchone()
+        if result and result[0] == 1:
+            messagebox.showerror('خطا', 'نوع کاربری ادمین قابل حذف نیست')
+            return
+
+        # بررسی اینکه آیا در کارمندان استفاده شده
+        cursor.execute('SELECT type_name FROM user_types WHERE id = %s', (selected_id,))
+        type_name = cursor.fetchone()[0]
+        cursor.execute('SELECT COUNT(*) FROM employee_data WHERE usertype = %s', (type_name,))
+        employee_count = cursor.fetchone()[0]
+
+        if employee_count > 0:
+            messagebox.showerror('خطا',
+                                 f'این نوع کاربری در {employee_count} کارمند استفاده شده است. ابتدا نوع کاربری کارمندان را تغییر دهید.')
+            return
+
+        # حذف
+        cursor.execute('DELETE FROM user_types WHERE id = %s', (selected_id,))
+        connection.commit()
+
+        messagebox.showinfo('موفقیت', 'نوع کاربری با موفقیت حذف شد')
+        load_user_types(treeview)
+
+    except Exception as e:
+        messagebox.showerror('خطا', f'خطا در حذف نوع کاربری: {e}')
+    finally:
+        cursor.close()
+        connection.close()
+
+
+# تابع select_data را به‌روزرسانی کنید:
+def select_data(event, treeview, type_name_entry, checkboxes):
+    """انتخاب ردیف از جدول"""
+    selected_items = treeview.selection()
+    if not selected_items:
+        return
+
+    item = treeview.item(selected_items[0])
+    tags = item['tags']
+    if not tags:
+        return
+
+    selected_id = tags[0]
+
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return
+
+    try:
+        cursor.execute('USE inventory_system')
+        cursor.execute('''
+            SELECT type_name, 
+                   can_employees, can_shifts, can_user_types,
+                   can_suppliers, can_categories, can_products,
+                   can_sales, can_invoices, can_invoice_history
+            FROM user_types WHERE id = %s
+        ''', (selected_id,))
+
+        result = cursor.fetchone()
+        if result:
+            type_name_entry.delete(0, END)
+            type_name_entry.insert(0, result[0])
+
+            # تنظیم وضعیت چک‌باکس‌ها (حالا 9 مورد)
+            permissions = result[1:]
+            for i, checkbox in enumerate(checkboxes):
+                var = checkbox[1]  # IntVar
+                var.set(1 if permissions[i] == 1 else 0)
+
+            return selected_id
+
+    except Exception as e:
+        messagebox.showerror('خطا', f'خطا در بارگذاری اطلاعات: {e}')
+    finally:
+        cursor.close()
+        connection.close()
+
+    return None
+
+
+def user_type_form(window):
+    """فرم مدیریت انواع کاربری"""
+    create_user_types_table()  # اطمینان از ایجاد جدول
+
+    user_type_frame = Frame(window, width=1165, height=567, bg='white')
+    user_type_frame.place(x=200, y=100)
+
+    heading_label = Label(user_type_frame, text='تعریف انواع کاربری',
+                          font=('fonts/Persian-Yekan.ttf', 18, 'bold'),
+                          bg='#00198f', fg='white')
+    heading_label.place(x=0, y=0, relwidth=1)
+
+    # دکمه بازگشت
+    try:
+        back_image = PhotoImage(file='images/back_button.png')
+        back_button = Button(user_type_frame, image=back_image, bd=0,
+                             cursor='hand2', bg='white',
+                             command=lambda: user_type_frame.place_forget())
+        back_button.place(x=10, y=45)
+    except:
+        back_button = Button(user_type_frame, text='← بازگشت',
+                             font=('fonts/Persian-Yekan.ttf', 12),
+                             bg='#00198f', fg='white', bd=0, cursor='hand2',
+                             command=lambda: user_type_frame.place_forget())
+        back_button.place(x=10, y=45)
+
+    # ============ سمت چپ: فرم ورودی ============
+    left_frame = Frame(user_type_frame, bg='white')
+    left_frame.place(x=30, y=100, width=400, height=400)
+
+    # نام نوع کاربری
+    Label(left_frame, text='نام نوع کاربری:',
+          font=('fonts/Persian-Yekan.ttf', 12, 'bold'),
+          bg='white').grid(row=0, column=0, padx=10, pady=10, sticky='w')
+
+    type_name_entry = Entry(left_frame,
+                            font=('fonts/Persian-Yekan.ttf', 12),
+                            bg='lightblue', width=25)
+    type_name_entry.grid(row=0, column=1, padx=10, pady=10)
+
+    # دسترسی‌ها
+    Label(left_frame, text='دسترسی‌ها:',
+          font=('fonts/Persian-Yekan.ttf', 12, 'bold'),
+          bg='white').grid(row=1, column=0, padx=10, pady=10, sticky='nw')
+
+    permissions_frame = Frame(left_frame, bg='white')
+    permissions_frame.grid(row=1, column=1, padx=10, pady=10, sticky='nsew')
+
+    # در لیست دسترسی‌ها (خطوط 96-112) تغییر دهید:
+
+    # لیست دسترسی‌ها
+    permission_labels = [
+        'کارمندان',
+        'تعریف شیفت',
+        'تعریف کاربری',
+        'تامین کنندگان',
+        'دسته بندی',
+        'محصولات',
+        'فروش',
+        'صدور فاکتور',
+        'تاریخچه فاکتور'
+    ]
+
+    checkboxes = []
+    permission_vars = []
+
+    # تعداد چک‌باکس‌ها را به 9 افزایش دهید
+    for i, label in enumerate(permission_labels):
+        var = IntVar(value=0)
+        permission_vars.append(var)
+
+        cb = Checkbutton(permissions_frame, text=label,
+                         variable=var,
+                         font=('fonts/Persian-Yekan.ttf', 11),
+                         bg='white', anchor='w')
+        cb.grid(row=i, column=0, sticky='w', pady=3)
+        checkboxes.append((cb, var))
+
+    # دکمه‌ها با چیدمان 2x2
+    button_frame = Frame(left_frame, bg='white')
+    button_frame.grid(row=2, column=0, columnspan=2, pady=20)
+
+    selected_id_var = StringVar()  # برای ذخیره ID انتخاب شده
+
+    # ردیف اول - دو دکمه
+    add_button = Button(button_frame, text='➕ افزودن',
+                        font=('fonts/Persian-Yekan.ttf', 11),
+                        bg='#00198f', fg='white', width=12,
+                        command=lambda: add_user_type(
+                            type_name_entry.get(),
+                            [var.get() for var in permission_vars],
+                            treeview
+                        ))
+    add_button.grid(row=0, column=0, padx=5, pady=5)
+
+    update_button = Button(button_frame, text='✏️ ویرایش',
+                           font=('fonts/Persian-Yekan.ttf', 11),
+                           bg='#00198f', fg='white', width=12,
+                           command=lambda: update_user_type(
+                               selected_id_var.get(),
+                               type_name_entry.get(),
+                               [var.get() for var in permission_vars],
+                               treeview
+                           ))
+    update_button.grid(row=0, column=1, padx=5, pady=5)
+
+    # ردیف دوم - دو دکمه
+    delete_button = Button(button_frame, text='🗑️ حذف',
+                           font=('fonts/Persian-Yekan.ttf', 11),
+                           bg='#00198f', fg='white', width=12,
+                           command=lambda: delete_user_type(
+                               selected_id_var.get(), treeview
+                           ))
+    delete_button.grid(row=1, column=0, padx=5, pady=5)
+
+    clear_button = Button(button_frame, text='🧹 پاک کردن',
+                          font=('fonts/Persian-Yekan.ttf', 11),
+                          bg='#00198f', fg='white', width=12,
+                          command=lambda: clear_fields(
+                              type_name_entry, permission_vars,
+                              selected_id_var, treeview
+                          ))
+    clear_button.grid(row=1, column=1, padx=5, pady=5)
+
+    # ============ سمت راست: جدول ============
+    right_frame = Frame(user_type_frame, bg='white')
+    right_frame.place(x=480, y=100, width=650, height=400)
+
+    # Treeview
+    tree_frame = Frame(right_frame, bg='white')
+    tree_frame.pack(fill=BOTH, expand=True)
+
+    scroll_y = Scrollbar(tree_frame, orient=VERTICAL)
+    scroll_x = Scrollbar(tree_frame, orient=HORIZONTAL)
+
+    # ستون‌های treeview را به‌روزرسانی کنید:
+    # در تابع user_type_form، بخش treeview:
+    treeview = ttk.Treeview(
+        tree_frame,
+        columns=('id', 'name', 'emp', 'shift', 'user_type',
+                 'sup', 'cat', 'prod', 'sale', 'inv', 'inv_history', 'admin'),  # اضافه شد inv_history
+        show='headings',
+        yscrollcommand=scroll_y.set,
+        xscrollcommand=scroll_x.set,
+        height=12
+    )
+
+    # تنظیم هدرها
+    headers = ['شناسه', 'نام نوع', 'کارمندان', 'شیفت', 'کاربری',
+               'تامین‌کننده', 'دسته‌بندی', 'محصولات', 'فروش', 'فاکتور', 'تاریخچه فاکتور', 'ادمین']  # اضافه شد
+
+    for i, header in enumerate(headers):
+        treeview.heading(f'#{i + 1}', text=header)
+        treeview.column(f'#{i + 1}', width=80 if i not in [1, 10] else 120, anchor='center')
+
+    scroll_y.config(command=treeview.yview)
+    scroll_x.config(command=treeview.xview)
+
+    treeview.grid(row=0, column=0, sticky='nsew')
+    scroll_y.grid(row=0, column=1, sticky='ns')
+    scroll_x.grid(row=1, column=0, sticky='ew', columnspan=2)
+
+    tree_frame.grid_rowconfigure(0, weight=1)
+    tree_frame.grid_columnconfigure(0, weight=1)
+
+    # تابع پاک کردن فیلدها
+    def clear_fields(type_entry, vars_list, selected_var, tree):
+        type_entry.delete(0, END)
+        for var in vars_list:
+            var.set(0)
+        selected_var.set('')
+        tree.selection_remove(tree.selection())
+        type_entry.focus_set()
+
+    # مدیریت انتخاب ردیف
+    def on_select(event):
+        selected_id = select_data(event, treeview, type_name_entry, checkboxes)
+        if selected_id:
+            selected_id_var.set(selected_id)
+
+    treeview.bind('<<TreeviewSelect>>', on_select)
+
+    # بارگذاری اولیه داده‌ها
+    load_user_types(treeview)
+
+    # تنظیم فوکوس
+    type_name_entry.focus_set()
+
+    return user_type_frame
