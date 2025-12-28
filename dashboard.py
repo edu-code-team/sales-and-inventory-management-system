@@ -4,6 +4,7 @@ from supplier import supplier_form
 from category import category_form
 from products import product_form
 from datetime import datetime
+from shift import shift_form
 
 
 # GUI Part
@@ -130,6 +131,34 @@ employee_button = Button(
     command=lambda: employee_form(window),
 )
 employee_button.pack(fill=X)
+
+# ============ دکمه جدید: تعریف شیفت ============
+# اگر آیکون shift.png ندارید، از یکی از آیکون‌های موجود استفاده کنید یا بدون آیکون بسازید
+try:
+    shift_icon = PhotoImage(file="images/clock.png")  # یا time.png یا هر آیکون ساعت دیگر
+except:
+    # اگر آیکون وجود ندارد، دکمه بدون آیکون بسازید
+    shift_icon = None
+
+shift_button = Button(
+    leftFrame,
+    text="       تعریف شیفت",
+    font=("fonts/Persian-Yekan.ttf", 15, "bold"),
+    anchor="w",
+    padx=10,
+    command=lambda: shift_form(window),
+    bg="#fef9fb",  # رنگ پس‌زمینه
+    fg="#00198f",  # رنگ متن
+    relief=FLAT,  # حاشیه صاف
+    bd=0,  # بدون border
+    cursor="hand2"  # حالت دست هنگام hover
+)
+
+# اگر آیکون دارید، آن را اضافه کنید
+if shift_icon:
+    shift_button.config(image=shift_icon, compound=LEFT)
+
+shift_button.pack(fill=X)
 
 
 supplier_icon = PhotoImage(file="images/supplier.png")

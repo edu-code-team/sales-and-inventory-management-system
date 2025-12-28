@@ -147,7 +147,7 @@ def update_employee(empid, name, email, gender, dob, contact, work_shift, addres
             connection.close()
 
 
-def delete_employee(empid,empname_entry):
+def delete_employee(empid):
     selected = employee_treeview.selection()
     if not selected:
         messagebox.showerror('خطا', 'هیچ ردیفی برای حذف انتخاب نشده')
@@ -163,7 +163,6 @@ def delete_employee(empid,empname_entry):
                 connection.commit()
                 treeview_data()
                 messagebox.showinfo('عملیات موفق', 'اطلاعات کارمند با موفقیت حذف شذ')
-                empname_entry.focus_set()
             except Exception as e:
                 messagebox.showerror('خطا', f'{e} خطای')
             finally:
@@ -233,7 +232,6 @@ def show_all(search_entry_widget, search_combobox_widget):
 
 def employee_form(window):
     global back_image, employee_treeview
-
     employee_frame = Frame(window, width=1165, height=567, bg='white')
     employee_frame.place(x=200, y=100)
 
@@ -344,7 +342,6 @@ def employee_form(window):
                                    state='readonly')
     gender_combobox.set('جنسیت را انتخاب کنید')
     gender_combobox.grid(row=1, column=1)
-    gender_combobox.configure(takefocus=1)
 
     dob_date_label = Label(detail_frame, text='تاریخ تولد', font=('fonts/Persian-Yekan.ttf', 12), bg='white')
     dob_date_label.grid(row=1, column=2, padx=20, pady=10)
@@ -352,7 +349,6 @@ def employee_form(window):
     dob_date_entry = DateEntry(detail_frame, width=18, font=('fonts/Persian-Yekan.ttf', 12), state='readonly',
                                data_pattern='dd/mm/yyyy')
     dob_date_entry.grid(row=1, column=3)
-    dob_date_entry.configure(takefocus=1)
 
     work_shift_label = Label(detail_frame, text='شیفت کاری', font=('fonts/Persian-Yekan.ttf', 12), bg='white')
     work_shift_label.grid(row=1, column=4, padx=20, pady=10)
@@ -361,7 +357,6 @@ def employee_form(window):
                                        font=('fonts/Persian-Yekan.ttf', 12), width=18, state='readonly')
     work_shift_combobox.set('ساعت کاری را انتخاب کنید')
     work_shift_combobox.grid(row=1, column=5)
-    work_shift_combobox.configure(takefocus=1)
 
     email_label = Label(detail_frame, text='ایمیل', font=('fonts/Persian-Yekan.ttf', 12), bg='white')
     email_label.grid(row=3, column=0, padx=20, pady=10)
@@ -372,9 +367,6 @@ def employee_form(window):
     address_label.grid(row=3, column=2, padx=20, pady=10)
     address_text = Text(detail_frame, width=20, height=3, font=('fonts/Persian-Yekan.ttf', 12), bg='lightblue')
     address_text.grid(row=3, column=3)
-    address_text.unbind_class("Text", "<Tab>")
-    address_text.unbind_class("Text", "<Shift-Tab>")
-
 
     user_type_label = Label(detail_frame, text='نوع کاربری', font=('fonts/Persian-Yekan.ttf', 12), bg='white')
     user_type_label.grid(row=3, column=4, padx=20, pady=10, sticky='w')
@@ -382,7 +374,6 @@ def employee_form(window):
                                       width=18, state='readonly')
     user_type_combobox.set('نوع کاربری را انتخاب کنید')
     user_type_combobox.grid(row=3, column=5)
-    user_type_combobox.configure(takefocus=1)
 
     password_label = Label(detail_frame, text='رمزعبور', font=('fonts/Persian-Yekan.ttf', 12), bg='white')
     password_label.grid(row=4, column=0, padx=20, pady=10, sticky='w')
@@ -410,13 +401,8 @@ def employee_form(window):
                                                                          password_entry.get()))
     update_button.grid(row=0, column=1, padx=20)
 
-    delete_button = Button(
-    button_frame,
-    text='حذف',
-    font=('fonts/Persian-Yekan.ttf', 12),
-    fg='white',
-    bg='#00198f',
-    command=lambda: delete_employee(empid_entry.get(), empname_entry))
+    delete_button = Button(button_frame, text='حذف', font=('fonts/Persian-Yekan.ttf', 12), fg='white',
+                           bg='#00198f', command=lambda: delete_employee(empid_entry.get()))
     delete_button.grid(row=0, column=2, padx=20)
 
     clear_button = Button(button_frame, text='پاک کردن',
@@ -428,111 +414,8 @@ def employee_form(window):
                                                        address_text, user_type_combobox,
                                                        password_entry, True))
     clear_button.grid(row=0, column=3, padx=20)
-
-        # ================= KEYBOARD SHORTCUTS =================
-
-    def search_shortcut(event):
-        search_button.invoke()
-
-    def show_all_shortcut(event):
-        show_button.invoke()
-
-    def add_shortcut(event=None):
-        add_button.invoke()
-
-    def update_shortcut(event=None):
-        update_button.invoke()
-
-    def delete_shortcut(event=None):
-        delete_button.invoke()
-
-    def clear_shortcut(event=None):
-        clear_button.invoke()
-
-    def focus_search(event=None):
-        search_entry.focus_set()
-
-    def close_form(event=None):
-        employee_frame.place_forget()
-   
-# bind to window (or employee_frame)
-    window.bind('<s>', search_shortcut)      # s = search
-    window.bind('<S>', search_shortcut)
-
-    window.bind('<a>', add_shortcut)         # a = add
-    window.bind('<A>', add_shortcut)
-
-    window.bind('<u>', update_shortcut)      # u = update
-    window.bind('<U>', update_shortcut)
-
-    window.bind('<d>', delete_shortcut)      # d = delete
-    window.bind('<D>', delete_shortcut)
-
-    window.bind('<c>', clear_shortcut)       # c = clear
-    window.bind('<C>', clear_shortcut)
-
-    window.bind('<f>', focus_search)         # f = focus search
-    window.bind('<F>', focus_search)
-
-    window.bind('<Return>', search_shortcut) # Enter = search
-
-    window.bind('<Escape>', close_form)
-
-    employee_frame.focus_set()
-
-    
     employee_treeview.bind('<ButtonRelease-1 >', lambda event: select_data(event, empid_entry, empname_entry,
                                                                            email_entry, gender_combobox, dob_date_entry,
                                                                            empnumber_entry, work_shift_combobox,
                                                                            address_text, user_type_combobox,
                                                                            password_entry))
-    for widget in detail_frame.winfo_children():
-        if isinstance(widget, Label):
-            widget.configure(takefocus=0)
-
-    # ================= TAB ORDER (100% FIX) =================
-    widgets_order = [
-        Search_combobox,
-        search_entry,
-        search_button,
-        show_button,
-        empid_entry,
-        empname_entry,
-        empnumber_entry,
-        gender_combobox,
-        dob_date_entry,
-        work_shift_combobox,
-        email_entry,
-        address_text,
-        user_type_combobox,
-        password_entry,
-        add_button,
-        update_button,
-        delete_button,
-        clear_button
-    ]
-
-    def focus_next(event):
-        widget = event.widget
-        if widget in widgets_order:
-            idx = widgets_order.index(widget)
-            widgets_order[(idx + 1) % len(widgets_order)].focus_set()
-        return "break"
-
-    def focus_prev(event):
-        widget = event.widget
-        if widget in widgets_order:
-            idx = widgets_order.index(widget)
-            widgets_order[idx - 1].focus_set()
-        return "break"
-
-    for w in widgets_order:
-        w.bind("<Tab>", focus_next)
-        w.bind("<Shift-Tab>", focus_prev)
-
-    Search_combobox.focus_set()
-
-
-    
-
-
