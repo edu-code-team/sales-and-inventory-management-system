@@ -11,14 +11,16 @@ def treeview_data(shift_treeview):
     if not cursor or not connection:
         return
     try:
-        cursor.execute('USE inventory_system')
-        cursor.execute('SELECT shift_id, shift_name, start_time, end_time FROM shift_data ORDER BY shift_id')
+        cursor.execute("USE inventory_system")
+        cursor.execute(
+            "SELECT shift_id, shift_name, start_time, end_time FROM shift_data ORDER BY shift_id"
+        )
         shift_records = cursor.fetchall()
         shift_treeview.delete(*shift_treeview.get_children())
         for records in shift_records:
-            shift_treeview.insert('', END, values=records)
+            shift_treeview.insert("", END, values=records)
     except Exception as e:
-        messagebox.showerror('خطا', f'خطا در بارگذاری داده‌ها: {e}')
+        messagebox.showerror("خطا", f"خطا در بارگذاری داده‌ها: {e}")
     finally:
         cursor.close()
         connection.close()
@@ -28,15 +30,12 @@ def connect_database():
     """اتصال به پایگاه داده"""
     try:
         connection = pymysql.connect(
-            host='localhost',
-            user='root',
-            passwd='',
-            charset='utf8mb4'
+            host="localhost", user="root", passwd="", charset="utf8mb4"
         )
         cursor = connection.cursor()
         return cursor, connection
     except Exception as e:
-        messagebox.showerror('خطا', f'اتصال به پایگاه داده ناموفق: {e}')
+        messagebox.showerror("خطا", f"اتصال به پایگاه داده ناموفق: {e}")
         return None, None
 
 
@@ -47,17 +46,21 @@ def create_shift_table():
         return
 
     try:
-        cursor.execute('CREATE DATABASE IF NOT EXISTS inventory_system DEFAULT CHARACTER SET utf8')
-        cursor.execute('USE inventory_system')
+        cursor.execute(
+            "CREATE DATABASE IF NOT EXISTS inventory_system DEFAULT CHARACTER SET utf8"
+        )
+        cursor.execute("USE inventory_system")
 
         # ایجاد جدول شیفت
-        cursor.execute('''CREATE TABLE IF NOT EXISTS shift_data (
+        cursor.execute(
+            """CREATE TABLE IF NOT EXISTS shift_data (
             shift_id INT PRIMARY KEY AUTO_INCREMENT,
             shift_name VARCHAR(100) NOT NULL UNIQUE,
             start_time VARCHAR(10) NOT NULL,
             end_time VARCHAR(10) NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )''')
+        )"""
+        )
 
         connection.commit()
         print("✅ جدول shift_data ایجاد شد")
@@ -74,7 +77,7 @@ def validate_time_format(time_str):
     try:
         if len(time_str) != 5:
             return False
-        hours, minutes = time_str.split(':')
+        hours, minutes = time_str.split(":")
         if not hours.isdigit() or not minutes.isdigit():
             return False
         if int(hours) < 0 or int(hours) > 23:
@@ -93,8 +96,8 @@ def get_shifts_for_combobox():
         return []
 
     try:
-        cursor.execute('USE inventory_system')
-        cursor.execute('SELECT shift_name FROM shift_data ORDER BY shift_name')
+        cursor.execute("USE inventory_system")
+        cursor.execute("SELECT shift_name FROM shift_data ORDER BY shift_name")
         shifts = cursor.fetchall()
         return [shift[0] for shift in shifts]
     except:
@@ -114,7 +117,7 @@ def shift_form(window):
             return
 
         content = shift_treeview.item(index)
-        row = content['values']
+        row = content["values"]
 
         # پاک کردن فیلدها
         shift_name_entry.delete(0, END)
@@ -133,16 +136,16 @@ def shift_form(window):
         end_time = end_time_entry.get().strip()
 
         if not shift_name:
-            messagebox.showerror('خطا', 'نام شیفت را وارد کنید')
+            messagebox.showerror("خطا", "نام شیفت را وارد کنید")
             return
 
         if not start_time or not end_time:
-            messagebox.showerror('خطا', 'ساعت شروع و پایان را وارد کنید')
+            messagebox.showerror("خطا", "ساعت شروع و پایان را وارد کنید")
             return
 
         # اعتبارسنجی فرمت زمان
         if not validate_time_format(start_time) or not validate_time_format(end_time):
-            messagebox.showerror('خطا', 'فرمت زمان باید HH:MM باشد (مثال: 08:30)')
+            messagebox.showerror("خطا", "فرمت زمان باید HH:MM باشد (مثال: 08:30)")
             return
 
         cursor, connection = connect_database()
@@ -150,27 +153,31 @@ def shift_form(window):
             return
 
         try:
-            cursor.execute('USE inventory_system')
+            cursor.execute("USE inventory_system")
 
             # بررسی تکراری نبودن نام شیفت
-            cursor.execute('SELECT * FROM shift_data WHERE shift_name = %s', (shift_name,))
+            cursor.execute(
+                "SELECT * FROM shift_data WHERE shift_name = %s", (shift_name,)
+            )
             if cursor.fetchone():
-                messagebox.showerror('خطا', 'این نام شیفت قبلاً ثبت شده است')
+                messagebox.showerror("خطا", "این نام شیفت قبلاً ثبت شده است")
                 return
 
             # اضافه کردن شیفت جدید
-            cursor.execute('INSERT INTO shift_data (shift_name, start_time, end_time) VALUES (%s, %s, %s)',
-                           (shift_name, start_time, end_time))
+            cursor.execute(
+                "INSERT INTO shift_data (shift_name, start_time, end_time) VALUES (%s, %s, %s)",
+                (shift_name, start_time, end_time),
+            )
             connection.commit()
 
             treeview_data(shift_treeview)
-            messagebox.showinfo('موفقیت', 'شیفت جدید با موفقیت اضافه شد')
+            messagebox.showinfo("موفقیت", "شیفت جدید با موفقیت اضافه شد")
 
             # پاک کردن فیلدها بعد از اضافه کردن
             clear_fields()
 
         except Exception as e:
-            messagebox.showerror('خطا', f'خطا در اضافه کردن شیفت: {e}')
+            messagebox.showerror("خطا", f"خطا در اضافه کردن شیفت: {e}")
         finally:
             cursor.close()
             connection.close()
@@ -179,15 +186,15 @@ def shift_form(window):
         """به‌روزرسانی شیفت"""
         selected_item = shift_treeview.selection()
         if not selected_item:
-            messagebox.showerror('خطا', 'لطفاً یک شیفت را برای ویرایش انتخاب کنید')
+            messagebox.showerror("خطا", "لطفاً یک شیفت را برای ویرایش انتخاب کنید")
             return
 
         # دریافت داده‌های انتخاب شده
         item = shift_treeview.item(selected_item[0])
-        shift_id = item['values'][0]
-        old_shift_name = item['values'][1]
-        old_start_time = item['values'][2]
-        old_end_time = item['values'][3]
+        shift_id = item["values"][0]
+        old_shift_name = item["values"][1]
+        old_start_time = item["values"][2]
+        old_end_time = item["values"][3]
 
         # دریافت داده‌های جدید از فیلدها
         new_shift_name = shift_name_entry.get().strip()
@@ -195,20 +202,24 @@ def shift_form(window):
         new_end_time = end_time_entry.get().strip()
 
         if not new_shift_name or not new_start_time or not new_end_time:
-            messagebox.showerror('خطا', 'تمامی فیلدها باید پر شوند')
+            messagebox.showerror("خطا", "تمامی فیلدها باید پر شوند")
             return
 
         # اعتبارسنجی فرمت زمان
-        if not validate_time_format(new_start_time) or not validate_time_format(new_end_time):
-            messagebox.showerror('خطا', 'فرمت زمان باید HH:MM باشد (مثال: 08:30)')
+        if not validate_time_format(new_start_time) or not validate_time_format(
+            new_end_time
+        ):
+            messagebox.showerror("خطا", "فرمت زمان باید HH:MM باشد (مثال: 08:30)")
             return
 
         # ============ رفع مشکل 1: بررسی تغییرات ============
         # چک کردن اگر هیچ تغییری ایجاد نشده باشد
-        if (new_shift_name == old_shift_name and
-                new_start_time == old_start_time and
-                new_end_time == old_end_time):
-            messagebox.showinfo('توجه', 'هیچ تغییری در اطلاعات شیفت ایجاد نشده است')
+        if (
+            new_shift_name == old_shift_name
+            and new_start_time == old_start_time
+            and new_end_time == old_end_time
+        ):
+            messagebox.showinfo("توجه", "هیچ تغییری در اطلاعات شیفت ایجاد نشده است")
             return
 
         cursor, connection = connect_database()
@@ -216,29 +227,33 @@ def shift_form(window):
             return
 
         try:
-            cursor.execute('USE inventory_system')
+            cursor.execute("USE inventory_system")
 
             # بررسی تکراری نبودن نام شیفت (به جز خودش)
             if new_shift_name != old_shift_name:
-                cursor.execute('SELECT * FROM shift_data WHERE shift_name = %s AND shift_id != %s',
-                               (new_shift_name, shift_id))
+                cursor.execute(
+                    "SELECT * FROM shift_data WHERE shift_name = %s AND shift_id != %s",
+                    (new_shift_name, shift_id),
+                )
                 if cursor.fetchone():
-                    messagebox.showerror('خطا', 'این نام شیفت قبلاً ثبت شده است')
+                    messagebox.showerror("خطا", "این نام شیفت قبلاً ثبت شده است")
                     return
 
             # به‌روزرسانی شیفت
-            cursor.execute('UPDATE shift_data SET shift_name = %s, start_time = %s, end_time = %s WHERE shift_id = %s',
-                           (new_shift_name, new_start_time, new_end_time, shift_id))
+            cursor.execute(
+                "UPDATE shift_data SET shift_name = %s, start_time = %s, end_time = %s WHERE shift_id = %s",
+                (new_shift_name, new_start_time, new_end_time, shift_id),
+            )
             connection.commit()
 
             treeview_data(shift_treeview)
-            messagebox.showinfo('موفقیت', 'شیفت با موفقیت ویرایش شد')
+            messagebox.showinfo("موفقیت", "شیفت با موفقیت ویرایش شد")
 
             # پاک کردن فیلدها
             clear_fields()
 
         except Exception as e:
-            messagebox.showerror('خطا', f'خطا در ویرایش شیفت: {e}')
+            messagebox.showerror("خطا", f"خطا در ویرایش شیفت: {e}")
         finally:
             cursor.close()
             connection.close()
@@ -247,17 +262,18 @@ def shift_form(window):
         """حذف شیفت"""
         selected_item = shift_treeview.selection()
         if not selected_item:
-            messagebox.showerror('خطا', 'لطفاً یک شیفت را برای حذف انتخاب کنید')
+            messagebox.showerror("خطا", "لطفاً یک شیفت را برای حذف انتخاب کنید")
             return
 
         # دریافت نام شیفت انتخاب شده
         item = shift_treeview.item(selected_item[0])
-        shift_id = item['values'][0]
-        shift_name = item['values'][1]
+        shift_id = item["values"][0]
+        shift_name = item["values"][1]
 
         # تأیید حذف
-        confirm = messagebox.askyesno('تأیید حذف',
-                                      f'آیا از حذف شیفت "{shift_name}" مطمئن هستید؟')
+        confirm = messagebox.askyesno(
+            "تأیید حذف", f'آیا از حذف شیفت "{shift_name}" مطمئن هستید؟'
+        )
         if not confirm:
             return
 
@@ -266,48 +282,58 @@ def shift_form(window):
             return
 
         try:
-            cursor.execute('USE inventory_system')
+            cursor.execute("USE inventory_system")
 
             # بررسی اینکه آیا این شیفت در جدول کارمندان استفاده شده
-            cursor.execute('SELECT COUNT(*) FROM employee_data WHERE work_shift = %s', (shift_name,))
+            cursor.execute(
+                "SELECT COUNT(*) FROM employee_data WHERE work_shift = %s",
+                (shift_name,),
+            )
             employee_count = cursor.fetchone()[0]
 
             if employee_count > 0:
-                messagebox.showwarning('اخطار',
-                                       f'این شیفت در {employee_count} کارمند استفاده شده است. ابتدا شیفت کارمندان را تغییر دهید.')
+                messagebox.showwarning(
+                    "اخطار",
+                    f"این شیفت در {employee_count} کارمند استفاده شده است. ابتدا شیفت کارمندان را تغییر دهید.",
+                )
                 return
 
             # ============ رفع مشکل 2: بازنشانی شناسه‌ها بعد از حذف ============
             # 1. ابتدا شیفت را حذف می‌کنیم
-            cursor.execute('DELETE FROM shift_data WHERE shift_id = %s', (shift_id,))
+            cursor.execute("DELETE FROM shift_data WHERE shift_id = %s", (shift_id,))
             connection.commit()
 
             # 2. بازنشانی شناسه‌های خودکار (AUTO_INCREMENT)
-            cursor.execute('ALTER TABLE shift_data AUTO_INCREMENT = 1')
+            cursor.execute("ALTER TABLE shift_data AUTO_INCREMENT = 1")
 
             # 3. دریافت همه شیفت‌ها و بازسازی شناسه‌ها
-            cursor.execute('SELECT shift_id, shift_name, start_time, end_time FROM shift_data ORDER BY shift_id')
+            cursor.execute(
+                "SELECT shift_id, shift_name, start_time, end_time FROM shift_data ORDER BY shift_id"
+            )
             all_shifts = cursor.fetchall()
 
             # 4. حذف همه رکوردها و دوباره اضافه کردن با شناسه‌های جدید
-            cursor.execute('DELETE FROM shift_data')
+            cursor.execute("DELETE FROM shift_data")
 
             # 5. اضافه کردن مجدد با شناسه‌های پشت سر هم
             for index, shift in enumerate(all_shifts, start=1):
                 cursor.execute(
-                    'INSERT INTO shift_data (shift_id, shift_name, start_time, end_time) VALUES (%s, %s, %s, %s)',
-                    (index, shift[1], shift[2], shift[3]))
+                    "INSERT INTO shift_data (shift_id, shift_name, start_time, end_time) VALUES (%s, %s, %s, %s)",
+                    (index, shift[1], shift[2], shift[3]),
+                )
 
             connection.commit()
 
             treeview_data(shift_treeview)
-            messagebox.showinfo('موفقیت', 'شیفت با موفقیت حذف شد و شناسه‌ها بازنشانی شدند')
+            messagebox.showinfo(
+                "موفقیت", "شیفت با موفقیت حذف شد و شناسه‌ها بازنشانی شدند"
+            )
 
             # پاک کردن فیلدها
             clear_fields()
 
         except Exception as e:
-            messagebox.showerror('خطا', f'خطا در حذف شیفت: {e}')
+            messagebox.showerror("خطا", f"خطا در حذف شیفت: {e}")
         finally:
             cursor.close()
             connection.close()
@@ -320,31 +346,55 @@ def shift_form(window):
         shift_treeview.selection_remove(shift_treeview.selection())
 
     # --- ایجاد رابط کاربری ---
-    shift_frame = Frame(window, width=1165, height=567, bg='white')
-    shift_frame.place(x=200, y=100)
 
-    heading_label = Label(shift_frame, text='تعریف شیفت', font=('fonts/Persian-Yekan.ttf', 16, 'bold'),
-                          bg='#00198f', fg='white')
+    shift_frame = Frame(
+        window,
+        width=window.winfo_width() - 200,
+        height=window.winfo_height(),
+        bg="white",
+    )
+    shift_frame.place(x=0, y=100)  # تنظیم موقعیت فرم در سمت چپ صفحه
+
+    heading_label = Label(
+        shift_frame,
+        text="تعریف شیفت",
+        font=("fonts/Persian-Yekan.ttf", 16, "bold"),
+        bg="#00198f",
+        fg="white",
+    )
     heading_label.place(x=0, y=0, relwidth=1)
 
     # اگر back_button.png ندارید، از این استفاده کنید یا کامنت کنید
     try:
-        back_image = PhotoImage(file='images/back_button.png')
-        back_button = Button(shift_frame, image=back_image, bd=0, cursor='hand2', bg='white',
-                             command=lambda: shift_frame.place_forget())
+        back_image = PhotoImage(file="images/back_button.png")
+        back_button = Button(
+            shift_frame,
+            image=back_image,
+            bd=0,
+            cursor="hand2",
+            bg="white",
+            command=lambda: shift_frame.place_forget(),
+        )
         back_button.place(x=10, y=10)
     except:
         # اگر آیکون وجود ندارد، دکمه متنی ایجاد کنید
-        back_button = Button(shift_frame, text='← بازگشت', font=('fonts/Persian-Yekan.ttf', 12),
-                             bg='#00198f', fg='white', bd=0, cursor='hand2',
-                             command=lambda: shift_frame.place_forget())
+        back_button = Button(
+            shift_frame,
+            text="← بازگشت",
+            font=("fonts/Persian-Yekan.ttf", 12),
+            bg="#00198f",
+            fg="white",
+            bd=0,
+            cursor="hand2",
+            command=lambda: shift_frame.place_forget(),
+        )
         back_button.place(x=10, y=10)
 
-    top_frame = Frame(shift_frame, bg='white')
+    top_frame = Frame(shift_frame, bg="white")
     top_frame.place(x=20, y=50, width=1125, height=235)
 
     # ایجاد Treeview به صورت مستقیم و ساده
-    tree_frame = Frame(top_frame, bg='white')
+    tree_frame = Frame(top_frame, bg="white")
     tree_frame.pack(fill=BOTH, expand=True, padx=10, pady=10)
 
     horizontal_scrollbar = Scrollbar(tree_frame, orient=HORIZONTAL)
@@ -352,82 +402,137 @@ def shift_form(window):
 
     shift_treeview = ttk.Treeview(
         tree_frame,
-        columns=('id', 'name', 'start', 'end'),
-        show='headings',
+        columns=("id", "name", "start", "end"),
+        show="headings",
         yscrollcommand=vertical_scrollbar.set,
         xscrollcommand=horizontal_scrollbar.set,
-        height=8
+        height=8,
     )
 
-    shift_treeview.heading('id', text='شناسه')
-    shift_treeview.heading('name', text='نام شیفت')
-    shift_treeview.heading('start', text='ساعت شروع')
-    shift_treeview.heading('end', text='ساعت پایان')
+    shift_treeview.heading("id", text="شناسه")
+    shift_treeview.heading("name", text="نام شیفت")
+    shift_treeview.heading("start", text="ساعت شروع")
+    shift_treeview.heading("end", text="ساعت پایان")
 
-    shift_treeview.column('id', width=80, anchor='center', minwidth=50)
-    shift_treeview.column('name', width=250, anchor='center', minwidth=150)
-    shift_treeview.column('start', width=150, anchor='center', minwidth=100)
-    shift_treeview.column('end', width=150, anchor='center', minwidth=100)
+    shift_treeview.column("id", width=80, anchor="center", minwidth=50)
+    shift_treeview.column("name", width=250, anchor="center", minwidth=150)
+    shift_treeview.column("start", width=150, anchor="center", minwidth=100)
+    shift_treeview.column("end", width=150, anchor="center", minwidth=100)
 
     horizontal_scrollbar.config(command=shift_treeview.xview)
     vertical_scrollbar.config(command=shift_treeview.yview)
 
-    shift_treeview.grid(row=0, column=0, sticky='nsew')
-    vertical_scrollbar.grid(row=0, column=1, sticky='ns')
-    horizontal_scrollbar.grid(row=1, column=0, sticky='ew', columnspan=2)
+    shift_treeview.grid(row=0, column=0, sticky="nsew")
+    vertical_scrollbar.grid(row=0, column=1, sticky="ns")
+    horizontal_scrollbar.grid(row=1, column=0, sticky="ew", columnspan=2)
 
     tree_frame.grid_rowconfigure(0, weight=1)
     tree_frame.grid_columnconfigure(0, weight=1)
 
     # ایجاد فرم ورود اطلاعات
-    detail_frame = Frame(shift_frame, bg='white')
+    detail_frame = Frame(shift_frame, bg="white")
     detail_frame.place(x=30, y=300)
 
-    shift_name_label = Label(detail_frame, text='نام شیفت *', font=('fonts/Persian-Yekan.ttf', 12), bg='white')
-    shift_name_label.grid(row=0, column=0, padx=20, pady=10, sticky='w')
-    shift_name_entry = Entry(detail_frame, font=('fonts/Persian-Yekan.ttf', 12), bg='lightblue', width=25)
+    shift_name_label = Label(
+        detail_frame,
+        text="نام شیفت *",
+        font=("fonts/Persian-Yekan.ttf", 12),
+        bg="white",
+    )
+    shift_name_label.grid(row=0, column=0, padx=20, pady=10, sticky="w")
+    shift_name_entry = Entry(
+        detail_frame, font=("fonts/Persian-Yekan.ttf", 12), bg="lightblue", width=25
+    )
     shift_name_entry.grid(row=0, column=1, padx=20, pady=10)
 
-    start_time_label = Label(detail_frame, text='ساعت شروع *', font=('fonts/Persian-Yekan.ttf', 12), bg='white')
-    start_time_label.grid(row=0, column=2, padx=20, pady=10, sticky='w')
-    start_time_entry = Entry(detail_frame, font=('fonts/Persian-Yekan.ttf', 12), bg='lightblue', width=15)
-    start_time_entry.insert(0, '08:00')
+    start_time_label = Label(
+        detail_frame,
+        text="ساعت شروع *",
+        font=("fonts/Persian-Yekan.ttf", 12),
+        bg="white",
+    )
+    start_time_label.grid(row=0, column=2, padx=20, pady=10, sticky="w")
+    start_time_entry = Entry(
+        detail_frame, font=("fonts/Persian-Yekan.ttf", 12), bg="lightblue", width=15
+    )
+    start_time_entry.insert(0, "08:00")
     start_time_entry.grid(row=0, column=3, padx=20, pady=10)
-    Label(detail_frame, text='(فرمت: HH:MM)', font=('fonts/Persian-Yekan.ttf', 10), bg='white', fg='gray').grid(row=1,
-                                                                                                                column=3,
-                                                                                                                sticky='w',
-                                                                                                                padx=20)
+    Label(
+        detail_frame,
+        text="(فرمت: HH:MM)",
+        font=("fonts/Persian-Yekan.ttf", 10),
+        bg="white",
+        fg="gray",
+    ).grid(row=1, column=3, sticky="w", padx=20)
 
-    end_time_label = Label(detail_frame, text='ساعت پایان *', font=('fonts/Persian-Yekan.ttf', 12), bg='white')
-    end_time_label.grid(row=0, column=4, padx=20, pady=10, sticky='w')
-    end_time_entry = Entry(detail_frame, font=('fonts/Persian-Yekan.ttf', 12), bg='lightblue', width=15)
-    end_time_entry.insert(0, '16:00')
+    end_time_label = Label(
+        detail_frame,
+        text="ساعت پایان *",
+        font=("fonts/Persian-Yekan.ttf", 12),
+        bg="white",
+    )
+    end_time_label.grid(row=0, column=4, padx=20, pady=10, sticky="w")
+    end_time_entry = Entry(
+        detail_frame, font=("fonts/Persian-Yekan.ttf", 12), bg="lightblue", width=15
+    )
+    end_time_entry.insert(0, "16:00")
     end_time_entry.grid(row=0, column=5, padx=20, pady=10)
-    Label(detail_frame, text='(فرمت: HH:MM)', font=('fonts/Persian-Yekan.ttf', 10), bg='white', fg='gray').grid(row=1,
-                                                                                                                column=5,
-                                                                                                                sticky='w',
-                                                                                                                padx=20)
+    Label(
+        detail_frame,
+        text="(فرمت: HH:MM)",
+        font=("fonts/Persian-Yekan.ttf", 10),
+        bg="white",
+        fg="gray",
+    ).grid(row=1, column=5, sticky="w", padx=20)
 
-    button_frame = Frame(shift_frame, bg='white')
+    button_frame = Frame(shift_frame, bg="white")
     button_frame.place(x=350, y=450)
 
-    add_button = Button(button_frame, text='➕ افزودن شیفت', font=('fonts/Persian-Yekan.ttf', 12), fg='white',
-                        bg='#00198f', width=15, command=add_shift)
+    add_button = Button(
+        button_frame,
+        text="➕ افزودن شیفت",
+        font=("fonts/Persian-Yekan.ttf", 12),
+        fg="white",
+        bg="#00198f",
+        width=15,
+        command=add_shift,
+    )
     add_button.grid(row=0, column=0, padx=10)
 
-    update_button = Button(button_frame, text='✏️ ویرایش شیفت', font=('fonts/Persian-Yekan.ttf', 12), fg='white',
-                           bg='#00198f', width=15, command=update_shift)
+    update_button = Button(
+        button_frame,
+        text="✏️ ویرایش شیفت",
+        font=("fonts/Persian-Yekan.ttf", 12),
+        fg="white",
+        bg="#00198f",
+        width=15,
+        command=update_shift,
+    )
     update_button.grid(row=0, column=1, padx=10)
 
-    delete_button = Button(button_frame, text='🗑️ حذف شیفت', font=('fonts/Persian-Yekan.ttf', 12), fg='white',
-                           bg='#00198f', width=15, command=delete_shift)
+    delete_button = Button(
+        button_frame,
+        text="🗑️ حذف شیفت",
+        font=("fonts/Persian-Yekan.ttf", 12),
+        fg="white",
+        bg="#00198f",
+        width=15,
+        command=delete_shift,
+    )
     delete_button.grid(row=0, column=2, padx=10)
 
-    clear_button = Button(button_frame, text='🧹 پاک کردن فیلدها', font=('fonts/Persian-Yekan.ttf', 12), fg='white',
-                          bg='#00198f', width=15, command=clear_fields)
+    clear_button = Button(
+        button_frame,
+        text="🧹 پاک کردن فیلدها",
+        font=("fonts/Persian-Yekan.ttf", 12),
+        fg="white",
+        bg="#00198f",
+        width=15,
+        command=clear_fields,
+    )
     clear_button.grid(row=0, column=3, padx=10)
 
-    shift_treeview.bind('<ButtonRelease-1>', lambda event: select_data(event))
+    shift_treeview.bind("<ButtonRelease-1>", lambda event: select_data(event))
 
     create_shift_table()
     treeview_data(shift_treeview)
