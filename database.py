@@ -296,3 +296,20 @@ def get_shifts_from_db():
     finally:
         cursor.close()
         connection.close()
+
+
+def get_count(table_name):
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return 0
+
+    try:
+        cursor.execute("USE inventory_system")
+        cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+        count = cursor.fetchone()[0]
+        return count
+    except:
+        return 0
+    finally:
+        cursor.close()
+        connection.close()

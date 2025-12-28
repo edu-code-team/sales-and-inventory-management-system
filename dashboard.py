@@ -9,6 +9,7 @@ from datetime import datetime
 from shift import shift_form
 from user_type import user_type_form
 from check_permissions import can_access
+from database import get_count
 import sys
 import subprocess
 import os
@@ -75,7 +76,7 @@ def main(user_info=None):
         bg="#dc3545",
         font=("Yekan", 14, "bold"),
         fg="#fef9fb",
-        command=lambda: logout(window)
+        command=lambda: logout(window),
     )
     logoButten.place(x=1100, y=10)
 
@@ -86,7 +87,7 @@ def main(user_info=None):
         bg="#4b39e9",
         font=("Yekan", 14, "bold"),
         fg="#fef9fb",
-        command=lambda: change_user(window)
+        command=lambda: change_user(window),
     )
     change_user_button.place(x=950, y=10)
 
@@ -142,54 +143,36 @@ def main(user_info=None):
         font=("fonts/Persian-Yekan.ttf", 15, "bold"),
         anchor="w",
         padx=10,
-        command=lambda: employee_form(window)
+        command=lambda: employee_form(window),
     )
 
     # ============ دکمه تعریف شیفت ============
-    try:
-        shift_icon = PhotoImage(file="images/clock.png")
-    except:
-        shift_icon = None
-
     shift_button = Button(
         leftFrame,
+        compound=LEFT,
         text="       تعریف شیفت",
         font=("fonts/Persian-Yekan.ttf", 15, "bold"),
-        anchor="w",
         padx=10,
         command=lambda: shift_form(window),
-        bg="#fef9fb",
-        fg="#00198f",
-        relief=FLAT,
-        bd=0,
-        cursor="hand2"
     )
-
-    if shift_icon:
-        shift_button.config(image=shift_icon, compound=LEFT)
 
     # ============ دکمه تعریف کاربری ============
     try:
-        user_type_icon = PhotoImage(file="images/user_type.png")
+        user_type_icon = PhotoImage(file="images/user.png")
     except:
         user_type_icon = None
 
     user_type_button = Button(
         leftFrame,
+        image=user_type_icon,
+        compound=LEFT,
         text="       تعریف کاربری",
         font=("fonts/Persian-Yekan.ttf", 15, "bold"),
-        anchor="w",
         padx=10,
         command=lambda: user_type_form(window),
-        bg="#fef9fb",
-        fg="#00198f",
-        relief=FLAT,
-        bd=0,
-        cursor="hand2"
     )
 
-    if user_type_icon:
-        user_type_button.config(image=user_type_icon, compound=LEFT)
+    user_type_button.image = user_type_icon
 
     supplier_icon = PhotoImage(file="images/supplier.png")
     supplier_button = Button(
@@ -222,15 +205,6 @@ def main(user_info=None):
         command=lambda: product_form(window),
     )
 
-    sale_icon = PhotoImage(file="images/sale.png")
-    sale_button = Button(
-        leftFrame,
-        image=sale_icon,
-        compound=LEFT,
-        text="             فروش",
-        font=("fonts/Persian-Yekan.ttf", 15, "bold"),
-    )
-
     # ============ دکمه صدور فاکتور ============
     try:
         invoice_icon = PhotoImage(file="images/invoice.png")
@@ -239,16 +213,10 @@ def main(user_info=None):
 
     invoice_button = Button(
         leftFrame,
+        compound=LEFT,
         text="       صدور فاکتور",
         font=("fonts/Persian-Yekan.ttf", 15, "bold"),
-        anchor="w",
         padx=10,
-        # command=lambda: invoice_form(window),
-        bg="#fef9fb",
-        fg="#00198f",
-        relief=FLAT,
-        bd=0,
-        cursor="hand2"
     )
 
     if invoice_icon:
@@ -262,16 +230,10 @@ def main(user_info=None):
 
     invoice_history_button = Button(
         leftFrame,
+        compound=LEFT,
         text="   تاریخچه فاکتور",
         font=("fonts/Persian-Yekan.ttf", 15, "bold"),
-        anchor="w",
         padx=10,
-        # command=lambda: invoice_history_form(window),
-        bg="#fef9fb",
-        fg="#00198f",
-        relief=FLAT,
-        bd=0,
-        cursor="hand2"
     )
 
     if invoice_history_icon:
@@ -286,45 +248,49 @@ def main(user_info=None):
         compound=LEFT,
         text="             خروج",
         font=("fonts/Persian-Yekan.ttf", 15, "bold"),
-        command=lambda: logout(window)
+        command=lambda: logout(window),
     )
 
     def create_menu_for_user():
         """ایجاد منو بر اساس دسترسی کاربر"""
 
         # ابتدا همه دکمه‌ها را مخفی می‌کنیم
-        for button in [employee_button, shift_button, user_type_button,
-                       supplier_button, category_button, products_button,
-                       sale_button, invoice_button, invoice_history_button,
-                       exit_button]:
+        for button in [
+            employee_button,
+            shift_button,
+            user_type_button,
+            supplier_button,
+            category_button,
+            products_button,
+            invoice_button,
+            invoice_history_button,
+            exit_button,
+        ]:
             button.pack_forget()
 
         # نمایش دکمه‌های مجاز
-        if can_access(current_user['user_type'], 'employees'):
+        if can_access(current_user["user_type"], "employees"):
             employee_button.pack(fill=X)
 
-        if can_access(current_user['user_type'], 'shifts'):
+        if can_access(current_user["user_type"], "shifts"):
             shift_button.pack(fill=X)
 
-        if can_access(current_user['user_type'], 'user_types'):
+        if can_access(current_user["user_type"], "user_types"):
             user_type_button.pack(fill=X)
 
-        if can_access(current_user['user_type'], 'suppliers'):
+        if can_access(current_user["user_type"], "suppliers"):
             supplier_button.pack(fill=X)
 
-        if can_access(current_user['user_type'], 'categories'):
+        if can_access(current_user["user_type"], "categories"):
             category_button.pack(fill=X)
 
-        if can_access(current_user['user_type'], 'products'):
+        if can_access(current_user["user_type"], "products"):
             products_button.pack(fill=X)
 
-        if can_access(current_user['user_type'], 'sales'):
-            sale_button.pack(fill=X)
-
-        if can_access(current_user['user_type'], 'invoices'):
+        if can_access(current_user["user_type"], "invoices"):
             invoice_button.pack(fill=X)
 
-        if can_access(current_user['user_type'], 'invoice_history'):
+        if can_access(current_user["user_type"], "invoice_history"):
             invoice_history_button.pack(fill=X)
 
         # دکمه خروج همیشه نمایش داده شود
@@ -377,7 +343,9 @@ def main(user_info=None):
         fg="#fef9fb",
         font=("fonts/Persian-Yekan.ttf", 25, "bold"),
     )
+
     totl_emp_count.pack()
+    totl_emp_count.config(text=str(get_count("employee_data")))
 
     sup_frame = Frame(content, bg="#00198f", bd=4, relief=RIDGE)
     sup_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
@@ -402,11 +370,14 @@ def main(user_info=None):
         font=("fonts/Persian-Yekan.ttf", 25, "bold"),
     )
     totl_sup_count.pack()
+    totl_sup_count.config(text=str(get_count("supplier_data")))
 
     category_frame = Frame(content, bg="#00198f", bd=4, relief=RIDGE)
     category_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
     totl_category_icon = PhotoImage(file="images/total_category.png")
-    totl_category_icon_label = Label(category_frame, image=totl_category_icon, bg="#00198f")
+    totl_category_icon_label = Label(
+        category_frame, image=totl_category_icon, bg="#00198f"
+    )
     totl_category_icon_label.pack(pady=8)
 
     totl_category_label = Label(
@@ -426,11 +397,14 @@ def main(user_info=None):
         font=("fonts/Persian-Yekan.ttf", 25, "bold"),
     )
     totl_category_count.pack()
+    totl_category_count.config(text=str(get_count("category_data")))
 
     product_frame = Frame(content, bg="#00198f", bd=4, relief=RIDGE)
     product_frame.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
     totl_product_icon = PhotoImage(file="images/total_product.png")
-    totl_product_icon_label = Label(product_frame, image=totl_product_icon, bg="#00198f")
+    totl_product_icon_label = Label(
+        product_frame, image=totl_product_icon, bg="#00198f"
+    )
     totl_product_icon_label.pack(pady=8)
 
     totl_product_label = Label(
@@ -450,30 +424,7 @@ def main(user_info=None):
         font=("fonts/Persian-Yekan.ttf", 25, "bold"),
     )
     totl_product_count.pack()
-
-    sale_frame = Frame(content, bg="#00198f", bd=4, relief=RIDGE)
-    sale_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
-    totl_sale_icon = PhotoImage(file="images/total_sale.png")
-    totl_sale_icon_label = Label(sale_frame, image=totl_sale_icon, bg="#00198f")
-    totl_sale_icon_label.pack(pady=8)
-
-    totl_sale_label = Label(
-        sale_frame,
-        text=" تعداد فروش ",
-        bg="#00198f",
-        fg="#fef9fb",
-        font=("fonts/Persian-Yekan.ttf", 15, "bold"),
-    )
-    totl_sale_label.pack()
-
-    totl_sale_count = Label(
-        sale_frame,
-        text="0",
-        bg="#00198f",
-        fg="#fef9fb",
-        font=("fonts/Persian-Yekan.ttf", 25, "bold"),
-    )
-    totl_sale_count.pack()
+    totl_product_count.config(text=str(get_count("product_data")))
 
     window.mainloop()
 
@@ -481,6 +432,7 @@ def main(user_info=None):
 def run_login():
     """اجرای مستقیم لاگین"""
     from login import LoginSystem
+
     app = LoginSystem()
     app.run()
 
