@@ -391,7 +391,7 @@ def category_form(window):
         width=12,
         fg="white",
         bg="#00198f",
-        command=lambda: delete_category(treeview, clear_func, id_entry),
+        command=lambda: update_category(id_entry,category_name_entry,description_text,treeview,clear_func),
     )
     update_button.grid(row=0, column=2, padx=5, pady=5, sticky="ew")
 
