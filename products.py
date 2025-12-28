@@ -298,7 +298,7 @@ def product_form(window):
     back_button.place(x=10, y=0)
 
     left_frame = Frame(product_frame, bg="white", bd=2, relief=RIDGE)
-    left_frame.place(x=20, y=40)
+    left_frame.place(x=window.winfo_width() - 600, y=40)
 
     heading_label = Label(
         left_frame,
@@ -315,12 +315,17 @@ def product_form(window):
         text="دسته‌بندی:",
         font=("fonts/Persian-Yekan.ttf", 14, "bold"),
         bg="white",
-    ).grid(row=1, column=0, padx=20, sticky="w")
+        anchor="e",  # راست‌چین کردن تکست
+    ).grid(row=1, column=0, padx=20, sticky="e")
+
     category_combobox = ttk.Combobox(
-        left_frame, font=("fonts/Persian-Yekan.ttf", 14), width=18, state="readonly"
+        left_frame,
+        font=("fonts/Persian-Yekan.ttf", 14),
+        width=18,
+        state="readonly",
+        justify="right",
     )
     category_combobox.grid(row=1, column=1, pady=15)
-    category_combobox.set("خالی")
 
     # ----- تأمین‌کننده -----
     Label(
@@ -328,12 +333,17 @@ def product_form(window):
         text="تأمین‌کننده:",
         font=("fonts/Persian-Yekan.ttf", 14, "bold"),
         bg="white",
-    ).grid(row=2, column=0, padx=20, sticky="w")
+        anchor="e",  # راست‌چین کردن تکست
+    ).grid(row=2, column=0, padx=20, sticky="e")
+
     supplier_combobox = ttk.Combobox(
-        left_frame, font=("fonts/Persian-Yekan.ttf", 14), width=18, state="readonly"
+        left_frame,
+        font=("fonts/Persian-Yekan.ttf", 14),
+        width=18,
+        state="readonly",
+        justify="right",
     )
     supplier_combobox.grid(row=2, column=1, pady=15)
-    supplier_combobox.set("خالی")
 
     # ----- نام -----
     Label(
@@ -341,9 +351,14 @@ def product_form(window):
         text="نام:",
         font=("fonts/Persian-Yekan.ttf", 14, "bold"),
         bg="white",
-    ).grid(row=3, column=0, padx=20, sticky="w")
+        anchor="e",
+    ).grid(row=3, column=0, padx=20, sticky="e")
+
     name_entry = Entry(
-        left_frame, font=("fonts/Persian-Yekan.ttf", 16, "bold"), bg="lightblue"
+        left_frame,
+        font=("fonts/Persian-Yekan.ttf", 16, "bold"),
+        bg="lightblue",
+        justify="right",
     )
     name_entry.grid(row=3, column=1, pady=15)
 
@@ -353,9 +368,14 @@ def product_form(window):
         text="قیمت:",
         font=("fonts/Persian-Yekan.ttf", 14, "bold"),
         bg="white",
-    ).grid(row=4, column=0, padx=20, sticky="w")
+        anchor="e",
+    ).grid(row=4, column=0, padx=20, sticky="e")
+
     price_entry = Entry(
-        left_frame, font=("fonts/Persian-Yekan.ttf", 16, "bold"), bg="lightblue"
+        left_frame,
+        font=("fonts/Persian-Yekan.ttf", 16, "bold"),
+        bg="lightblue",
+        justify="right",
     )
     price_entry.grid(row=4, column=1, pady=15)
 
@@ -365,9 +385,14 @@ def product_form(window):
         text="مقدار:",
         font=("fonts/Persian-Yekan.ttf", 14, "bold"),
         bg="white",
-    ).grid(row=5, column=0, padx=20, sticky="w")
+        anchor="e",
+    ).grid(row=5, column=0, padx=20, sticky="e")
+
     quantity_entry = Entry(
-        left_frame, font=("fonts/Persian-Yekan.ttf", 16, "bold"), bg="lightblue"
+        left_frame,
+        font=("fonts/Persian-Yekan.ttf", 16, "bold"),
+        bg="lightblue",
+        justify="right",
     )
     quantity_entry.grid(row=5, column=1, pady=15)
 
@@ -377,12 +402,8 @@ def product_form(window):
         text="وضعیت:",
         font=("fonts/Persian-Yekan.ttf", 14, "bold"),
         bg="white",
-    ).grid(row=6, column=0, padx=20, sticky="w")
-
-    # جلوگیری از فوکوس گرفتن Label های فرم سمت چپ
-    for widget in left_frame.winfo_children():
-        if isinstance(widget, Label):
-            widget.configure(takefocus=0)
+        anchor="e",
+    ).grid(row=6, column=0, padx=20, sticky="e")
 
     status_combobox = ttk.Combobox(
         left_frame,
@@ -390,6 +411,7 @@ def product_form(window):
         font=("fonts/Persian-Yekan.ttf", 14),
         width=18,
         state="readonly",
+        justify="right",
     )
     status_combobox.grid(row=6, column=1, pady=15)
     status_combobox.set("یک مورد را انتخاب کنید")
@@ -415,7 +437,7 @@ def product_form(window):
             treeview,
         ),
     )
-    add_button.grid(row=0, column=0, padx=10)
+    add_button.grid(row=0, column=0, padx=10, sticky="e")
 
     update_button = Button(
         button_frame,
@@ -434,7 +456,7 @@ def product_form(window):
             treeview,
         ),
     )
-    update_button.grid(row=0, column=1, padx=10)
+    update_button.grid(row=0, column=1, padx=10, sticky="e")
 
     delete_button = Button(
         button_frame,
@@ -453,7 +475,7 @@ def product_form(window):
             status_combobox,
         ),
     )
-    delete_button.grid(row=0, column=2, padx=10)
+    delete_button.grid(row=0, column=2, padx=10, sticky="e")
 
     clear_button = Button(
         button_frame,
@@ -471,7 +493,7 @@ def product_form(window):
             status_combobox,
         ),
     )
-    clear_button.grid(row=0, column=3, padx=10)
+    clear_button.grid(row=0, column=3, padx=10, sticky="e")
 
     # ================= KEYBOARD SHORTCUTS (PRODUCTS) =================
 
@@ -528,7 +550,7 @@ def product_form(window):
 
     # ------------------------ فیلتر ------------------------
     filter_frame = Frame(product_frame, bg="white", bd=1, relief=SOLID)
-    filter_frame.place(x=480, y=40, width=570, height=50)  # دقیقاً هم‌عرض TreeView
+    filter_frame.place(x=80, y=40, width=570, height=50)  # دقیقاً هم‌عرض TreeView
 
     # فونت
     f_font = ("fonts/Persian-Yekan.ttf", 11)
@@ -590,7 +612,7 @@ def product_form(window):
 
     # ------------------------ TreeView ------------------------
     treeview_frame = Frame(product_frame)
-    treeview_frame.place(x=480, y=100, width=570, height=430)
+    treeview_frame.place(x=80, y=100, width=570, height=430)
 
     scrolly = Scrollbar(treeview_frame, orient=VERTICAL)
     scrollx = Scrollbar(treeview_frame, orient=HORIZONTAL)
@@ -609,21 +631,21 @@ def product_form(window):
     scrolly.config(command=treeview.yview)
     treeview.pack(fill=BOTH, expand=1)
 
-    treeview.heading("id", text="شناسه")
-    treeview.heading("category", text="دسته‌بندی")
-    treeview.heading("supplier", text="تأمین‌کننده")
-    treeview.heading("name", text="نام")
-    treeview.heading("price", text="قیمت")
-    treeview.heading("quantity", text="مقدار")
-    treeview.heading("state", text="وضعیت")
+    treeview.heading("id", text="شناسه", anchor="e")  # راست‌چین کردن سرستون
+    treeview.heading("category", text="دسته‌بندی", anchor="e")
+    treeview.heading("supplier", text="تأمین‌کننده", anchor="e")
+    treeview.heading("name", text="نام", anchor="e")
+    treeview.heading("price", text="قیمت", anchor="e")
+    treeview.heading("quantity", text="مقدار", anchor="e")
+    treeview.heading("state", text="وضعیت", anchor="e")
 
     # ست کردن عرض ستون‌ها
-    treeview.column("category", width=100)
-    treeview.column("supplier", width=120)
-    treeview.column("name", width=120)
-    treeview.column("price", width=80)
-    treeview.column("quantity", width=80)
-    treeview.column("state", width=80)
+    treeview.column("category", width=100, anchor="e")
+    treeview.column("supplier", width=120, anchor="e")
+    treeview.column("name", width=120, anchor="e")
+    treeview.column("price", width=80, anchor="e")
+    treeview.column("quantity", width=80, anchor="e")
+    treeview.column("state", width=80, anchor="e")
 
     fetch_supplier_category(category_combobox, supplier_combobox)
     filter_category.config(values=["همه"] + list(category_combobox["values"]))
@@ -644,6 +666,7 @@ def product_form(window):
             status_combobox,
         ),
     )
+
     # ================= TAB FIX (PRODUCTS) =================
 
     category_combobox.focus_set()
