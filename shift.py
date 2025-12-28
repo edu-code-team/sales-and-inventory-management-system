@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import ttk
 from tkinter import messagebox
 import pymysql
+from database import connect_database
 
 
 def treeview_data(shift_treeview):
@@ -11,7 +12,7 @@ def treeview_data(shift_treeview):
         return
     try:
         cursor.execute('USE inventory_system')
-        cursor.execute('SELECT shift_id, shift_name, start_time, end_time FROM shift_data ORDER BY shift_name')
+        cursor.execute('SELECT shift_id, shift_name, start_time, end_time FROM shift_data ORDER BY shift_id')
         shift_records = cursor.fetchall()
         shift_treeview.delete(*shift_treeview.get_children())
         for records in shift_records:
@@ -185,6 +186,8 @@ def shift_form(window):
         item = shift_treeview.item(selected_item[0])
         shift_id = item['values'][0]
         old_shift_name = item['values'][1]
+        old_start_time = item['values'][2]
+        old_end_time = item['values'][3]
 
         # دریافت داده‌های جدید از فیلدها
         new_shift_name = shift_name_entry.get().strip()
@@ -198,6 +201,14 @@ def shift_form(window):
         # اعتبارسنجی فرمت زمان
         if not validate_time_format(new_start_time) or not validate_time_format(new_end_time):
             messagebox.showerror('خطا', 'فرمت زمان باید HH:MM باشد (مثال: 08:30)')
+            return
+
+        # ============ رفع مشکل 1: بررسی تغییرات ============
+        # چک کردن اگر هیچ تغییری ایجاد نشده باشد
+        if (new_shift_name == old_shift_name and
+                new_start_time == old_start_time and
+                new_end_time == old_end_time):
+            messagebox.showinfo('توجه', 'هیچ تغییری در اطلاعات شیفت ایجاد نشده است')
             return
 
         cursor, connection = connect_database()
@@ -266,12 +277,31 @@ def shift_form(window):
                                        f'این شیفت در {employee_count} کارمند استفاده شده است. ابتدا شیفت کارمندان را تغییر دهید.')
                 return
 
-            # حذف شیفت
+            # ============ رفع مشکل 2: بازنشانی شناسه‌ها بعد از حذف ============
+            # 1. ابتدا شیفت را حذف می‌کنیم
             cursor.execute('DELETE FROM shift_data WHERE shift_id = %s', (shift_id,))
             connection.commit()
 
+            # 2. بازنشانی شناسه‌های خودکار (AUTO_INCREMENT)
+            cursor.execute('ALTER TABLE shift_data AUTO_INCREMENT = 1')
+
+            # 3. دریافت همه شیفت‌ها و بازسازی شناسه‌ها
+            cursor.execute('SELECT shift_id, shift_name, start_time, end_time FROM shift_data ORDER BY shift_id')
+            all_shifts = cursor.fetchall()
+
+            # 4. حذف همه رکوردها و دوباره اضافه کردن با شناسه‌های جدید
+            cursor.execute('DELETE FROM shift_data')
+
+            # 5. اضافه کردن مجدد با شناسه‌های پشت سر هم
+            for index, shift in enumerate(all_shifts, start=1):
+                cursor.execute(
+                    'INSERT INTO shift_data (shift_id, shift_name, start_time, end_time) VALUES (%s, %s, %s, %s)',
+                    (index, shift[1], shift[2], shift[3]))
+
+            connection.commit()
+
             treeview_data(shift_treeview)
-            messagebox.showinfo('موفقیت', 'شیفت با موفقیت حذف شد')
+            messagebox.showinfo('موفقیت', 'شیفت با موفقیت حذف شد و شناسه‌ها بازنشانی شدند')
 
             # پاک کردن فیلدها
             clear_fields()
@@ -311,54 +341,53 @@ def shift_form(window):
         back_button.place(x=10, y=10)
 
     top_frame = Frame(shift_frame, bg='white')
-    top_frame.place(x=0, y=50, relwidth=1, height=235)
+    top_frame.place(x=20, y=50, width=1125, height=235)
 
-    # ایجاد جدول Treeview
-    style = ttk.Style()
-    style.configure("Treeview.Heading", font=('fonts/Persian-Yekan.ttf', 12, 'bold'),
-                    background='#00198f', foreground='white')
-    style.configure("Treeview", font=('fonts/Persian-Yekan.ttf', 11), rowheight=25)
+    # ایجاد Treeview به صورت مستقیم و ساده
+    tree_frame = Frame(top_frame, bg='white')
+    tree_frame.pack(fill=BOTH, expand=True, padx=10, pady=10)
 
-    horizontal_scrollbar = Scrollbar(top_frame, orient=HORIZONTAL)
-    vertical_scrollbar = Scrollbar(top_frame, orient=VERTICAL)
+    horizontal_scrollbar = Scrollbar(tree_frame, orient=HORIZONTAL)
+    vertical_scrollbar = Scrollbar(tree_frame, orient=VERTICAL)
 
     shift_treeview = ttk.Treeview(
-        top_frame,
-        columns=('shift_id', 'shift_name', 'start_time', 'end_time'),
+        tree_frame,
+        columns=('id', 'name', 'start', 'end'),
         show='headings',
         yscrollcommand=vertical_scrollbar.set,
-        xscrollcommand=horizontal_scrollbar.set
+        xscrollcommand=horizontal_scrollbar.set,
+        height=8
     )
+
+    shift_treeview.heading('id', text='شناسه')
+    shift_treeview.heading('name', text='نام شیفت')
+    shift_treeview.heading('start', text='ساعت شروع')
+    shift_treeview.heading('end', text='ساعت پایان')
+
+    shift_treeview.column('id', width=80, anchor='center', minwidth=50)
+    shift_treeview.column('name', width=250, anchor='center', minwidth=150)
+    shift_treeview.column('start', width=150, anchor='center', minwidth=100)
+    shift_treeview.column('end', width=150, anchor='center', minwidth=100)
 
     horizontal_scrollbar.config(command=shift_treeview.xview)
     vertical_scrollbar.config(command=shift_treeview.yview)
 
-    horizontal_scrollbar.pack(side=BOTTOM, fill=X)
-    vertical_scrollbar.pack(side=RIGHT, fill=Y)
-    shift_treeview.pack(fill=BOTH, expand=True)
+    shift_treeview.grid(row=0, column=0, sticky='nsew')
+    vertical_scrollbar.grid(row=0, column=1, sticky='ns')
+    horizontal_scrollbar.grid(row=1, column=0, sticky='ew', columnspan=2)
 
-    # تنظیم ستون‌ها
-    shift_treeview.heading('shift_id', text='شناسه')
-    shift_treeview.heading('shift_name', text='نام شیفت')
-    shift_treeview.heading('start_time', text='ساعت شروع (HH:MM)')
-    shift_treeview.heading('end_time', text='ساعت پایان (HH:MM)')
-
-    shift_treeview.column('shift_id', width=60)
-    shift_treeview.column('shift_name', width=200)
-    shift_treeview.column('start_time', width=120)
-    shift_treeview.column('end_time', width=120)
+    tree_frame.grid_rowconfigure(0, weight=1)
+    tree_frame.grid_columnconfigure(0, weight=1)
 
     # ایجاد فرم ورود اطلاعات
     detail_frame = Frame(shift_frame, bg='white')
     detail_frame.place(x=30, y=300)
 
-    # نام شیفت
     shift_name_label = Label(detail_frame, text='نام شیفت *', font=('fonts/Persian-Yekan.ttf', 12), bg='white')
     shift_name_label.grid(row=0, column=0, padx=20, pady=10, sticky='w')
     shift_name_entry = Entry(detail_frame, font=('fonts/Persian-Yekan.ttf', 12), bg='lightblue', width=25)
     shift_name_entry.grid(row=0, column=1, padx=20, pady=10)
 
-    # ساعت شروع
     start_time_label = Label(detail_frame, text='ساعت شروع *', font=('fonts/Persian-Yekan.ttf', 12), bg='white')
     start_time_label.grid(row=0, column=2, padx=20, pady=10, sticky='w')
     start_time_entry = Entry(detail_frame, font=('fonts/Persian-Yekan.ttf', 12), bg='lightblue', width=15)
@@ -369,7 +398,6 @@ def shift_form(window):
                                                                                                                 sticky='w',
                                                                                                                 padx=20)
 
-    # ساعت پایان
     end_time_label = Label(detail_frame, text='ساعت پایان *', font=('fonts/Persian-Yekan.ttf', 12), bg='white')
     end_time_label.grid(row=0, column=4, padx=20, pady=10, sticky='w')
     end_time_entry = Entry(detail_frame, font=('fonts/Persian-Yekan.ttf', 12), bg='lightblue', width=15)
@@ -380,9 +408,8 @@ def shift_form(window):
                                                                                                                 sticky='w',
                                                                                                                 padx=20)
 
-    # ایجاد دکمه‌ها
     button_frame = Frame(shift_frame, bg='white')
-    button_frame.place(x=200, y=500)
+    button_frame.place(x=350, y=450)
 
     add_button = Button(button_frame, text='➕ افزودن شیفت', font=('fonts/Persian-Yekan.ttf', 12), fg='white',
                         bg='#00198f', width=15, command=add_shift)
@@ -400,10 +427,8 @@ def shift_form(window):
                           bg='#00198f', width=15, command=clear_fields)
     clear_button.grid(row=0, column=3, padx=10)
 
-    # اتصال رویداد انتخاب در جدول
     shift_treeview.bind('<ButtonRelease-1>', lambda event: select_data(event))
 
-    # ایجاد جدول و بارگذاری داده‌ها
     create_shift_table()
     treeview_data(shift_treeview)
 

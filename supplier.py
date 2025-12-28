@@ -1,7 +1,7 @@
 from tkinter import *
 from tkinter import ttk
 from tkinter import messagebox
-from employees import connect_database
+from employees import connect_database, get_shifts_from_db
 
 
 def delete_supplier(invoice,treeview):

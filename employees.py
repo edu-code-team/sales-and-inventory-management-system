@@ -1,10 +1,9 @@
 from tkinter import *
 from tkinter import ttk
 from tkinter import messagebox
-from warnings import catch_warnings
-
 from tkcalendar import DateEntry
 import pymysql
+from database import connect_database, get_shifts_from_db  # از database.py import کنید
 
 
 def treeview_data():
@@ -25,16 +24,8 @@ def treeview_data():
         connection.close()
 
 
-def connect_database():
-    try:
-        connection = pymysql.connect(host='localhost', user='root', passwd='')
-        cursor = connection.cursor()
-    except:
-        messagebox.showerror('خطا', ' اتصال به پایگاه داده ناموفق.  mysql را باز کنید')
-        return None, None
-
-    return cursor, connection
-
+# تابع connect_database دیگر اینجا تعریف نشود! از database.py استفاده می‌کنیم
+# تابع get_shifts_from_db هم از database.py استفاده می‌شود
 
 def create_database_table():
     cursor, connection = connect_database()
@@ -73,7 +64,7 @@ def add_employee(empid, name, email, gender, dob, contact, work_shift, address, 
             or work_shift == 'ساعت کاری را انتخاب کنید' or address == '\n' or usertype == 'نوع کاربری را انتخاب کنید'):
         messagebox.showerror('خطا', 'هیچ فیلدی نباید خالی باشد')
     else:
-        cursor, connection = connect_database()
+        cursor, connection = connect_database()  # از database.py
         if not cursor or not connection:
             return
         cursor.execute('USE inventory_system')
@@ -120,7 +111,7 @@ def update_employee(empid, name, email, gender, dob, contact, work_shift, addres
     if not selected:
         messagebox.showerror('خطا', 'هیچ ردیفی برای بروزرسانی انتخاب نشده')
     else:
-        cursor, connection = connect_database()
+        cursor, connection = connect_database()  # از database.py
         if not cursor or not connection:
             return
         try:
@@ -154,7 +145,7 @@ def delete_employee(empid):
     else:
         result = messagebox.askyesno('تایید', 'آیا از حذف ردیف مورد نظر خود مطمئن هستید؟')
         if result:
-            cursor, connection = connect_database()
+            cursor, connection = connect_database()  # از database.py
             if not cursor or not connection:
                 return
             try:
@@ -188,14 +179,14 @@ def search_employee(search_option, value):
         db_column = column_mapping.get(search_option)
         # -----------------------------------------------
 
-        cursor, connection = connect_database()
+        cursor, connection = connect_database()  # از database.py
         if not cursor or not connection:
             return
         try:
             cursor.execute('USE inventory_system')
 
             # -------------db_column query--------------
-            #show all matches not just the exact ones
+            # show all matches not just the exact ones
             like_value = f"%{value.strip()}%"
             query = f"SELECT * FROM employee_data WHERE {db_column} LIKE %s"
             cursor.execute(query, (like_value,))
@@ -221,13 +212,10 @@ def search_employee(search_option, value):
             connection.close()
 
 
-
 def show_all(search_entry_widget, search_combobox_widget):
     treeview_data()
     search_entry_widget.delete(0, END)
     search_combobox_widget.set('جستجو بر اساس')
-
-
 
 
 def employee_form(window):
@@ -241,7 +229,7 @@ def employee_form(window):
 
     back_image = PhotoImage(file='images/back_button.png')
 
-    top_Frame = Frame(employee_frame,bg='white')
+    top_Frame = Frame(employee_frame, bg='white')
     top_Frame.place(x=0, y=40, relwidth=1, height=235)
 
     back_button = Button(top_Frame, image=back_image, bd=0, cursor='hand2', bg='white',
@@ -261,11 +249,11 @@ def employee_form(window):
     search_entry.grid(row=0, column=1)
 
     search_button = Button(search_frame, text='جستجو', font=('fonts/Persian-Yekan.ttf', 12), fg='white',
-                           bg='#00198f', command=lambda: search_employee(Search_combobox.get(),search_entry.get()))
+                           bg='#00198f', command=lambda: search_employee(Search_combobox.get(), search_entry.get()))
     search_button.grid(row=0, column=2, padx=20)
 
     show_button = Button(search_frame, text='نمایش همه', font=('fonts/Persian-Yekan.ttf', 12), width=10, cursor='hand2',
-                         fg='white', bg='#00198f', command=lambda : show_all(search_entry ,Search_combobox))
+                         fg='white', bg='#00198f', command=lambda: show_all(search_entry, Search_combobox))
     show_button.grid(row=0, column=3)
 
     style = ttk.Style()
@@ -312,9 +300,7 @@ def employee_form(window):
     employee_treeview.column('address', width=270)
     employee_treeview.column('user_type', width=70)
 
-    #------------this function was moved from the last line to here------------
     create_database_table()
-    #-------------------------------------------------------------------------
     treeview_data()
 
     detail_frame = Frame(employee_frame, bg='white')
@@ -353,9 +339,21 @@ def employee_form(window):
     work_shift_label = Label(detail_frame, text='شیفت کاری', font=('fonts/Persian-Yekan.ttf', 12), bg='white')
     work_shift_label.grid(row=1, column=4, padx=20, pady=10)
 
-    work_shift_combobox = ttk.Combobox(detail_frame, values=('تمام وقت', 'پاره وقت'),
-                                       font=('fonts/Persian-Yekan.ttf', 12), width=18, state='readonly')
-    work_shift_combobox.set('ساعت کاری را انتخاب کنید')
+    # دریافت لیست شیفت‌ها از database.py
+    shifts_list = get_shifts_from_db()
+
+    work_shift_combobox = ttk.Combobox(detail_frame,
+                                       font=('fonts/Persian-Yekan.ttf', 12),
+                                       width=18,
+                                       state='readonly')
+
+    if shifts_list:
+        work_shift_combobox['values'] = shifts_list
+        work_shift_combobox.set('شیفت کاری را انتخاب کنید')
+    else:
+        work_shift_combobox['values'] = ['اول شیفت تعریف کنید']
+        work_shift_combobox.set('اول شیفت تعریف کنید')
+
     work_shift_combobox.grid(row=1, column=5)
 
     email_label = Label(detail_frame, text='ایمیل', font=('fonts/Persian-Yekan.ttf', 12), bg='white')
@@ -380,7 +378,7 @@ def employee_form(window):
     password_entry = Entry(detail_frame, font=('fonts/Persian-Yekan.ttf', 12), bg='lightblue')
     password_entry.grid(row=4, column=1, padx=20, pady=10)
 
-    button_frame = Frame(employee_frame,bg='white')
+    button_frame = Frame(employee_frame, bg='white')
     button_frame.place(x=200, y=500)
 
     add_button = Button(button_frame, text='افزودن',

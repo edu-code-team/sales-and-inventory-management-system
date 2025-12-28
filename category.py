@@ -98,7 +98,7 @@ def update_category(id_entry, name_entry, description_text, treeview, clear_func
         connection.close()
 
 
-def delete_category(treeview, clear_func, id_entry):
+def delete_category(treeview, clear_func, id_entry, first_entry=None):
     index = treeview.selection()
     command=lambda: delete_category(treeview, clear_func, id_entry)
     first_entry.focus_set()
