@@ -380,7 +380,7 @@ def category_form(window):
         width=12,
         fg="white",
         bg="#00198f",
-        command=lambda: delete_category(treeview, clear_func),
+        command=lambda: delete_category(treeview, clear_func,id_entry,category_name_entry),
     )
     delete_button.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
 
