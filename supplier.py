@@ -224,9 +224,13 @@ def add_supplier(invoice, name, contact, description, treeview):
 def supplier_form(window):
     global back_image
 
-    supplier_frame = Frame(window, width=1165, height=567, bg="white")
-    supplier_frame.place(x=200, y=100)
-
+    supplier_frame = Frame(
+        window,
+        width=window.winfo_width() - 200,
+        height=window.winfo_height(),
+        bg="white",
+    )
+    supplier_frame.place(x=0, y=100)  # تنظیم موقعیت فرم در سمت چپ صفحه
     heading_label = Label(
         supplier_frame,
         text="مدیریت تامین کنندگان",

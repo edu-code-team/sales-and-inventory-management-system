@@ -4,6 +4,7 @@ from tkinter import messagebox
 from employees import treeview_data, clear_fields
 from employees import connect_database
 
+
 def move_focus(widget):
     widget.focus_set()
     return "break"
@@ -94,7 +95,7 @@ def delete_product(
                 quantity_entry,
                 status_combobox,
             )
-            
+
             category_combobox.focus_set()
 
         except Exception as e:
@@ -277,8 +278,13 @@ def product_form(window):
     global category_combobox, supplier_combobox, status_combobox
     global back_image
 
-    product_frame = Frame(window, width=1165, height=567, bg="white")
-    product_frame.place(x=200, y=100)
+    product_frame = Frame(
+        window,
+        width=window.winfo_width() - 200,
+        height=window.winfo_height(),
+        bg="white",
+    )
+    product_frame.place(x=0, y=100)  # تنظیم موقعیت فرم در سمت چپ صفحه
 
     back_image = PhotoImage(file="images/back_button.png")
     back_button = Button(
@@ -377,7 +383,6 @@ def product_form(window):
     for widget in left_frame.winfo_children():
         if isinstance(widget, Label):
             widget.configure(takefocus=0)
-
 
     status_combobox = ttk.Combobox(
         left_frame,
@@ -494,30 +499,30 @@ def product_form(window):
     def close_form(event=None):
         product_frame.place_forget()
 
-# Bind shortcuts
-    window.bind('<a>', add_shortcut)
-    window.bind('<A>', add_shortcut)
+    # Bind shortcuts
+    window.bind("<a>", add_shortcut)
+    window.bind("<A>", add_shortcut)
 
-    window.bind('<u>', update_shortcut)
-    window.bind('<U>', update_shortcut)
+    window.bind("<u>", update_shortcut)
+    window.bind("<U>", update_shortcut)
 
-    window.bind('<d>', delete_shortcut)
-    window.bind('<D>', delete_shortcut)
+    window.bind("<d>", delete_shortcut)
+    window.bind("<D>", delete_shortcut)
 
-    window.bind('<c>', clear_shortcut)
-    window.bind('<C>', clear_shortcut)
+    window.bind("<c>", clear_shortcut)
+    window.bind("<C>", clear_shortcut)
 
-    window.bind('<s>', search_shortcut)
-    window.bind('<S>', search_shortcut)
-    window.bind('<Return>', search_shortcut)
+    window.bind("<s>", search_shortcut)
+    window.bind("<S>", search_shortcut)
+    window.bind("<Return>", search_shortcut)
 
-    window.bind('<r>', show_all_shortcut)
-    window.bind('<R>', show_all_shortcut)
+    window.bind("<r>", show_all_shortcut)
+    window.bind("<R>", show_all_shortcut)
 
-    window.bind('<f>', focus_category)
-    window.bind('<F>', focus_category)
+    window.bind("<f>", focus_category)
+    window.bind("<F>", focus_category)
 
-    window.bind('<Escape>', close_form)
+    window.bind("<Escape>", close_form)
 
     product_frame.focus_set()
 
@@ -559,30 +564,29 @@ def product_form(window):
 
     # دکمه اعمال
     search_button = Button(
-    filter_frame,
-    text=" جستجو",
-    bg="#00198f",
-    fg="white",
-    width=9,
-    command=lambda: filter_products(
-        treeview,
-        filter_category.get(),
-        filter_supplier.get(),
-        filter_status.get(),
-    ),
-)
+        filter_frame,
+        text=" جستجو",
+        bg="#00198f",
+        fg="white",
+        width=9,
+        command=lambda: filter_products(
+            treeview,
+            filter_category.get(),
+            filter_supplier.get(),
+            filter_status.get(),
+        ),
+    )
     search_button.place(x=410, y=20)
 
     show_all_button = Button(
-    filter_frame,
-    text="نمایش همه",
-    bg="#00198f",
-    fg="white",
-    width=9,
-    command=lambda: load_product_data(treeview),
-)
+        filter_frame,
+        text="نمایش همه",
+        bg="#00198f",
+        fg="white",
+        width=9,
+        command=lambda: load_product_data(treeview),
+    )
     show_all_button.place(x=485, y=20)
-
 
     # ------------------------ TreeView ------------------------
     treeview_frame = Frame(product_frame)
@@ -655,7 +659,7 @@ def product_form(window):
     update_button.bind("<Tab>", lambda e: move_focus(delete_button))
     delete_button.bind("<Tab>", lambda e: move_focus(clear_button))
 
-# ---- رفتن به فیلتر بالا ----
+    # ---- رفتن به فیلتر بالا ----
     clear_button.bind("<Tab>", lambda e: move_focus(filter_category))
 
     filter_category.bind("<Tab>", lambda e: move_focus(filter_supplier))
@@ -665,7 +669,5 @@ def product_form(window):
     search_button.bind("<Tab>", lambda e: move_focus(show_all_button))
     show_all_button.bind("<Tab>", lambda e: move_focus(treeview))
 
-# ---- جدول ----
+    # ---- جدول ----
     treeview.bind("<Tab>", lambda e: move_focus(category_combobox))
-
-
