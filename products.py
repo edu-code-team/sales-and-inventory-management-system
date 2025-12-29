@@ -296,125 +296,100 @@ def product_form(window):
         command=lambda: product_frame.place_forget(),
     )
     back_button.place(x=10, y=0)
-
     left_frame = Frame(product_frame, bg="white", bd=2, relief=RIDGE)
-    left_frame.place(x=window.winfo_width() - 600, y=40)
+    left_frame.place(x=window.winfo_width() - 700, y=40,height=490)
+
+# تنظیم ستون‌ها برای RTL
+    left_frame.grid_columnconfigure(0, minsize=200)
+    left_frame.grid_columnconfigure(1, minsize=120)
 
     heading_label = Label(
-        left_frame,
-        text="مدیریت جزییات محصولات",
-        font=("fonts/Persian-Yekan.ttf", 16, "bold"),
-        bg="#00198f",
-        fg="white",
-    )
-    heading_label.grid(row=0, columnspan=2, sticky="we")
+    left_frame,
+    text="مدیریت جزییات محصولات",
+    font=("fonts/Persian-Yekan.ttf", 16, "bold"),
+    bg="#00198f",
+    fg="white",
+)
+    heading_label.grid(row=0, column=0, columnspan=2, sticky="we", pady=(0, 10))
 
-    # ----- دسته‌بندی -----
-    Label(
+# ---------- helper ----------
+    def rtl_label(text, row):
+        Label(
         left_frame,
-        text="دسته‌بندی:",
+        text=text,
         font=("fonts/Persian-Yekan.ttf", 14, "bold"),
         bg="white",
-        anchor="e",  # راست‌چین کردن تکست
-    ).grid(row=1, column=0, padx=20, sticky="e")
+        anchor="e",
+    ).grid(row=row, column=1, padx=15, sticky="e")
 
+    def rtl_entry(widget, row):
+        widget.grid(row=row, column=0, pady=12, sticky="e")
+
+# ---------- دسته‌بندی ----------
     category_combobox = ttk.Combobox(
-        left_frame,
-        font=("fonts/Persian-Yekan.ttf", 14),
-        width=18,
-        state="readonly",
-        justify="right",
-    )
-    category_combobox.grid(row=1, column=1, pady=15)
+    left_frame,
+    font=("fonts/Persian-Yekan.ttf", 14),
+    width=18,
+    state="readonly",
+    justify="right",
+)
+    rtl_entry(category_combobox, 1)
+    rtl_label("دسته‌بندی", 1)
 
-    # ----- تأمین‌کننده -----
-    Label(
-        left_frame,
-        text="تأمین‌کننده:",
-        font=("fonts/Persian-Yekan.ttf", 14, "bold"),
-        bg="white",
-        anchor="e",  # راست‌چین کردن تکست
-    ).grid(row=2, column=0, padx=20, sticky="e")
-
+# ---------- تامین‌کننده ----------
     supplier_combobox = ttk.Combobox(
-        left_frame,
-        font=("fonts/Persian-Yekan.ttf", 14),
-        width=18,
-        state="readonly",
-        justify="right",
-    )
-    supplier_combobox.grid(row=2, column=1, pady=15)
+    left_frame,
+    font=("fonts/Persian-Yekan.ttf", 14),
+    width=18,
+    state="readonly",
+    justify="right",
+)
+    rtl_entry(supplier_combobox, 2)
+    rtl_label("تأمین‌کننده", 2)
 
-    # ----- نام -----
-    Label(
-        left_frame,
-        text="نام:",
-        font=("fonts/Persian-Yekan.ttf", 14, "bold"),
-        bg="white",
-        anchor="e",
-    ).grid(row=3, column=0, padx=20, sticky="e")
-
+# ---------- نام ----------
     name_entry = Entry(
-        left_frame,
-        font=("fonts/Persian-Yekan.ttf", 16, "bold"),
-        bg="lightblue",
-        justify="right",
-    )
-    name_entry.grid(row=3, column=1, pady=15)
+    left_frame,
+    font=("fonts/Persian-Yekan.ttf", 16, "bold"),
+    bg="lightblue",
+    justify="right",
+)
+    rtl_entry(name_entry, 3)
+    rtl_label("نام", 3)
 
-    # ----- قیمت -----
-    Label(
-        left_frame,
-        text="قیمت:",
-        font=("fonts/Persian-Yekan.ttf", 14, "bold"),
-        bg="white",
-        anchor="e",
-    ).grid(row=4, column=0, padx=20, sticky="e")
-
+# ---------- قیمت ----------
     price_entry = Entry(
-        left_frame,
-        font=("fonts/Persian-Yekan.ttf", 16, "bold"),
-        bg="lightblue",
-        justify="right",
-    )
-    price_entry.grid(row=4, column=1, pady=15)
+    left_frame,
+    font=("fonts/Persian-Yekan.ttf", 16, "bold"),
+    bg="lightblue",
+    justify="right",
+)
+    rtl_entry(price_entry, 4)
+    rtl_label("قیمت", 4)
 
-    # ----- مقدار -----
-    Label(
-        left_frame,
-        text="مقدار:",
-        font=("fonts/Persian-Yekan.ttf", 14, "bold"),
-        bg="white",
-        anchor="e",
-    ).grid(row=5, column=0, padx=20, sticky="e")
-
+# ---------- مقدار ----------
     quantity_entry = Entry(
-        left_frame,
-        font=("fonts/Persian-Yekan.ttf", 16, "bold"),
-        bg="lightblue",
-        justify="right",
-    )
-    quantity_entry.grid(row=5, column=1, pady=15)
+    left_frame,
+    font=("fonts/Persian-Yekan.ttf", 16, "bold"),
+    bg="lightblue",
+    justify="right",
+)
+    rtl_entry(quantity_entry, 5)
+    rtl_label("مقدار", 5)
 
-    # ----- وضعیت -----
-    Label(
-        left_frame,
-        text="وضعیت:",
-        font=("fonts/Persian-Yekan.ttf", 14, "bold"),
-        bg="white",
-        anchor="e",
-    ).grid(row=6, column=0, padx=20, sticky="e")
-
+# ---------- وضعیت ----------
     status_combobox = ttk.Combobox(
-        left_frame,
-        values=("فعال", "غیرفعال"),
-        font=("fonts/Persian-Yekan.ttf", 14),
-        width=18,
-        state="readonly",
-        justify="right",
-    )
-    status_combobox.grid(row=6, column=1, pady=15)
+    left_frame,
+    values=("فعال", "غیرفعال"),
+    font=("fonts/Persian-Yekan.ttf", 14),
+    width=18,
+    state="readonly",
+    justify="right",
+)
+    rtl_entry(status_combobox, 6)
+    rtl_label("وضعیت", 6)
     status_combobox.set("یک مورد را انتخاب کنید")
+
 
     # ===== کلیدها =====
     button_frame = Frame(left_frame, bg="white")
