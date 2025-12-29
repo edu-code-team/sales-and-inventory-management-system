@@ -46,9 +46,6 @@ class LoginSystem:
         # دکمه‌ها
         self.create_buttons()
 
-        # اطلاعات
-        self.create_info_box()
-
         # کلیدهای کیبورد
         self.window.bind('<Return>', lambda e: self.login())
         self.window.bind('<Escape>', lambda e: self.window.destroy())
@@ -70,7 +67,7 @@ class LoginSystem:
                                     bd=1)
         self.username_entry.grid(row=0, column=1, padx=10, pady=10)
         self.username_entry.focus_set()
-        self.username_entry.insert(0, 'admin')
+        # اطلاعات کاربری به صورت پیش‌فرض وارد نمی‌شود
 
         # رمز عبور
         Label(form_frame, text="رمز عبور:",
@@ -85,7 +82,6 @@ class LoginSystem:
                                     relief=SOLID,
                                     bd=1)
         self.password_entry.grid(row=1, column=1, padx=10, pady=10)
-        self.password_entry.insert(0, '1234')
 
         # نمایش رمز
         self.show_pass_var = IntVar()
@@ -117,20 +113,6 @@ class LoginSystem:
                bd=2,
                cursor='hand2',
                command=self.window.destroy).pack(side=LEFT, padx=10)
-
-    def create_info_box(self):
-        info_frame = Frame(self.window, bg='#d4edda', relief=SOLID, bd=1)
-        info_frame.pack(pady=10, fill=X, padx=20)
-
-        info_text = """👤 کاربر پیش‌فرض:
-نام کاربری: admin
-رمز عبور: 1234
-نوع کاربری: ادمین"""
-
-        Label(info_frame, text=info_text,
-              font=('B Nazanin', 10),
-              bg='#d4edda', fg='#155724',
-              justify=LEFT).pack(padx=10, pady=8)
 
     def toggle_password(self):
         if self.show_pass_var.get():
