@@ -47,6 +47,103 @@ def export_to_excel(treeview):
         messagebox.showerror("خطا", f"خطا در ذخیره‌سازی: {str(e)}")
 
 
+def import_from_csv(treeview):
+    """
+    تابع برای وارد کردن داده‌ها از فایل CSV به دیتابیس دسته‌بندی
+    """
+    try:
+        file_path = filedialog.askopenfilename(
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+            title="انتخاب فایل CSV برای وارد کردن"
+        )
+        
+        if not file_path:
+            return
+            
+        cursor, connection = connect_database()
+        if not cursor or not connection:
+            return
+            
+        cursor.execute("USE inventory_system")
+        
+        imported_count = 0
+        skipped_count = 0
+        errors = []
+        
+        with open(file_path, 'r', encoding='utf-8-sig') as file:
+            reader = csv.reader(file)
+            next(reader)  # رد کردن هدر
+            
+            for idx, row in enumerate(reader, start=2):  # start=2 چون سطر 1 هدر است
+                if len(row) < 3:
+                    skipped_count += 1
+                    errors.append(f"سطر {idx}: تعداد ستون‌ها ناکافی است (نیاز به 3 ستون)")
+                    continue
+                    
+                try:
+                    id_val = row[0].strip()
+                    name_val = row[1].strip()
+                    description_val = row[2].strip()
+                    
+                    # چک کردن فیلدهای خالی
+                    if not id_val or not name_val:
+                        skipped_count += 1
+                        errors.append(f"سطر {idx}: شناسه یا نام خالی است")
+                        continue
+                    
+                    # چک کردن شناسه عددی
+                    if not id_val.isdigit():
+                        skipped_count += 1
+                        errors.append(f"سطر {idx}: شناسه باید عددی باشد")
+                        continue
+                    
+                    # چک کردن وجود دسته‌بندی
+                    cursor.execute("SELECT * FROM category_data WHERE id=%s", (id_val,))
+                    if cursor.fetchone():
+                        skipped_count += 1
+                        errors.append(f"سطر {idx}: شناسه {id_val} تکراری است")
+                        continue
+                        
+                    # وارد کردن دسته‌بندی جدید
+                    cursor.execute(
+                        "INSERT INTO category_data (id, name, description) VALUES (%s, %s, %s)",
+                        (int(id_val), name_val, description_val)
+                    )
+                    imported_count += 1
+                    
+                except ValueError as ve:
+                    skipped_count += 1
+                    errors.append(f"سطر {idx}: خطا در فرمت داده‌ها - {str(ve)}")
+                except Exception as e:
+                    skipped_count += 1
+                    errors.append(f"سطر {idx}: خطای عمومی - {str(e)}")
+        
+        connection.commit()
+        
+        # نمایش نتایج
+        result_message = f"عملیات وارد کردن تکمیل شد:\n\n"
+        result_message += f"تعداد وارد شده: {imported_count}\n"
+        result_message += f"تعداد رد شده: {skipped_count}\n"
+        
+        if errors and len(errors) <= 10:  # نمایش حداکثر 10 خطا
+            result_message += "\nخطاها:\n"
+            for error in errors[:10]:
+                result_message += f"• {error}\n"
+        elif errors:
+            result_message += f"\n{len(errors)} خطا رخ داده است (اولین 10 خطا نمایش داده شد)"
+        
+        messagebox.showinfo("عملیات وارد کردن", result_message)
+        
+        # تازه‌سازی داده‌ها
+        treeview_data(treeview)
+        
+        cursor.close()
+        connection.close()
+        
+    except Exception as e:
+        messagebox.showerror("خطا", f"خطا در وارد کردن فایل: {str(e)}")
+
+
 def update_category(id_entry, name_entry, description_text, treeview, clear_func):
     id_val = id_entry.get()
     name_val = name_entry.get()
@@ -261,19 +358,33 @@ def category_form(window):
     label = Label(category_frame, image=logo, bg="white")
     label.place(x=30, y=130)
 
-    export_frame = Frame(category_frame, bg="white")
-    export_frame.place(x=30, y=80)
+    # ============ فریم برای دکمه‌های ایمپورت/اکسپورت ============
+    import_export_frame = Frame(category_frame, bg="white")
+    import_export_frame.place(x=30, y=80, width=300)
 
+    # دکمه ایمپورت
+    import_button = Button(
+        import_export_frame,
+        text="📥 وارد کردن CSV",
+        font=("fonts/Persian-Yekan.ttf", 11),
+        width=15,
+        fg="white",
+        bg="#4b39e9",
+        command=lambda: import_from_csv(treeview),
+    )
+    import_button.pack(side=LEFT, padx=5)
+
+    # دکمه اکسپورت
     export_button = Button(
-        export_frame,
+        import_export_frame,
         text="📊 خروجی CSV",
-        font=("fonts/Persian-Yekan.ttf", 12),
+        font=("fonts/Persian-Yekan.ttf", 11),
         width=15,
         fg="white",
         bg="#4b39e9",
         command=lambda: export_to_excel(treeview),
     )
-    export_button.pack()
+    export_button.pack(side=LEFT, padx=5)
 
     # ============ قسمت فرم ورودی ============
     details_frame = Frame(category_frame, bg="white")
@@ -423,6 +534,9 @@ def category_form(window):
     def focus_id(event=None):
         id_entry.focus_set()
 
+    def import_shortcut(event=None):
+        import_button.invoke()
+
     def export_shortcut(event=None):
         export_button.invoke()
 
@@ -444,6 +558,9 @@ def category_form(window):
 
     window.bind("<f>", focus_id)
     window.bind("<F>", focus_id)
+
+    window.bind("<i>", import_shortcut)
+    window.bind("<I>", import_shortcut)
 
     window.bind("<e>", export_shortcut)
     window.bind("<E>", export_shortcut)
@@ -467,6 +584,11 @@ def category_form(window):
     delete_button.bind("<Tab>", lambda e: move_focus(update_button))
     update_button.bind("<Tab>", lambda e: move_focus(clear_button))
     clear_button.bind("<Tab>", lambda e: move_focus(id_entry))
+
+    # اضافه کردن Tab برای دکمه‌های ایمپورت/اکسپورت
+    id_entry.bind("<Shift-Tab>", lambda e: move_focus(import_button))
+    import_button.bind("<Tab>", lambda e: move_focus(export_button))
+    export_button.bind("<Tab>", lambda e: move_focus(id_entry))
 
     for i in range(4):
         button_frame.grid_columnconfigure(i, weight=1)
