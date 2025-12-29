@@ -1,13 +1,155 @@
 from tkinter import *
 from tkinter import ttk
 from tkinter import messagebox
-from employees import treeview_data, clear_fields
 from employees import connect_database
+from tkinter import filedialog
+import csv
 
 
 def move_focus(widget):
     widget.focus_set()
     return "break"
+
+
+def export_to_excel(treeview):
+    """
+    تابع برای ذخیره داده‌های treeview در فایل CSV
+    """
+    try:
+        items = treeview.get_children()
+        data = []
+
+        for item in items:
+            values = treeview.item(item)["values"]
+            data.append(values)
+
+        if not data:
+            messagebox.showwarning("هشدار", "هیچ داده‌ای برای ذخیره‌سازی وجود ندارد")
+            return
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+            title="ذخیره فایل",
+        )
+
+        if file_path:
+            with open(file_path, "w", newline="", encoding="utf-8-sig") as file:
+                writer = csv.writer(file)
+                writer.writerow(["شناسه", "دسته‌بندی", "تأمین‌کننده", "نام", "قیمت", "مقدار", "وضعیت"])
+                writer.writerows(data)
+
+            messagebox.showinfo(
+                "موفقیت", f"داده‌ها با موفقیت در\n{file_path}\nذخیره شدند"
+            )
+
+    except Exception as e:
+        messagebox.showerror("خطا", f"خطا در ذخیره‌سازی: {str(e)}")
+
+
+def import_from_csv(treeview, category_combobox, supplier_combobox):
+    """
+    تابع برای وارد کردن داده‌ها از فایل CSV به دیتابیس
+    """
+    try:
+        file_path = filedialog.askopenfilename(
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+            title="انتخاب فایل CSV برای وارد کردن"
+        )
+        
+        if not file_path:
+            return
+            
+        cursor, connection = connect_database()
+        if not cursor or not connection:
+            return
+            
+        cursor.execute("USE inventory_system")
+        
+        imported_count = 0
+        skipped_count = 0
+        errors = []
+        
+        with open(file_path, 'r', encoding='utf-8-sig') as file:
+            reader = csv.reader(file)
+            next(reader)  # رد کردن هدر
+            
+            for idx, row in enumerate(reader, start=2):  # start=2 چون سطر 1 هدر است
+                if len(row) < 7:
+                    skipped_count += 1
+                    errors.append(f"سطر {idx}: تعداد ستون‌ها ناکافی است")
+                    continue
+                    
+                try:
+                    # چک کردن وجود دسته‌بندی
+                    category = row[1].strip()
+                    cursor.execute("SELECT name FROM category_data WHERE name=%s", (category,))
+                    if not cursor.fetchone():
+                        skipped_count += 1
+                        errors.append(f"سطر {idx}: دسته‌بندی '{category}' وجود ندارد")
+                        continue
+                    
+                    # چک کردن وجود تأمین‌کننده
+                    supplier = row[2].strip()
+                    cursor.execute("SELECT name FROM supplier_data WHERE name=%s", (supplier,))
+                    if not cursor.fetchone():
+                        skipped_count += 1
+                        errors.append(f"سطر {idx}: تأمین‌کننده '{supplier}' وجود ندارد")
+                        continue
+                    
+                    # چک کردن وجود محصول
+                    product_name = row[3].strip()
+                    cursor.execute(
+                        "SELECT * FROM product_data WHERE name=%s AND category=%s AND supplier=%s",
+                        (product_name, category, supplier)
+                    )
+                    
+                    if cursor.fetchone():
+                        skipped_count += 1
+                        errors.append(f"سطر {idx}: محصول '{product_name}' از قبل وجود دارد")
+                        continue
+                        
+                    # وارد کردن محصول جدید
+                    cursor.execute(
+                        "INSERT INTO product_data (category, supplier, name, price, quantity, status) VALUES (%s, %s, %s, %s, %s, %s)",
+                        (category, supplier, product_name, float(row[4]), int(row[5]), row[6].strip())
+                    )
+                    imported_count += 1
+                    
+                except ValueError as ve:
+                    skipped_count += 1
+                    errors.append(f"سطر {idx}: خطا در فرمت داده‌ها - {str(ve)}")
+                except Exception as e:
+                    skipped_count += 1
+                    errors.append(f"سطر {idx}: خطای عمومی - {str(e)}")
+        
+        connection.commit()
+        
+        # تازه‌سازی Comboboxها
+        fetch_supplier_category(category_combobox, supplier_combobox)
+        
+        # نمایش نتایج
+        result_message = f"عملیات وارد کردن تکمیل شد:\n\n"
+        result_message += f"تعداد وارد شده: {imported_count}\n"
+        result_message += f"تعداد رد شده: {skipped_count}\n"
+        
+        if errors and len(errors) <= 10:  # نمایش حداکثر 10 خطا
+            result_message += "\nخطاها:\n"
+            for error in errors[:10]:
+                result_message += f"• {error}\n"
+        elif errors:
+            result_message += f"\n{len(errors)} خطا رخ داده است (اولین 10 خطا نمایش داده شد)"
+        
+        messagebox.showinfo("عملیات وارد کردن", result_message)
+        
+        # تازه‌سازی داده‌ها
+        load_product_data(treeview)
+        
+        cursor.close()
+        connection.close()
+        
+    except Exception as e:
+        messagebox.showerror("خطا", f"خطا در وارد کردن فایل: {str(e)}")
 
 
 def filter_products(treeview, category, supplier, status):
@@ -260,7 +402,6 @@ def add_product(category, supplier, name, price, quantity, status, treeview):
         )
         connection.commit()
         messagebox.showinfo("عمل موفق", "محصول با موفقیت افزوده شد")
-        # treeview_data(treeview)
         load_product_data(treeview)
         clear_fields(
             category_combobox,
@@ -296,102 +437,102 @@ def product_form(window):
         command=lambda: product_frame.place_forget(),
     )
     back_button.place(x=10, y=0)
+    
     left_frame = Frame(product_frame, bg="white", bd=2, relief=RIDGE)
     left_frame.place(x=window.winfo_width() - 700, y=40,height=490)
 
-# تنظیم ستون‌ها برای RTL
+    # تنظیم ستون‌ها برای RTL
     left_frame.grid_columnconfigure(0, minsize=200)
     left_frame.grid_columnconfigure(1, minsize=120)
 
     heading_label = Label(
-    left_frame,
-    text="مدیریت جزییات محصولات",
-    font=("fonts/Persian-Yekan.ttf", 16, "bold"),
-    bg="#00198f",
-    fg="white",
-)
+        left_frame,
+        text="مدیریت جزییات محصولات",
+        font=("fonts/Persian-Yekan.ttf", 16, "bold"),
+        bg="#00198f",
+        fg="white",
+    )
     heading_label.grid(row=0, column=0, columnspan=2, sticky="we", pady=(0, 10))
 
-# ---------- helper ----------
+    # ---------- helper ----------
     def rtl_label(text, row):
         Label(
-        left_frame,
-        text=text,
-        font=("fonts/Persian-Yekan.ttf", 14, "bold"),
-        bg="white",
-        anchor="e",
-    ).grid(row=row, column=1, padx=15, sticky="e")
+            left_frame,
+            text=text,
+            font=("fonts/Persian-Yekan.ttf", 14, "bold"),
+            bg="white",
+            anchor="e",
+        ).grid(row=row, column=1, padx=15, sticky="e")
 
     def rtl_entry(widget, row):
         widget.grid(row=row, column=0, pady=12, sticky="e")
 
-# ---------- دسته‌بندی ----------
+    # ---------- دسته‌بندی ----------
     category_combobox = ttk.Combobox(
-    left_frame,
-    font=("fonts/Persian-Yekan.ttf", 14),
-    width=18,
-    state="readonly",
-    justify="right",
-)
+        left_frame,
+        font=("fonts/Persian-Yekan.ttf", 14),
+        width=18,
+        state="readonly",
+        justify="right",
+    )
     rtl_entry(category_combobox, 1)
     rtl_label("دسته‌بندی", 1)
 
-# ---------- تامین‌کننده ----------
+    # ---------- تامین‌کننده ----------
     supplier_combobox = ttk.Combobox(
-    left_frame,
-    font=("fonts/Persian-Yekan.ttf", 14),
-    width=18,
-    state="readonly",
-    justify="right",
-)
+        left_frame,
+        font=("fonts/Persian-Yekan.ttf", 14),
+        width=18,
+        state="readonly",
+        justify="right",
+    )
     rtl_entry(supplier_combobox, 2)
     rtl_label("تأمین‌کننده", 2)
 
-# ---------- نام ----------
+    # ---------- نام ----------
     name_entry = Entry(
-    left_frame,
-    font=("fonts/Persian-Yekan.ttf", 16, "bold"),
-    bg="lightblue",
-    justify="right",
-)
+        left_frame,
+        font=("fonts/Persian-Yekan.ttf", 16, "bold"),
+        bg="lightblue",
+        justify="right",
+    )
     rtl_entry(name_entry, 3)
     rtl_label("نام", 3)
 
-# ---------- قیمت ----------
+    # ---------- قیمت ----------
     price_entry = Entry(
-    left_frame,
-    font=("fonts/Persian-Yekan.ttf", 16, "bold"),
-    bg="lightblue",
-    justify="right",
-)
+        left_frame,
+        font=("fonts/Persian-Yekan.ttf", 16, "bold"),
+        bg="lightblue",
+        justify="right",
+    )
     rtl_entry(price_entry, 4)
     rtl_label("قیمت", 4)
 
-# ---------- مقدار ----------
+    # ---------- مقدار ----------
     quantity_entry = Entry(
-    left_frame,
-    font=("fonts/Persian-Yekan.ttf", 16, "bold"),
-    bg="lightblue",
-    justify="right",
-)
+        left_frame,
+        font=("fonts/Persian-Yekan.ttf", 16, "bold"),
+        bg="lightblue",
+        justify="right",
+    )
     rtl_entry(quantity_entry, 5)
     rtl_label("مقدار", 5)
 
-# ---------- وضعیت ----------
+    # ---------- وضعیت ----------
     status_combobox = ttk.Combobox(
-    left_frame,
-    values=("فعال", "غیرفعال"),
-    font=("fonts/Persian-Yekan.ttf", 14),
-    width=18,
-    state="readonly",
-    justify="right",
-)
+        left_frame,
+        values=("فعال", "غیرفعال"),
+        font=("fonts/Persian-Yekan.ttf", 14),
+        width=18,
+        state="readonly",
+        justify="right",
+    )
     rtl_entry(status_combobox, 6)
     rtl_label("وضعیت", 6)
     status_combobox.set("یک مورد را انتخاب کنید")
 
-
-    # ===== کلیدها =====
+    # ===== کلیدهای اصلی (4 دکمه اول) =====
     button_frame = Frame(left_frame, bg="white")
     button_frame.grid(row=7, columnspan=2, pady=20)
 
@@ -470,6 +611,34 @@ def product_form(window):
     )
     clear_button.grid(row=0, column=3, padx=10, sticky="e")
 
+    # ===== کلیدهای ایمپورت/اکسپورت (در زیر کلیدهای اصلی) =====
+    import_export_frame = Frame(left_frame, bg="white")
+    import_export_frame.grid(row=8, columnspan=2, pady=(0, 10))
+
+    # دکمه ایمپورت
+    import_button = Button(
+        import_export_frame,
+        text="📥 وارد کردن CSV",
+        font=("fonts/Persian-Yekan.ttf", 11),
+        width=15,
+        fg="white",
+        bg="#4b39e9",
+        command=lambda: import_from_csv(treeview, category_combobox, supplier_combobox),
+    )
+    import_button.grid(row=0, column=0, padx=5)
+
+    # دکمه اکسپورت
+    export_button = Button(
+        import_export_frame,
+        text="📊 خروجی CSV",
+        font=("fonts/Persian-Yekan.ttf", 11),
+        width=15,
+        fg="white",
+        bg="#4b39e9",
+        command=lambda: export_to_excel(treeview),
+    )
+    export_button.grid(row=0, column=1, padx=5)
+
     # ================= KEYBOARD SHORTCUTS (PRODUCTS) =================
 
     def add_shortcut(event=None):
@@ -492,6 +661,12 @@ def product_form(window):
 
     def focus_category(event=None):
         category_combobox.focus_set()
+
+    def import_shortcut(event=None):
+        import_button.invoke()
+
+    def export_shortcut(event=None):
+        export_button.invoke()
 
     def close_form(event=None):
         product_frame.place_forget()
@@ -518,6 +693,12 @@ def product_form(window):
 
     window.bind("<f>", focus_category)
     window.bind("<F>", focus_category)
+
+    window.bind("<i>", import_shortcut)
+    window.bind("<I>", import_shortcut)
+
+    window.bind("<e>", export_shortcut)
+    window.bind("<E>", export_shortcut)
 
     window.bind("<Escape>", close_form)
 
@@ -606,7 +787,7 @@ def product_form(window):
     scrolly.config(command=treeview.yview)
     treeview.pack(fill=BOTH, expand=1)
 
-    treeview.heading("id", text="شناسه", anchor="e")  # راست‌چین کردن سرستون
+    treeview.heading("id", text="شناسه", anchor="e")
     treeview.heading("category", text="دسته‌بندی", anchor="e")
     treeview.heading("supplier", text="تأمین‌کننده", anchor="e")
     treeview.heading("name", text="نام", anchor="e")
@@ -657,8 +838,10 @@ def product_form(window):
     update_button.bind("<Tab>", lambda e: move_focus(delete_button))
     delete_button.bind("<Tab>", lambda e: move_focus(clear_button))
 
-    # ---- رفتن به فیلتر بالا ----
-    clear_button.bind("<Tab>", lambda e: move_focus(filter_category))
+    # ---- رفتن به دکمه ایمپورت ----
+    clear_button.bind("<Tab>", lambda e: move_focus(import_button))
+    import_button.bind("<Tab>", lambda e: move_focus(export_button))
+    export_button.bind("<Tab>", lambda e: move_focus(filter_category))
 
     filter_category.bind("<Tab>", lambda e: move_focus(filter_supplier))
     filter_supplier.bind("<Tab>", lambda e: move_focus(filter_status))
