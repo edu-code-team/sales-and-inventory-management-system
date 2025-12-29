@@ -1,13 +1,144 @@
-# user_type.py
 from tkinter import *
 from tkinter import ttk, messagebox
+from tkinter import filedialog
 from database import connect_database
-import json
+import csv
 
 
 def move_focus(widget):
     widget.focus_set()
     return "break"
+
+
+def export_to_csv(treeview):
+    """تابع برای ذخیره داده‌های انواع کاربری در فایل CSV"""
+    try:
+        items = treeview.get_children()
+        data = []
+
+        for item in items:
+            values = treeview.item(item)["values"]
+            data.append(values)
+
+        if not data:
+            messagebox.showwarning("هشدار", "هیچ داده‌ای برای ذخیره‌سازی وجود ندارد")
+            return
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+            title="ذخیره فایل CSV",
+        )
+
+        if file_path:
+            with open(file_path, "w", newline="", encoding="utf-8-sig") as file:
+                writer = csv.writer(file)
+                writer.writerow([
+                    "شناسه", "نام نوع", "کارمندان", "شیفت", "کاربری", 
+                    "تامین‌کننده", "دسته‌بندی", "محصولات", "فروش", 
+                    "فاکتور", "تاریخچه فاکتور", "ادمین"
+                ])
+                writer.writerows(data)
+
+            messagebox.showinfo(
+                "موفقیت", f"داده‌ها با موفقیت در\n{file_path}\nذخیره شدند"
+            )
+
+    except Exception as e:
+        messagebox.showerror("خطا", f"خطا در ذخیره‌سازی: {str(e)}")
+
+
+def import_from_csv(treeview):
+    """تابع برای وارد کردن داده‌ها از فایل CSV به دیتابیس انواع کاربری"""
+    try:
+        file_path = filedialog.askopenfilename(
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+            title="انتخاب فایل CSV برای وارد کردن"
+        )
+        
+        if not file_path:
+            return
+            
+        cursor, connection = connect_database()
+        if not cursor or not connection:
+            return
+            
+        cursor.execute("USE inventory_system")
+        
+        imported_count = 0
+        skipped_count = 0
+        errors = []
+        
+        with open(file_path, 'r', encoding='utf-8-sig') as file:
+            reader = csv.reader(file)
+            next(reader)  # رد کردن هدر
+            
+            for idx, row in enumerate(reader, start=2):  # start=2 چون سطر 1 هدر است
+                if len(row) < 12:
+                    skipped_count += 1
+                    errors.append(f"سطر {idx}: تعداد ستون‌ها ناکافی است (نیاز به 12 ستون)")
+                    continue
+                    
+                try:
+                    # خواندن داده‌ها از ردیف CSV
+                    type_name = row[1].strip()
+                    
+                    # چک کردن وجود نوع کاربری
+                    cursor.execute("SELECT * FROM user_types WHERE type_name=%s", (type_name,))
+                    if cursor.fetchone():
+                        skipped_count += 1
+                        errors.append(f"سطر {idx}: نوع کاربری '{type_name}' از قبل وجود دارد")
+                        continue
+                    
+                    # تبدیل ✅/❌ به 1/0 برای دیتابیس
+                    permissions = []
+                    for i in range(2, 11):  # از ستون 2 تا 10 (دسترسی‌ها)
+                        if row[i] == "✅":
+                            permissions.append(1)
+                        else:
+                            permissions.append(0)
+                    
+                    # اضافه کردن نوع کاربری
+                    cursor.execute(
+                        """
+                        INSERT INTO user_types 
+                        (type_name, can_employees, can_shifts, can_user_types, 
+                         can_suppliers, can_categories, can_products,
+                         can_sales, can_invoices, can_invoice_history)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        """,
+                        (type_name, *permissions)
+                    )
+                    imported_count += 1
+                    
+                except Exception as e:
+                    skipped_count += 1
+                    errors.append(f"سطر {idx}: خطای عمومی - {str(e)}")
+        
+        connection.commit()
+        
+        # نمایش نتایج
+        result_message = f"عملیات وارد کردن تکمیل شد:\n\n"
+        result_message += f"تعداد وارد شده: {imported_count}\n"
+        result_message += f"تعداد رد شده: {skipped_count}\n"
+        
+        if errors and len(errors) <= 5:  # نمایش حداکثر 5 خطا
+            result_message += "\nخطاها:\n"
+            for error in errors[:5]:
+                result_message += f"• {error}\n"
+        elif errors:
+            result_message += f"\n{len(errors)} خطا رخ داده است (اولین 5 خطا نمایش داده شد)"
+        
+        messagebox.showinfo("عملیات وارد کردن", result_message)
+        
+        # تازه‌سازی داده‌ها
+        load_user_types(treeview)
+        
+        cursor.close()
+        connection.close()
+        
+    except Exception as e:
+        messagebox.showerror("خطا", f"خطا در وارد کردن فایل: {str(e)}")
 
 
 def create_user_types_table():
@@ -30,6 +161,7 @@ def create_user_types_table():
             can_products BOOLEAN DEFAULT 0,
             can_sales BOOLEAN DEFAULT 0,
             can_invoices BOOLEAN DEFAULT 0,
+            can_invoice_history BOOLEAN DEFAULT 0,
             is_admin BOOLEAN DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )"""
@@ -40,8 +172,8 @@ def create_user_types_table():
             """
             INSERT IGNORE INTO user_types 
             (type_name, can_employees, can_shifts, can_user_types, can_suppliers, 
-             can_categories, can_products, can_sales, can_invoices, is_admin)
-            VALUES ('ادمین', 1, 1, 1, 1, 1, 1, 1, 1, 1)
+             can_categories, can_products, can_sales, can_invoices, can_invoice_history, is_admin)
+            VALUES ('ادمین', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
         """
         )
 
@@ -55,7 +187,6 @@ def create_user_types_table():
         connection.close()
 
 
-# تابع load_user_types را به‌روزرسانی کنید:
 def load_user_types(treeview):
     """بارگذاری انواع کاربری در جدول"""
     cursor, connection = connect_database()
@@ -82,11 +213,8 @@ def load_user_types(treeview):
             display_record = list(record[:2])  # id و type_name
 
             # تبدیل 0/1 به ❌/✅
-            for i in range(2, len(record) - 1):  # همه دسترسی‌ها بجز is_admin
+            for i in range(2, len(record)):  # همه دسترسی‌ها شامل is_admin
                 display_record.append("✅" if record[i] == 1 else "❌")
-
-            # نمایش ادمین بودن
-            display_record.append("✅" if record[-1] == 1 else "❌")
 
             treeview.insert("", END, values=display_record, tags=(record[0],))
 
@@ -134,13 +262,13 @@ def add_user_type(type_name, permissions, treeview):
             messagebox.showerror("خطا", "این نوع کاربری قبلاً وجود دارد")
             return
 
-        # اضافه کردن رکورد جدید (حالا 9 دسترسی داریم)
+        # اضافه کردن رکورد جدید
         cursor.execute(
             """
             INSERT INTO user_types 
             (type_name, can_employees, can_shifts, can_user_types, can_suppliers,
-             can_categories, can_products, can_sales, can_invoices, can_invoice_history, is_admin)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0)
+             can_categories, can_products, can_sales, can_invoices, can_invoice_history)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """,
             (type_name, *permissions),
         )
@@ -156,7 +284,6 @@ def add_user_type(type_name, permissions, treeview):
         connection.close()
 
 
-# تابع update_user_type را به‌روزرسانی کنید:
 def update_user_type(selected_id, type_name, permissions, treeview):
     """ویرایش نوع کاربری"""
     if not selected_id:
@@ -177,7 +304,7 @@ def update_user_type(selected_id, type_name, permissions, treeview):
             messagebox.showerror("خطا", "نوع کاربری ادمین قابل ویرایش نیست")
             return
 
-        # به‌روزرسانی (حالا 9 دسترسی داریم)
+        # به‌روزرسانی
         cursor.execute(
             """
             UPDATE user_types 
@@ -250,7 +377,6 @@ def delete_user_type(selected_id, treeview):
         connection.close()
 
 
-# تابع select_data را به‌روزرسانی کنید:
 def select_data(event, treeview, type_name_entry, checkboxes):
     """انتخاب ردیف از جدول"""
     selected_items = treeview.selection()
@@ -286,7 +412,7 @@ def select_data(event, treeview, type_name_entry, checkboxes):
             type_name_entry.delete(0, END)
             type_name_entry.insert(0, result[0])
 
-            # تنظیم وضعیت چک‌باکس‌ها (حالا 9 مورد)
+            # تنظیم وضعیت چک‌باکس‌ها
             permissions = result[1:]
             for i, checkbox in enumerate(checkboxes):
                 var = checkbox[1]  # IntVar
@@ -301,6 +427,16 @@ def select_data(event, treeview, type_name_entry, checkboxes):
         connection.close()
 
     return None
+
+
+def clear_fields(type_entry, vars_list, selected_var, tree):
+    """پاک کردن فیلدها"""
+    type_entry.delete(0, END)
+    for var in vars_list:
+        var.set(0)
+    selected_var.set("")
+    tree.selection_remove(tree.selection())
+    type_entry.focus_set()
 
 
 def user_type_form(window):
@@ -351,7 +487,35 @@ def user_type_form(window):
 
     # ============ سمت چپ: فرم ورودی ============
     left_frame = Frame(user_type_frame, bg="white")
-    left_frame.place(x=30, y=100, width=400, height=400)
+    left_frame.place(x=30, y=80, width=400, height=420)
+
+    # فریم برای دکمه‌های ایمپورت/اکسپورت (در بالای فرم)
+    import_export_frame = Frame(left_frame, bg="white")
+    import_export_frame.grid(row=0, column=0, columnspan=2, pady=(0, 10), sticky="ew")
+
+    # دکمه ایمپورت
+    import_button = Button(
+        import_export_frame,
+        text="📥 وارد کردن CSV",
+        font=("fonts/Persian-Yekan.ttf", 11),
+        width=18,
+        fg="white",
+        bg="#4b39e9",
+        command=lambda: import_from_csv(treeview),
+    )
+    import_button.pack(side=LEFT, padx=5)
+
+    # دکمه اکسپورت
+    export_button = Button(
+        import_export_frame,
+        text="📊 خروجی CSV",
+        font=("fonts/Persian-Yekan.ttf", 11),
+        width=18,
+        fg="white",
+        bg="#4b39e9",
+        command=lambda: export_to_csv(treeview),
+    )
+    export_button.pack(side=LEFT, padx=5)
 
     # نام نوع کاربری
     Label(
@@ -359,12 +523,12 @@ def user_type_form(window):
         text="نام نوع کاربری:",
         font=("fonts/Persian-Yekan.ttf", 12, "bold"),
         bg="white",
-    ).grid(row=0, column=0, padx=10, pady=10, sticky="w")
+    ).grid(row=1, column=0, padx=10, pady=10, sticky="w")
 
     type_name_entry = Entry(
         left_frame, font=("fonts/Persian-Yekan.ttf", 12), bg="lightblue", width=25
     )
-    type_name_entry.grid(row=0, column=1, padx=10, pady=10)
+    type_name_entry.grid(row=1, column=1, padx=10, pady=10)
 
     # دسترسی‌ها
     Label(
@@ -372,33 +536,34 @@ def user_type_form(window):
         text="دسترسی‌ها:",
         font=("fonts/Persian-Yekan.ttf", 12, "bold"),
         bg="white",
-    ).grid(row=1, column=0, padx=10, pady=10, sticky="nw")
+    ).grid(row=2, column=0, padx=10, pady=10, sticky="nw")
 
     permissions_frame = Frame(left_frame, bg="white")
-    permissions_frame.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
+    permissions_frame.grid(row=2, column=1, padx=10, pady=10, sticky="nsew")
 
-    # در لیست دسترسی‌ها (خطوط 96-112) تغییر دهید:
-
-    # لیست دسترسی‌ها
+    # لیست دسترسی‌ها در دو ستون
     permission_labels = [
-        "کارمندان",
-        "تعریف شیفت",
-        "تعریف کاربری",
-        "تامین کنندگان",
-        "دسته بندی",
-        "محصولات",
-        "فروش",
-        "صدور فاکتور",
-        "تاریخچه فاکتور",
+        ("کارمندان", "can_employees"),
+        ("تعریف شیفت", "can_shifts"),
+        ("تعریف کاربری", "can_user_types"),
+        ("تامین کنندگان", "can_suppliers"),
+        ("دسته بندی", "can_categories"),
+        ("محصولات", "can_products"),
+        ("فروش", "can_sales"),
+        ("صدور فاکتور", "can_invoices"),
+        ("تاریخچه فاکتور", "can_invoice_history"),
     ]
 
     checkboxes = []
     permission_vars = []
 
-    # تعداد چک‌باکس‌ها را به 9 افزایش دهید
-    for i, label in enumerate(permission_labels):
+    # ایجاد چک‌باکس‌ها در دو ستون
+    for i, (label, _) in enumerate(permission_labels):
         var = IntVar(value=0)
         permission_vars.append(var)
+
+        row = i % 5  # 5 ردیف در هر ستون
+        col = i // 5  # ستون 0 یا 1
 
         cb = Checkbutton(
             permissions_frame,
@@ -408,14 +573,48 @@ def user_type_form(window):
             bg="white",
             anchor="w",
         )
-        cb.grid(row=i, column=0, sticky="w", pady=3)
+        cb.grid(row=row, column=col, sticky="w", pady=3, padx=(10 if col == 1 else 0))
         checkboxes.append((cb, var))
 
-    # دکمه‌ها با چیدمان 2x2
+    # تنظیمات گرید برای تراز کردن ستون‌ها
+    permissions_frame.grid_columnconfigure(0, weight=1)
+    permissions_frame.grid_columnconfigure(1, weight=1)
+
+    # دکمه‌های عملیات
     button_frame = Frame(left_frame, bg="white")
-    button_frame.grid(row=2, column=0, columnspan=2, pady=20)
+    button_frame.grid(row=3, column=0, columnspan=2, pady=20)
 
     selected_id_var = StringVar()  # برای ذخیره ID انتخاب شده
+
+    # ردیف اول - دو دکمه
+    add_button = Button(
+        button_frame,
+        text="➕ افزودن",
+        font=("fonts/Persian-Yekan.ttf", 11),
+        bg="#00198f",
+        fg="white",
+        width=12,
+        command=lambda: add_user_type(
+            type_name_entry.get(), [var.get() for var in permission_vars], treeview
+        ),
+    )
+    add_button.grid(row=0, column=0, padx=5, pady=5)
+
+    update_button = Button(
+        button_frame,
+        text="✏️ ویرایش",
+        font=("fonts/Persian-Yekan.ttf", 11),
+        bg="#00198f",
+        fg="white",
+        width=12,
+        command=lambda: update_user_type(
+            selected_id_var.get(),
+            type_name_entry.get(),
+            [var.get() for var in permission_vars],
+            treeview,
+        ),
+    )
+    update_button.grid(row=0, column=1, padx=5, pady=5)
 
     # ردیف دوم - دو دکمه
     delete_button = Button(
@@ -444,60 +643,48 @@ def user_type_form(window):
 
     # ============ سمت راست: جدول ============
     right_frame = Frame(user_type_frame, bg="white")
-    right_frame.place(x=480, y=100, width=650, height=400)
+    right_frame.place(x=480, y=80, width=650, height=420)
 
-    # Treeview
+    # Treeview با 2 ستون اصلی
     tree_frame = Frame(right_frame, bg="white")
     tree_frame.pack(fill=BOTH, expand=True)
 
     scroll_y = Scrollbar(tree_frame, orient=VERTICAL)
     scroll_x = Scrollbar(tree_frame, orient=HORIZONTAL)
 
-    # ستون‌های treeview را به‌روزرسانی کنید:
-    # در تابع user_type_form، بخش treeview:
+    # ستون‌های treeview
     treeview = ttk.Treeview(
         tree_frame,
         columns=(
-            "id",
-            "name",
-            "emp",
-            "shift",
-            "user_type",
-            "sup",
-            "cat",
-            "prod",
-            "sale",
-            "inv",
-            "inv_history",
-            "admin",
-        ),  # اضافه شد inv_history
+            "id", "name", "emp", "shift", "user_type",
+            "sup", "cat", "prod", "sale", 
+            "inv", "inv_history", "admin"
+        ),
         show="headings",
         yscrollcommand=scroll_y.set,
         xscrollcommand=scroll_x.set,
-        height=12,
+        height=15,
     )
 
     # تنظیم هدرها
     headers = [
-        "شناسه",
-        "نام نوع",
-        "کارمندان",
-        "شیفت",
-        "کاربری",
-        "تامین‌کننده",
-        "دسته‌بندی",
-        "محصولات",
-        "فروش",
-        "فاکتور",
-        "تاریخچه فاکتور",
-        "ادمین",
-    ]  # اضافه شد
+        "شناسه", "نام نوع",
+        "کارمندان", "شیفت", "کاربری",
+        "تامین‌کننده", "دسته‌بندی", "محصولات",
+        "فروش", "فاکتور", "تاریخچه فاکتور", "ادمین"
+    ]
 
-    for i, header in enumerate(headers):
+    column_widths = [
+        60, 100,  # شناسه و نام
+        80, 60, 70,  # کارمندان، شیفت، کاربری
+        90, 80, 70,  # تامین‌کننده، دسته‌بندی، محصولات
+        60, 70, 100,  # فروش، فاکتور، تاریخچه فاکتور
+        60  # ادمین
+    ]
+
+    for i, (header, width) in enumerate(zip(headers, column_widths)):
         treeview.heading(f"#{i + 1}", text=header)
-        treeview.column(
-            f"#{i + 1}", width=80 if i not in [1, 10] else 120, anchor="center"
-        )
+        treeview.column(f"#{i + 1}", width=width, anchor="center")
 
     scroll_y.config(command=treeview.yview)
     scroll_x.config(command=treeview.xview)
@@ -508,15 +695,6 @@ def user_type_form(window):
 
     tree_frame.grid_rowconfigure(0, weight=1)
     tree_frame.grid_columnconfigure(0, weight=1)
-
-    # تابع پاک کردن فیلدها
-    def clear_fields(type_entry, vars_list, selected_var, tree):
-        type_entry.delete(0, END)
-        for var in vars_list:
-            var.set(0)
-        selected_var.set("")
-        tree.selection_remove(tree.selection())
-        type_entry.focus_set()
 
     # مدیریت انتخاب ردیف
     def on_select(event):
@@ -531,5 +709,20 @@ def user_type_form(window):
 
     # تنظیم فوکوس
     type_name_entry.focus_set()
+
+    # تنظیمات Tab Order
+    type_name_entry.bind("<Tab>", lambda e: move_focus(checkboxes[0][0]))
+    
+    for i in range(len(checkboxes) - 1):
+        checkboxes[i][0].bind("<Tab>", lambda e, idx=i: move_focus(checkboxes[idx + 1][0]))
+    
+    checkboxes[-1][0].bind("<Tab>", lambda e: move_focus(add_button))
+    add_button.bind("<Tab>", lambda e: move_focus(update_button))
+    update_button.bind("<Tab>", lambda e: move_focus(delete_button))
+    delete_button.bind("<Tab>", lambda e: move_focus(clear_button))
+    clear_button.bind("<Tab>", lambda e: move_focus(import_button))
+    import_button.bind("<Tab>", lambda e: move_focus(export_button))
+    export_button.bind("<Tab>", lambda e: move_focus(treeview))
+    treeview.bind("<Tab>", lambda e: move_focus(type_name_entry))
 
     return user_type_frame
