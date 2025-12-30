@@ -5,6 +5,8 @@ from employees import employee_form
 from supplier import supplier_form
 from category import category_form
 from products import product_form
+from invoice import show_invoice_form
+from invoice_history import show_invoice_history
 from datetime import datetime
 import jdatetime
 from shift import shift_form
@@ -361,15 +363,12 @@ def main(user_info=None):
         if can_access(current_user["user_type"], "products"):
             products_button.pack(fill=X)
 
-        # کامنت شده تا زمانی که پیاده‌سازی شوند
-
         if can_access(current_user["user_type"], "invoices"):
             invoice_button.pack(fill=X)
 
         if can_access(current_user["user_type"], "invoice_history"):
             invoice_history_button.pack(fill=X)
 
-        # دکمه خروج همیشه نمایش داده شود
         exit_button.pack(fill=X)
 
     def logout(win):
