@@ -520,7 +520,7 @@ def user_type_form(window):
     # نام نوع کاربری
     Label(
         left_frame,
-        text="نام نوع کاربری:",
+        text="نام نوع کاربری",
         font=("fonts/Persian-Yekan.ttf", 12, "bold"),
         bg="white",
     ).grid(row=1, column=0, padx=10, pady=10, sticky="w")
@@ -533,7 +533,7 @@ def user_type_form(window):
     # دسترسی‌ها
     Label(
         left_frame,
-        text="دسترسی‌ها:",
+        text="دسترسی‌ها",
         font=("fonts/Persian-Yekan.ttf", 12, "bold"),
         bg="white",
     ).grid(row=2, column=0, padx=10, pady=10, sticky="nw")

@@ -6,7 +6,77 @@ from tkcalendar import DateEntry
 import pymysql
 from database import connect_database, get_shifts_from_db
 from user_type import get_user_types_for_combobox  # اضافه کردن import جدید
+from tkinter import filedialog
+import csv
 
+def export_employee_to_csv(treeview):
+    items = treeview.get_children()
+    if not items:
+        messagebox.showwarning("هشدار", "داده‌ای برای خروجی وجود ندارد")
+        return
+
+    file_path = filedialog.asksaveasfilename(
+        defaultextension=".csv",
+        filetypes=[("CSV files", "*.csv")],
+        title="ذخیره فایل CSV"
+    )
+    if not file_path:
+        return
+
+    with open(file_path, "w", newline="", encoding="utf-8-sig") as file:
+        writer = csv.writer(file)
+        writer.writerow([
+            "شماره پرسنلی", "نام", "ایمیل", "جنسیت", "تاریخ تولد",
+            "شماره تماس", "شیفت کاری", "آدرس", "نوع کاربری", "رمز عبور"
+        ])
+        for item in items:
+            writer.writerow(treeview.item(item)["values"])
+
+    messagebox.showinfo("موفقیت", "خروجی CSV با موفقیت انجام شد")
+
+def import_employee_from_csv(treeview):
+    file_path = filedialog.askopenfilename(
+        filetypes=[("CSV files", "*.csv")],
+        title="انتخاب فایل CSV"
+    )
+    if not file_path:
+        return
+
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return
+
+    cursor.execute("USE inventory_system")
+    imported, skipped = 0, 0
+
+    with open(file_path, "r", encoding="utf-8-sig") as file:
+        reader = csv.reader(file)
+        next(reader)
+
+        for row in reader:
+            if len(row) < 10:
+                skipped += 1
+                continue
+
+            empid = row[0]
+
+            cursor.execute("SELECT empid FROM employee_data WHERE empid=%s", (empid,))
+            if cursor.fetchone():
+                skipped += 1
+                continue
+
+            cursor.execute(
+                "INSERT INTO employee_data VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                tuple(row)
+            )
+            imported += 1
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    treeview_data()
+    messagebox.showinfo("نتیجه", f"وارد شده: {imported}\nرد شده: {skipped}")
 
 def treeview_data():
     cursor, connection = connect_database()
@@ -460,11 +530,50 @@ def employee_form(window):
     detail_frame = Frame(employee_frame, bg="white")
     detail_frame.place(x=30, y=280)
 
+    # ================= CSV BUTTONS (کنار فرم جزئیات کارمند) =================
+
+# تنظیم ستون‌ها برای اینکه نظم گرید به‌هم نریزه
+    for i in range(7):
+        detail_frame.grid_columnconfigure(i, minsize=140)
+
+    csv_frame = Frame(detail_frame, bg="white")
+    csv_frame.grid(
+    row=0,
+    column=6,
+    rowspan=2,
+    padx=40,
+    pady=10,
+    sticky="n"
+)
+
+    import_button = Button(
+    csv_frame,
+    text="📥 وارد کردن CSV",
+    font=("fonts/Persian-Yekan.ttf", 11),
+    width=16,
+    fg="white",
+    bg="#4b39e9",
+    command=lambda: import_employee_from_csv(employee_treeview),
+)
+    import_button.pack(pady=8)
+
+    export_button = Button(
+    csv_frame,
+    text="📤 خروجی CSV",
+    font=("fonts/Persian-Yekan.ttf", 11),
+    width=16,
+    fg="white",
+    bg="#4b39e9",
+    command=lambda: export_employee_to_csv(employee_treeview),
+)
+    export_button.pack(pady=8)
+
+
     # تعریف فیلدهای ورودی
     empid_label = Label(
         detail_frame,
         text="شماره پرسنلی",
-        font=("fonts/Persian-Yekan.ttf", 12),
+        font=("fonts/Persian-Yekan.ttf", 12, "bold"),
         bg="white",
     )
     empid_label.grid(row=0, column=0, padx=20, pady=10, sticky="w")
@@ -476,7 +585,7 @@ def employee_form(window):
     empname_label = Label(
         detail_frame,
         text="نام و نام خانوادگی",
-        font=("fonts/Persian-Yekan.ttf", 12),
+        font=("fonts/Persian-Yekan.ttf", 12, "bold"),
         bg="white",
     )
     empname_label.grid(row=0, column=2, padx=20, pady=10)
@@ -488,17 +597,17 @@ def employee_form(window):
     empnumber_label = Label(
         detail_frame,
         text="شماره تماس",
-        font=("fonts/Persian-Yekan.ttf", 12),
+        font=("fonts/Persian-Yekan.ttf", 12, "bold"),
         bg="white",
     )
-    empnumber_label.grid(row=0, column=4, padx=20, pady=10)
+    empnumber_label.grid(row=0, column=4, padx=20, pady=10,sticky="w")
     empnumber_entry = Entry(
         detail_frame, font=("fonts/Persian-Yekan.ttf", 12), bg="lightblue"
     )
     empnumber_entry.grid(row=0, column=5, padx=20, pady=10)
 
     gender_label = Label(
-        detail_frame, text="جنسیت", font=("fonts/Persian-Yekan.ttf", 12), bg="white"
+        detail_frame, text="جنسیت", font=("fonts/Persian-Yekan.ttf", 12, "bold"), bg="white"
     )
     gender_label.grid(row=1, column=0, padx=20, pady=10)
 
@@ -515,7 +624,7 @@ def employee_form(window):
     dob_date_label = Label(
         detail_frame,
         text="تاریخ تولد",
-        font=("fonts/Persian-Yekan.ttf", 12),
+        font=("fonts/Persian-Yekan.ttf", 12, "bold"),
         bg="white",
     )
     dob_date_label.grid(row=1, column=2, padx=20, pady=10)
@@ -550,9 +659,21 @@ def employee_form(window):
         work_shift_combobox.set("اول شیفت تعریف کنید")
 
     work_shift_combobox.grid(row=1, column=5)
+    # لیبل شیفت کاری
+    work_shift_label = Label(
+    detail_frame,
+    text="شیفت کاری",
+    font=("fonts/Persian-Yekan.ttf", 12, "bold"),
+    bg="white",
+)
+    work_shift_label.grid(row=1, column=4, padx=20, pady=10, sticky="w")
+
+# کمبوباکس شیفت کاری
+    work_shift_combobox.grid(row=1, column=5, padx=20, pady=10)
+
 
     email_label = Label(
-        detail_frame, text="ایمیل", font=("fonts/Persian-Yekan.ttf", 12), bg="white"
+        detail_frame, text="ایمیل", font=("fonts/Persian-Yekan.ttf", 12,"bold"), bg="white"
     )
     email_label.grid(row=3, column=0, padx=20, pady=10)
     email_entry = Entry(
@@ -561,7 +682,7 @@ def employee_form(window):
     email_entry.grid(row=3, column=1, padx=20, pady=10)
 
     address_label = Label(
-        detail_frame, text="آدرس", font=("fonts/Persian-Yekan.ttf", 12), bg="white"
+        detail_frame, text="آدرس", font=("fonts/Persian-Yekan.ttf", 12,"bold"), bg="white"
     )
     address_label.grid(row=3, column=2, padx=20, pady=10)
     address_text = Text(
@@ -576,7 +697,7 @@ def employee_form(window):
     user_type_label = Label(
         detail_frame,
         text="نوع کاربری",
-        font=("fonts/Persian-Yekan.ttf", 12),
+        font=("fonts/Persian-Yekan.ttf", 12,"bold"),
         bg="white",
     )
     user_type_label.grid(row=3, column=4, padx=20, pady=10, sticky="w")
@@ -600,7 +721,7 @@ def employee_form(window):
     user_type_combobox.grid(row=3, column=5)
 
     password_label = Label(
-        detail_frame, text="رمزعبور", font=("fonts/Persian-Yekan.ttf", 12), bg="white"
+        detail_frame, text="رمزعبور", font=("fonts/Persian-Yekan.ttf", 12,"bold"), bg="white"
     )
     password_label.grid(row=4, column=0, padx=20, pady=10, sticky="w")
     password_entry = Entry(
@@ -608,8 +729,15 @@ def employee_form(window):
     )
     password_entry.grid(row=4, column=1, padx=20, pady=10)
 
-    button_frame = Frame(employee_frame, bg="white")
-    button_frame.place(x=200, y=500)
+    # ================= CRUD BUTTONS (CENTERED) =================
+
+# فریم مادر برای وسط‌چین افقی
+    button_container = Frame(employee_frame, bg="white")
+    button_container.place(relx=0.5, y=520, anchor="n")
+
+    button_frame = Frame(button_container, bg="white")
+    button_frame.pack()
+
 
     add_button = Button(
         button_frame,

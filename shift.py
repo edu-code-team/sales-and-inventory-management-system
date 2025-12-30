@@ -3,6 +3,83 @@ from tkinter import ttk
 from tkinter import messagebox
 import pymysql
 from database import connect_database
+from tkinter import filedialog
+import csv
+
+def export_shift_to_csv(treeview):
+    items = treeview.get_children()
+    if not items:
+        messagebox.showwarning("هشدار", "داده‌ای برای خروجی وجود ندارد")
+        return
+
+    file_path = filedialog.asksaveasfilename(
+        defaultextension=".csv",
+        filetypes=[("CSV files", "*.csv")],
+        title="ذخیره فایل CSV"
+    )
+    if not file_path:
+        return
+
+    with open(file_path, "w", newline="", encoding="utf-8-sig") as file:
+        writer = csv.writer(file)
+        writer.writerow(["شناسه", "نام شیفت", "ساعت شروع", "ساعت پایان"])
+        for item in items:
+            writer.writerow(treeview.item(item)["values"])
+
+    messagebox.showinfo("موفقیت", "خروجی CSV با موفقیت انجام شد")
+
+def import_shift_from_csv(treeview):
+    file_path = filedialog.askopenfilename(
+        filetypes=[("CSV files", "*.csv")],
+        title="انتخاب فایل CSV"
+    )
+    if not file_path:
+        return
+
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return
+
+    cursor.execute("USE inventory_system")
+
+    imported = 0
+    skipped = 0
+
+    with open(file_path, "r", encoding="utf-8-sig") as file:
+        reader = csv.reader(file)
+        next(reader)  # رد کردن هدر
+
+        for row in reader:
+            if len(row) < 4:
+                skipped += 1
+                continue
+
+            shift_name, start_time, end_time = row[1], row[2], row[3]
+
+            cursor.execute(
+                "SELECT shift_id FROM shift_data WHERE shift_name=%s",
+                (shift_name,)
+            )
+            if cursor.fetchone():
+                skipped += 1
+                continue
+
+            cursor.execute(
+                "INSERT INTO shift_data (shift_name, start_time, end_time) VALUES (%s, %s, %s)",
+                (shift_name, start_time, end_time)
+            )
+            imported += 1
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    treeview_data(treeview)
+
+    messagebox.showinfo(
+        "نتیجه",
+        f"وارد شده: {imported}\nرد شده: {skipped}"
+    )
 
 
 def treeview_data(shift_treeview):
@@ -436,7 +513,7 @@ def shift_form(window):
     shift_name_label = Label(
         detail_frame,
         text="نام شیفت *",
-        font=("fonts/Persian-Yekan.ttf", 12),
+        font=("fonts/Persian-Yekan.ttf", 12, "bold"),
         bg="white",
     )
     shift_name_label.grid(row=0, column=0, padx=20, pady=10, sticky="w")
@@ -448,7 +525,7 @@ def shift_form(window):
     start_time_label = Label(
         detail_frame,
         text="ساعت شروع *",
-        font=("fonts/Persian-Yekan.ttf", 12),
+        font=("fonts/Persian-Yekan.ttf", 12, "bold"),
         bg="white",
     )
     start_time_label.grid(row=0, column=2, padx=20, pady=10, sticky="w")
@@ -460,7 +537,7 @@ def shift_form(window):
     Label(
         detail_frame,
         text="(فرمت: HH:MM)",
-        font=("fonts/Persian-Yekan.ttf", 10),
+        font=("fonts/Persian-Yekan.ttf", 10, "bold"),
         bg="white",
         fg="gray",
     ).grid(row=1, column=3, sticky="w", padx=20)
@@ -468,7 +545,7 @@ def shift_form(window):
     end_time_label = Label(
         detail_frame,
         text="ساعت پایان *",
-        font=("fonts/Persian-Yekan.ttf", 12),
+        font=("fonts/Persian-Yekan.ttf", 12, "bold"),
         bg="white",
     )
     end_time_label.grid(row=0, column=4, padx=20, pady=10, sticky="w")
@@ -531,6 +608,36 @@ def shift_form(window):
         command=clear_fields,
     )
     clear_button.grid(row=0, column=3, padx=10)
+# ===== دکمه‌های CSV (مثل صفحه محصولات) =====
+    csv_frame = Frame(shift_frame, bg="white")
+    csv_frame.place(x=350, y=510)
+
+    # ===== دکمه‌های CSV (وسط ۴ دکمه بالا) =====
+
+    import_button = Button(
+    button_frame,
+    text="📥 وارد کردن CSV",
+    font=("fonts/Persian-Yekan.ttf", 11),
+    width=15,
+    fg="white",
+    bg="#4b39e9",
+    command=lambda: import_shift_from_csv(shift_treeview),
+)
+
+    export_button = Button(
+    button_frame,
+    text="📤 خروجی CSV",
+    font=("fonts/Persian-Yekan.ttf", 11),
+    width=15,
+    fg="white",
+    bg="#4b39e9",
+    command=lambda: export_shift_to_csv(shift_treeview),
+)
+
+# ⬇️ ستون 1 و 2 یعنی وسط ۴ دکمه
+    import_button.grid(row=1, column=1, padx=10, pady=10)
+    export_button.grid(row=1, column=2, padx=10, pady=10)
+
 
     shift_treeview.bind("<ButtonRelease-1>", lambda event: select_data(event))
 
