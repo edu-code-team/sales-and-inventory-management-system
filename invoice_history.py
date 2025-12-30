@@ -1,0 +1,681 @@
+from tkinter import *
+from tkinter import ttk, messagebox
+from datetime import datetime
+import jdatetime
+from database import connect_database
+from tkinter import filedialog
+import csv
+
+
+def move_focus(widget):
+    widget.focus_set()
+    return "break"
+
+
+def load_invoice_history(
+    treeview, date_filter=None, invoice_filter=None, customer_filter=None
+):
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return
+
+    try:
+        cursor.execute("USE inventory_system")
+
+        query = """
+            SELECT invoice_number, customer_name, customer_phone, 
+                   total_amount, invoice_date, items_count,
+                   DATE_FORMAT(created_at, '%H:%i:%s') as invoice_time
+            FROM invoice_history
+            WHERE 1=1
+        """
+        params = []
+
+        if date_filter and date_filter != "همه":
+            query += " AND invoice_date = %s"
+            params.append(date_filter)
+
+        if invoice_filter and invoice_filter != "همه":
+            query += " AND invoice_number = %s"
+            params.append(invoice_filter)
+
+        if customer_filter and customer_filter != "همه":
+            query += " AND customer_name LIKE %s"
+            params.append(f"%{customer_filter}%")
+
+        query += " ORDER BY invoice_number DESC"
+
+        cursor.execute(query, tuple(params))
+        invoices = cursor.fetchall()
+
+        treeview.delete(*treeview.get_children())
+
+        for invoice in invoices:
+            treeview.insert(
+                "",
+                END,
+                values=(
+                    invoice[0],  # شماره فاکتور
+                    invoice[1],  # نام مشتری
+                    invoice[2],  # شماره تماس
+                    f"{invoice[3]:,.0f}",  # مبلغ کل
+                    invoice[4],  # تاریخ
+                    invoice[5],  # تعداد آیتم‌ها
+                    invoice[6],  # زمان
+                ),
+            )
+
+    except Exception as e:
+        messagebox.showerror("خطا", f"خطا در بارگذاری تاریخچه: {str(e)}")
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def load_filters(date_filter_cb, invoice_filter_cb, customer_filter_cb):
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return
+
+    try:
+        cursor.execute("USE inventory_system")
+
+        # بارگذاری تاریخ‌ها
+        cursor.execute(
+            "SELECT DISTINCT invoice_date FROM invoice_history ORDER BY invoice_date DESC"
+        )
+        dates = ["همه"] + [date[0] for date in cursor.fetchall()]
+        date_filter_cb["values"] = dates[:20]  # فقط 20 تاریخ آخر
+        date_filter_cb.set("همه")
+
+        # بارگذاری شماره فاکتورها
+        cursor.execute(
+            "SELECT DISTINCT invoice_number FROM invoice_history ORDER BY invoice_number DESC"
+        )
+        invoices = ["همه"] + [str(inv[0]) for inv in cursor.fetchall()]
+        invoice_filter_cb["values"] = invoices[:50]  # فقط 50 فاکتور آخر
+        invoice_filter_cb.set("همه")
+
+        # بارگذاری نام مشتریان
+        cursor.execute(
+            "SELECT DISTINCT customer_name FROM invoice_history ORDER BY customer_name"
+        )
+        customers = ["همه"] + [cust[0] for cust in cursor.fetchall()]
+        customer_filter_cb["values"] = customers[:50]  # فقط 50 مشتری
+        customer_filter_cb.set("همه")
+
+    except Exception as e:
+        print(f"خطا در بارگذاری فیلترها: {e}")
+        date_filter_cb["values"] = ["همه"]
+        invoice_filter_cb["values"] = ["همه"]
+        customer_filter_cb["values"] = ["همه"]
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def show_invoice_details(event, treeview):
+    selected = treeview.selection()
+    if not selected:
+        return
+
+    item = treeview.item(selected[0])
+    invoice_number = item["values"][0]
+
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return
+
+    try:
+        cursor.execute("USE inventory_system")
+
+        # اطلاعات فاکتور اصلی
+        cursor.execute(
+            """
+            SELECT customer_name, customer_phone, total_amount, invoice_date
+            FROM invoice_history 
+            WHERE invoice_number = %s
+        """,
+            (invoice_number,),
+        )
+
+        invoice_info = cursor.fetchone()
+        if not invoice_info:
+            messagebox.showerror("خطا", "فاکتور پیدا نشد")
+            return
+
+        # آیتم‌های فاکتور
+        cursor.execute(
+            """
+            SELECT product_name, price, quantity, total
+            FROM invoice_items
+            WHERE invoice_number = %s
+            ORDER BY id
+        """,
+            (invoice_number,),
+        )
+
+        items = cursor.fetchall()
+
+        # ایجاد پنجره جزئیات
+        show_invoice_detail_window(invoice_number, invoice_info, items)
+
+    except Exception as e:
+        messagebox.showerror("خطا", f"خطا در نمایش جزئیات: {str(e)}")
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def show_invoice_detail_window(invoice_number, invoice_info, items):
+    detail_window = Toplevel()
+    detail_window.title(f"جزئیات فاکتور شماره {invoice_number}")
+    detail_window.geometry("600x500")
+    detail_window.configure(bg="white")
+    detail_window.resizable(False, False)
+
+    # مرکز کردن پنجره
+    detail_window.update_idletasks()
+    width = 600
+    height = 500
+    x = (detail_window.winfo_screenwidth() // 2) - (width // 2)
+    y = (detail_window.winfo_screenheight() // 2) - (height // 2)
+    detail_window.geometry(f"{width}x{height}+{x}+{y}")
+
+    # عنوان
+    Label(
+        detail_window,
+        text=f"📄 فاکتور شماره {invoice_number}",
+        font=("B Nazanin", 18, "bold"),
+        bg="white",
+        fg="#00198f",
+    ).pack(pady=20)
+
+    # اطلاعات فاکتور
+    info_frame = Frame(detail_window, bg="white")
+    info_frame.pack(pady=10, padx=20, fill=X)
+
+    customer_name, customer_phone, total_amount, invoice_date = invoice_info
+
+    info_texts = [
+        f"مشتری: {customer_name}",
+        f"شماره تماس: {customer_phone}",
+        f"تاریخ: {invoice_date}",
+        f"تعداد آیتم‌ها: {len(items)}",
+    ]
+
+    for text in info_texts:
+        Label(
+            info_frame, text=text, font=("B Nazanin", 14), bg="white", anchor="w"
+        ).pack(fill=X, pady=5)
+
+    # خط جداکننده
+    Label(
+        detail_window, text="─" * 50, font=("B Nazanin", 12), bg="white", fg="gray"
+    ).pack(pady=10)
+
+    # آیتم‌های فاکتور
+    Label(
+        detail_window, text="اقلام خرید:", font=("B Nazanin", 14, "bold"), bg="white"
+    ).pack(pady=5)
+
+    items_frame = Frame(detail_window, bg="white")
+    items_frame.pack(pady=10, padx=20, fill=BOTH, expand=True)
+
+    # ایجاد Canvas برای اسکرول
+    canvas = Canvas(items_frame, bg="white", height=200)
+    scrollbar = Scrollbar(items_frame, orient="vertical", command=canvas.yview)
+    scrollable_frame = Frame(canvas, bg="white")
+
+    scrollable_frame.bind(
+        "<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+    )
+
+    canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+    canvas.configure(yscrollcommand=scrollbar.set)
+
+    # هدر جدول
+    header_frame = Frame(scrollable_frame, bg="#f0f0f0")
+    header_frame.pack(fill=X)
+
+    headers = ["نام محصول", "قیمت", "تعداد", "جمع"]
+    for i, header in enumerate(headers):
+        Label(
+            header_frame,
+            text=header,
+            font=("B Nazanin", 12, "bold"),
+            bg="#f0f0f0",
+            width=15,
+        ).pack(side=LEFT, padx=2)
+
+    # آیتم‌ها
+    for item in items:
+        item_frame = Frame(scrollable_frame, bg="white")
+        item_frame.pack(fill=X, pady=2)
+
+        product_name, price, quantity, total = item
+
+        Label(
+            item_frame,
+            text=product_name[:20],
+            font=("B Nazanin", 11),
+            bg="white",
+            width=15,
+        ).pack(side=LEFT, padx=2)
+        Label(
+            item_frame,
+            text=f"{price:,.0f}",
+            font=("B Nazanin", 11),
+            bg="white",
+            width=15,
+        ).pack(side=LEFT, padx=2)
+        Label(
+            item_frame, text=quantity, font=("B Nazanin", 11), bg="white", width=15
+        ).pack(side=LEFT, padx=2)
+        Label(
+            item_frame,
+            text=f"{total:,.0f}",
+            font=("B Nazanin", 11),
+            bg="white",
+            width=15,
+        ).pack(side=LEFT, padx=2)
+
+    canvas.pack(side="left", fill="both", expand=True)
+    scrollbar.pack(side="right", fill="y")
+
+    # خط جداکننده
+    Label(
+        detail_window, text="─" * 50, font=("B Nazanin", 12), bg="white", fg="gray"
+    ).pack(pady=10)
+
+    # جمع کل
+    total_frame = Frame(detail_window, bg="white")
+    total_frame.pack(pady=10, padx=20, fill=X)
+
+    Label(
+        total_frame, text="مبلغ کل فاکتور:", font=("B Nazanin", 14, "bold"), bg="white"
+    ).pack(side=LEFT)
+    Label(
+        total_frame,
+        text=f"{total_amount:,.0f} تومان",
+        font=("B Nazanin", 16, "bold"),
+        bg="white",
+        fg="#28a745",
+    ).pack(side=RIGHT)
+
+    # دکمه بستن
+    Button(
+        detail_window,
+        text="بستن",
+        font=("B Nazanin", 12),
+        bg="#6c757d",
+        fg="white",
+        command=detail_window.destroy,
+    ).pack(pady=20)
+
+
+def export_invoice_history(treeview):
+    """صدور تاریخچه فاکتور به CSV"""
+    try:
+        items = treeview.get_children()
+        data = []
+
+        for item in items:
+            values = treeview.item(item)["values"]
+            data.append(values)
+
+        if not data:
+            messagebox.showwarning("هشدار", "هیچ فاکتوری برای صدور وجود ندارد")
+            return
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+            title="ذخیره تاریخچه فاکتور",
+        )
+
+        if file_path:
+            with open(file_path, "w", newline="", encoding="utf-8-sig") as file:
+                writer = csv.writer(file)
+                writer.writerow(
+                    [
+                        "شماره فاکتور",
+                        "نام مشتری",
+                        "شماره تماس",
+                        "مبلغ کل",
+                        "تاریخ",
+                        "تعداد اقلام",
+                        "زمان",
+                    ]
+                )
+                writer.writerows(data)
+
+            messagebox.showinfo("موفقیت", f"تاریخچه فاکتورها در\n{file_path}\nذخیره شد")
+
+    except Exception as e:
+        messagebox.showerror("خطا", f"خطا در صدور فایل: {str(e)}")
+
+
+def delete_invoice(treeview):
+    """حذف فاکتور از تاریخچه"""
+    selected = treeview.selection()
+    if not selected:
+        messagebox.showerror("خطا", "هیچ فاکتوری انتخاب نشده است")
+        return
+
+    item = treeview.item(selected[0])
+    invoice_number = item["values"][0]
+
+    confirm = messagebox.askyesno(
+        "تأیید حذف",
+        f"آیا از حذف فاکتور شماره {invoice_number} مطمئن هستید؟\nاین عمل قابل بازگشت نیست!",
+    )
+
+    if not confirm:
+        return
+
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return
+
+    try:
+        cursor.execute("USE inventory_system")
+
+        # حذف فاکتور (CASCADE باعث حذف خودکار آیتم‌ها می‌شود)
+        cursor.execute(
+            "DELETE FROM invoice_history WHERE invoice_number = %s", (invoice_number,)
+        )
+
+        connection.commit()
+        messagebox.showinfo("موفقیت", f"فاکتور شماره {invoice_number} حذف شد")
+
+        # تازه‌سازی تاریخچه
+        load_invoice_history(treeview)
+
+    except Exception as e:
+        messagebox.showerror("خطا", f"خطا در حذف فاکتور: {str(e)}")
+        connection.rollback()
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def invoice_history_form(window):
+    history_frame = Frame(
+        window,
+        width=window.winfo_width() - 200,
+        height=window.winfo_height(),
+        bg="white",
+    )
+    history_frame.place(x=0, y=100)
+
+    # هدر فرم
+    heading_label = Label(
+        history_frame,
+        text="📜 تاریخچه فاکتورها",
+        font=("fonts/Persian-Yekan.ttf", 18, "bold"),
+        bg="#00198f",
+        fg="white",
+    )
+    heading_label.place(x=0, y=0, relwidth=1)
+
+    # دکمه بازگشت
+    try:
+        back_image = PhotoImage(file="images/back_button.png")
+        back_button = Button(
+            history_frame,
+            image=back_image,
+            bd=0,
+            cursor="hand2",
+            bg="white",
+            command=lambda: history_frame.place_forget(),
+        )
+        back_button.place(x=10, y=45)
+    except:
+        back_button = Button(
+            history_frame,
+            text="← بازگشت",
+            font=("fonts/Persian-Yekan.ttf", 12),
+            bg="#00198f",
+            fg="white",
+            bd=0,
+            cursor="hand2",
+            command=lambda: history_frame.place_forget(),
+        )
+        back_button.place(x=10, y=45)
+
+    # ============ فیلترها ============
+    filter_frame = Frame(history_frame, bg="white", bd=1, relief=SOLID)
+    filter_frame.place(x=20, y=80, width=1150, height=80)
+
+    # فیلتر تاریخ
+    Label(
+        filter_frame, text="تاریخ:", font=("fonts/Persian-Yekan.ttf", 12), bg="white"
+    ).place(x=1050, y=10)
+
+    date_filter = ttk.Combobox(
+        filter_frame,
+        font=("fonts/Persian-Yekan.ttf", 11),
+        width=15,
+        state="readonly",
+        justify="right",
+    )
+    date_filter.place(x=900, y=10)
+
+    # فیلتر شماره فاکتور
+    Label(
+        filter_frame,
+        text="شماره فاکتور:",
+        font=("fonts/Persian-Yekan.ttf", 12),
+        bg="white",
+    ).place(x=860, y=10)
+
+    invoice_filter = ttk.Combobox(
+        filter_frame,
+        font=("fonts/Persian-Yekan.ttf", 11),
+        width=15,
+        state="readonly",
+        justify="right",
+    )
+    invoice_filter.place(x=710, y=10)
+
+    # فیلتر مشتری
+    Label(
+        filter_frame, text="مشتری:", font=("fonts/Persian-Yekan.ttf", 12), bg="white"
+    ).place(x=670, y=10)
+
+    customer_filter = ttk.Combobox(
+        filter_frame,
+        font=("fonts/Persian-Yekan.ttf", 11),
+        width=15,
+        state="readonly",
+        justify="right",
+    )
+    customer_filter.place(x=520, y=10)
+
+    # دکمه اعمال فیلتر
+    apply_filter_button = Button(
+        filter_frame,
+        text="🔍 اعمال فیلتر",
+        font=("fonts/Persian-Yekan.ttf", 11),
+        bg="#00198f",
+        fg="white",
+        width=12,
+        command=lambda: load_invoice_history(
+            invoice_treeview,
+            date_filter.get(),
+            invoice_filter.get(),
+            customer_filter.get(),
+        ),
+    )
+    apply_filter_button.place(x=370, y=8)
+
+    # دکمه نمایش همه
+    show_all_button = Button(
+        filter_frame,
+        text="📋 نمایش همه",
+        font=("fonts/Persian-Yekan.ttf", 11),
+        bg="#6c757d",
+        fg="white",
+        width=12,
+        command=lambda: load_invoice_history(invoice_treeview),
+    )
+    show_all_button.place(x=240, y=8)
+
+    # بارگذاری فیلترها
+    load_filters(date_filter, invoice_filter, customer_filter)
+
+    # ============ جدول تاریخچه ============
+    table_frame = Frame(history_frame, bg="white")
+    table_frame.place(x=20, y=170, width=1150, height=400)
+
+    # اسکرول بارها
+    scroll_y = Scrollbar(table_frame, orient=VERTICAL)
+    scroll_x = Scrollbar(table_frame, orient=HORIZONTAL)
+
+    # Treeview تاریخچه
+    invoice_treeview = ttk.Treeview(
+        table_frame,
+        columns=("invoice_no", "customer", "phone", "amount", "date", "items", "time"),
+        show="headings",
+        yscrollcommand=scroll_y.set,
+        xscrollcommand=scroll_x.set,
+        height=15,
+    )
+
+    # تنظیم هدرها
+    headers = [
+        ("شماره فاکتور", 120),
+        ("نام مشتری", 180),
+        ("شماره تماس", 120),
+        ("مبلغ کل", 150),
+        ("تاریخ", 100),
+        ("تعداد اقلام", 100),
+        ("زمان", 80),
+    ]
+
+    for i, (header, width) in enumerate(headers):
+        invoice_treeview.heading(f"#{i+1}", text=header)
+        invoice_treeview.column(f"#{i+1}", width=width, anchor="center")
+
+    scroll_y.config(command=invoice_treeview.yview)
+    scroll_x.config(command=invoice_treeview.xview)
+
+    invoice_treeview.pack(side=LEFT, fill=BOTH, expand=True)
+    scroll_y.pack(side=RIGHT, fill=Y)
+    scroll_x.pack(side=BOTTOM, fill=X)
+
+    # ============ دکمه‌های عملیات ============
+    button_frame = Frame(history_frame, bg="white")
+    button_frame.place(x=20, y=580, width=1150, height=50)
+
+    # دکمه مشاهده جزئیات
+    details_button = Button(
+        button_frame,
+        text="👁️ مشاهده جزئیات",
+        font=("fonts/Persian-Yekan.ttf", 12),
+        bg="#007bff",
+        fg="white",
+        width=15,
+        command=lambda: show_invoice_details(None, invoice_treeview),
+    )
+    details_button.pack(side=RIGHT, padx=10)
+
+    # دکمه حذف
+    delete_button = Button(
+        button_frame,
+        text="🗑️ حذف فاکتور",
+        font=("fonts/Persian-Yekan.ttf", 12),
+        bg="#dc3545",
+        fg="white",
+        width=15,
+        command=lambda: delete_invoice(invoice_treeview),
+    )
+    delete_button.pack(side=RIGHT, padx=10)
+
+    # دکمه صدور به CSV
+    export_button = Button(
+        button_frame,
+        text="📥 صدور به CSV",
+        font=("fonts/Persian-Yekan.ttf", 12),
+        bg="#28a745",
+        fg="white",
+        width=15,
+        command=lambda: export_invoice_history(invoice_treeview),
+    )
+    export_button.pack(side=RIGHT, padx=10)
+
+    # دکمه تازه‌سازی
+    refresh_button = Button(
+        button_frame,
+        text="🔄 تازه‌سازی",
+        font=("fonts/Persian-Yekan.ttf", 12),
+        bg="#6c757d",
+        fg="white",
+        width=15,
+        command=lambda: load_invoice_history(invoice_treeview),
+    )
+    refresh_button.pack(side=RIGHT, padx=10)
+
+    # ============ کنترل کیبورد ============
+
+    def filter_shortcut(event=None):
+        apply_filter_button.invoke()
+
+    def show_all_shortcut(event=None):
+        show_all_button.invoke()
+
+    def details_shortcut(event=None):
+        details_button.invoke()
+
+    def delete_shortcut(event=None):
+        delete_button.invoke()
+
+    def export_shortcut(event=None):
+        export_button.invoke()
+
+    def refresh_shortcut(event=None):
+        refresh_button.invoke()
+
+    def close_form(event=None):
+        history_frame.place_forget()
+
+    # بایند کلیدهای کیبورد
+    window.bind("<F1>", lambda e: date_filter.focus_set())
+    window.bind("<F2>", lambda e: invoice_filter.focus_set())
+    window.bind("<F3>", lambda e: customer_filter.focus_set())
+    window.bind("<F4>", filter_shortcut)
+    window.bind("<F5>", show_all_shortcut)
+    window.bind("<F6>", details_shortcut)
+    window.bind("<F7>", delete_shortcut)
+    window.bind("<F8>", export_shortcut)
+    window.bind("<F9>", refresh_shortcut)
+    window.bind("<Escape>", close_form)
+
+    # Tab Order
+    date_filter.focus_set()
+    date_filter.bind("<Tab>", lambda e: move_focus(invoice_filter))
+    invoice_filter.bind("<Tab>", lambda e: move_focus(customer_filter))
+    customer_filter.bind("<Tab>", lambda e: move_focus(apply_filter_button))
+    apply_filter_button.bind("<Tab>", lambda e: move_focus(show_all_button))
+    show_all_button.bind("<Tab>", lambda e: move_focus(invoice_treeview))
+    invoice_treeview.bind("<Tab>", lambda e: move_focus(details_button))
+    details_button.bind("<Tab>", lambda e: move_focus(delete_button))
+    delete_button.bind("<Tab>", lambda e: move_focus(export_button))
+    export_button.bind("<Tab>", lambda e: move_focus(refresh_button))
+    refresh_button.bind("<Tab>", lambda e: move_focus(date_filter))
+
+    # ============ بارگذاری اولیه ============
+    load_invoice_history(invoice_treeview)
+
+    # تنظیم رویداد دابل کلیک روی فاکتورها
+    invoice_treeview.bind(
+        "<Double-Button-1>", lambda e: show_invoice_details(e, invoice_treeview)
+    )
+
+    return history_frame
+
+
+# تابع برای استفاده در dashboard.py
+def show_invoice_history(window):
+    invoice_history_form(window)
