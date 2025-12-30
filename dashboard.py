@@ -262,9 +262,7 @@ def main(user_info=None):
     products_button.bind("<Return>", lambda e: products_button.invoke())
 
     # ============ دکمه صدور فاکتور (کامنت شده) ============
-    """
-    # TODO: این دکمه باید در آینده برای فرم صدور فاکتور پیاده‌سازی شود
-    # در حال حاضر فقط UI آن ایجاد شده اما عملکردی ندارد
+
     try:
         invoice_icon = PhotoImage(file="images/invoice.png")
     except:
@@ -278,7 +276,7 @@ def main(user_info=None):
         font=("fonts/Persian-Yekan.ttf", 15, "bold"),
         takefocus=True,
         padx=10,
-        command=lambda: show_invoice_form(window)  # این تابع باید پیاده‌سازی شود
+        command=lambda: show_invoice_form(window),  # این تابع باید پیاده‌سازی شود
     )
     invoice_button.bind("<FocusIn>", on_focus_in)
     invoice_button.bind("<FocusOut>", on_focus_out)
@@ -286,11 +284,9 @@ def main(user_info=None):
 
     if invoice_icon:
         invoice_button.config(image=invoice_icon, compound=LEFT)
-    """
 
     # ============ دکمه تاریخچه فاکتور (کامنت شده) ============
-    """
-    # TODO: این دکمه باید در آینده برای نمایش تاریخچه فاکتورها پیاده‌سازی شود
+
     try:
         invoice_history_icon = PhotoImage(file="images/history.png")
     except:
@@ -304,7 +300,7 @@ def main(user_info=None):
         font=("fonts/Persian-Yekan.ttf", 15, "bold"),
         takefocus=True,
         padx=10,
-        command=lambda: show_invoice_history(window)  # این تابع باید پیاده‌سازی شود
+        command=lambda: show_invoice_history(window),  # این تابع باید پیاده‌سازی شود
     )
     invoice_history_button.bind("<FocusIn>", on_focus_in)
     invoice_history_button.bind("<FocusOut>", on_focus_out)
@@ -314,7 +310,6 @@ def main(user_info=None):
         invoice_history_button.config(image=invoice_history_icon, compound=LEFT)
     elif invoice_icon:
         invoice_history_button.config(image=invoice_icon, compound=LEFT)
-    """
 
     exit_icon = PhotoImage(file="images/exit.png")
     exit_button = Button(
@@ -367,13 +362,12 @@ def main(user_info=None):
             products_button.pack(fill=X)
 
         # کامنت شده تا زمانی که پیاده‌سازی شوند
-        """
+
         if can_access(current_user["user_type"], "invoices"):
             invoice_button.pack(fill=X)
 
         if can_access(current_user["user_type"], "invoice_history"):
             invoice_history_button.pack(fill=X)
-        """
 
         # دکمه خروج همیشه نمایش داده شود
         exit_button.pack(fill=X)
