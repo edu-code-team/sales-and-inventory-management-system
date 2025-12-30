@@ -487,12 +487,23 @@ def user_type_form(window):
 
     # ============ سمت چپ: فرم ورودی ============
     left_frame = Frame(user_type_frame, bg="white")
-    left_frame.place(x=30, y=80, width=400, height=420)
+    left_frame.place(x=900, y=80, width=600, height=450)
 
     # فریم برای دکمه‌های ایمپورت/اکسپورت (در بالای فرم)
     import_export_frame = Frame(left_frame, bg="white")
     import_export_frame.grid(row=0, column=0, columnspan=2, pady=(0, 10), sticky="ew")
 
+# دکمه اکسپورت
+    export_button = Button(
+        import_export_frame,
+        text="📊 خروجی CSV",
+        font=("fonts/Persian-Yekan.ttf", 11),
+        width=18,
+        fg="white",
+        bg="#4b39e9",
+        command=lambda: export_to_csv(treeview),
+    )
+    export_button.pack(side=LEFT, padx=5)
     # دکمه ایمپورت
     import_button = Button(
         import_export_frame,
@@ -505,30 +516,22 @@ def user_type_form(window):
     )
     import_button.pack(side=LEFT, padx=5)
 
-    # دکمه اکسپورت
-    export_button = Button(
-        import_export_frame,
-        text="📊 خروجی CSV",
-        font=("fonts/Persian-Yekan.ttf", 11),
-        width=18,
-        fg="white",
-        bg="#4b39e9",
-        command=lambda: export_to_csv(treeview),
-    )
-    export_button.pack(side=LEFT, padx=5)
+    
 
     # نام نوع کاربری
+    # تغییر موقعیت لیبل و فیلد ورودی
     Label(
-        left_frame,
-        text="نام نوع کاربری",
-        font=("fonts/Persian-Yekan.ttf", 12, "bold"),
-        bg="white",
-    ).grid(row=1, column=0, padx=10, pady=10, sticky="w")
+    left_frame,
+    text="نام نوع کاربری",
+    font=("fonts/Persian-Yekan.ttf", 12, "bold"),
+    bg="white",
+).grid(row=1, column=1, padx=10, pady=20, sticky="w")  # تغییر ستون و چسباندن به راست
 
     type_name_entry = Entry(
-        left_frame, font=("fonts/Persian-Yekan.ttf", 12), bg="lightblue", width=25
-    )
-    type_name_entry.grid(row=1, column=1, padx=10, pady=10)
+    left_frame, font=("fonts/Persian-Yekan.ttf", 12), bg="lightblue", width=25
+)
+    type_name_entry.grid(row=1, column=0, padx=10, pady=10, sticky="w")  # تغییر ستون و چسباندن به چپ
+
 
     # دسترسی‌ها
     Label(
@@ -536,10 +539,10 @@ def user_type_form(window):
         text="دسترسی‌ها",
         font=("fonts/Persian-Yekan.ttf", 12, "bold"),
         bg="white",
-    ).grid(row=2, column=0, padx=10, pady=10, sticky="nw")
+    ).grid(row=2, column=1, padx=10, pady=20, sticky="w")
 
     permissions_frame = Frame(left_frame, bg="white")
-    permissions_frame.grid(row=2, column=1, padx=10, pady=10, sticky="nsew")
+    permissions_frame.grid(row=2, column=0, padx=10, pady=10, sticky="w")
 
     # لیست دسترسی‌ها در دو ستون
     permission_labels = [
@@ -582,7 +585,8 @@ def user_type_form(window):
 
     # دکمه‌های عملیات
     button_frame = Frame(left_frame, bg="white")
-    button_frame.grid(row=3, column=0, columnspan=2, pady=20)
+    button_frame.grid(row=3, column=1, columnspan=2, pady=20)
+
 
     selected_id_var = StringVar()  # برای ذخیره ID انتخاب شده
 
@@ -598,7 +602,7 @@ def user_type_form(window):
             type_name_entry.get(), [var.get() for var in permission_vars], treeview
         ),
     )
-    add_button.grid(row=0, column=0, padx=5, pady=5)
+    add_button.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
 
     update_button = Button(
         button_frame,
@@ -614,7 +618,7 @@ def user_type_form(window):
             treeview,
         ),
     )
-    update_button.grid(row=0, column=1, padx=5, pady=5)
+    update_button.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
 
     # ردیف دوم - دو دکمه
     delete_button = Button(
@@ -626,7 +630,7 @@ def user_type_form(window):
         width=12,
         command=lambda: delete_user_type(selected_id_var.get(), treeview),
     )
-    delete_button.grid(row=1, column=0, padx=5, pady=5)
+    delete_button.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
 
     clear_button = Button(
         button_frame,
@@ -639,11 +643,11 @@ def user_type_form(window):
             type_name_entry, permission_vars, selected_id_var, treeview
         ),
     )
-    clear_button.grid(row=1, column=1, padx=5, pady=5)
+    clear_button.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
 
     # ============ سمت راست: جدول ============
     right_frame = Frame(user_type_frame, bg="white")
-    right_frame.place(x=480, y=80, width=650, height=420)
+    right_frame.place(x=30, y=80, width=750, height=420)
 
     # Treeview با 2 ستون اصلی
     tree_frame = Frame(right_frame, bg="white")
