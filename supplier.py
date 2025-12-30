@@ -3,6 +3,77 @@ from tkinter import ttk
 from tkinter import messagebox
 from employees import connect_database
 
+from tkinter import filedialog
+import csv
+from tkinter import messagebox
+
+# تابع برای ذخیره داده‌های تامین‌کنندگان در فایل CSV
+def export_supplier_to_csv(treeview):
+    items = treeview.get_children()
+    if not items:
+        messagebox.showwarning("هشدار", "داده‌ای برای خروجی وجود ندارد")
+        return
+
+    file_path = filedialog.asksaveasfilename(
+        defaultextension=".csv",
+        filetypes=[("CSV files", "*.csv")],
+        title="ذخیره فایل CSV"
+    )
+    if not file_path:
+        return
+
+    with open(file_path, "w", newline="", encoding="utf-8-sig") as file:
+        writer = csv.writer(file)
+        writer.writerow(["شماره فاکتور", "نام تامین‌کننده", "شماره تماس", "توضیحات"])  # به دلخواه شما
+        for item in items:
+            writer.writerow(treeview.item(item)["values"])
+
+    messagebox.showinfo("موفقیت", "خروجی CSV با موفقیت انجام شد")
+
+# تابع برای وارد کردن داده‌ها از فایل CSV به دیتابیس تامین‌کنندگان
+def import_supplier_from_csv(treeview):
+    file_path = filedialog.askopenfilename(
+        filetypes=[("CSV files", "*.csv")],
+        title="انتخاب فایل CSV"
+    )
+    if not file_path:
+        return
+
+    # اتصال به پایگاه داده و وارد کردن داده‌ها
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return
+
+    cursor.execute("USE inventory_system")
+    imported, skipped = 0, 0
+
+    with open(file_path, "r", encoding="utf-8-sig") as file:
+        reader = csv.reader(file)
+        next(reader)  # برای رد کردن هدر
+
+        for row in reader:
+            if len(row) < 4:
+                skipped += 1
+                continue
+
+            invoice = row[0]
+            cursor.execute("SELECT invoice FROM supplier_data WHERE invoice = %s", (invoice,))
+            if cursor.fetchone():
+                skipped += 1
+                continue
+
+            cursor.execute(
+                "INSERT INTO supplier_data (invoice, name, contact, description) VALUES (%s, %s, %s, %s)",
+                tuple(row)
+            )
+            imported += 1
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    treeview_data()
+    messagebox.showinfo("نتیجه", f"وارد شده: {imported}\nرد شده: {skipped}")
 
 def fetch_supplier_search_values(invoice_cb, name_cb, contact_cb):
     cursor, connection = connect_database()
@@ -352,6 +423,35 @@ def supplier_form(window):
             invoice_entry, name_entry, contact_entry, description_text, treeview
         ),
     ).grid(row=0, column=3)
+
+    import_export_frame = Frame(button_frame, bg="white")
+    import_export_frame.grid(row=1, column=0, columnspan=4, pady=(10, 10), sticky="ew")
+
+
+# دکمه اکسپورت
+    export_button = Button(
+    import_export_frame,
+    text="📊 خروجی CSV",
+    font=("fonts/Persian-Yekan.ttf", 11),
+    width=18,
+    fg="white",
+    bg="#4b39e9",
+    command=lambda: export_supplier_to_csv(treeview),
+)
+    export_button.pack(side=LEFT, padx=14)
+
+# دکمه ایمپورت
+    import_button = Button(
+    import_export_frame,
+    text="📥 وارد کردن CSV",
+    font=("fonts/Persian-Yekan.ttf", 11),
+    width=18,
+    fg="white",
+    bg="#4b39e9",
+    command=lambda: import_supplier_from_csv(treeview),
+)
+    import_button.pack(side=LEFT, padx=14)
+
 
     # ==================== سرچ + جدول سمت راست ====================
     right_frame = Frame(supplier_frame, bg="white")
