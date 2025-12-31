@@ -5,10 +5,134 @@ from tkinter import messagebox
 from tkcalendar import DateEntry
 import pymysql
 from database import connect_database, get_shifts_from_db
-from user_type import get_user_types_for_combobox  # اضافه کردن import جدید
+from user_type import get_user_types_for_combobox
 from tkinter import filedialog
 import csv
 
+# ================= تابع فیلتر چند ملاکه جدید =================
+def multi_filter_employees(treeview, empid_filter, name_filter, gender_filter, usertype_filter, shift_filter):
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return
+    
+    try:
+        cursor.execute("USE inventory_system")
+        
+        # ساخت شرط‌های پویا
+        conditions = []
+        params = []
+        
+        if empid_filter and empid_filter != "همه":
+            conditions.append("empid = %s")
+            params.append(empid_filter)
+        
+        if name_filter and name_filter != "همه":
+            conditions.append("name = %s")
+            params.append(name_filter)
+        
+        if gender_filter != "همه":
+            conditions.append("gender = %s")
+            params.append(gender_filter)
+        
+        if usertype_filter != "همه":
+            conditions.append("usertype = %s")
+            params.append(usertype_filter)
+        
+        if shift_filter != "همه":
+            conditions.append("work_shift = %s")
+            params.append(shift_filter)
+        
+        # ساختن کوئری نهایی
+        if conditions:
+            query = "SELECT * FROM employee_data WHERE " + " AND ".join(conditions)
+        else:
+            query = "SELECT * FROM employee_data"
+        
+        cursor.execute(query, tuple(params))
+        records = cursor.fetchall()
+        
+        treeview.delete(*treeview.get_children())
+        
+        if not records:
+            messagebox.showinfo("نتیجه", "هیچ رکوردی با این فیلترها یافت نشد")
+            return
+            
+        for record in records:
+            treeview.insert("", END, values=record)
+            
+    except Exception as e:
+        messagebox.showerror("خطا", f"خطا در فیلتر کردن: {str(e)}")
+    finally:
+        cursor.close()
+        connection.close()
+
+# ================= تابع برای دریافت نام‌های کارمندان از دیتابیس =================
+def get_employee_names_from_db():
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return ["همه"]
+    
+    try:
+        cursor.execute("USE inventory_system")
+        cursor.execute("SELECT DISTINCT name FROM employee_data ORDER BY name")
+        names = cursor.fetchall()
+        name_list = ["همه"]
+        for name in names:
+            if name[0]:  # اطمینان از خالی نبودن
+                name_list.append(name[0])
+        return name_list
+    except Exception as e:
+        print(f"خطا در دریافت نام‌ها: {e}")
+        return ["همه"]
+    finally:
+        cursor.close()
+        connection.close()
+
+# ================= تابع برای دریافت شماره‌های پرسنلی از دیتابیس =================
+def get_employee_ids_from_db():
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return ["همه"]
+    
+    try:
+        cursor.execute("USE inventory_system")
+        cursor.execute("SELECT DISTINCT empid FROM employee_data ORDER BY empid")
+        ids = cursor.fetchall()
+        id_list = ["همه"]
+        for id in ids:
+            if id[0]:  # اطمینان از خالی نبودن
+                id_list.append(str(id[0]))
+        return id_list
+    except Exception as e:
+        print(f"خطا در دریافت شماره پرسنلی‌ها: {e}")
+        return ["همه"]
+    finally:
+        cursor.close()
+        connection.close()
+
+# ================= تابع برای دریافت انواع کاربری از دیتابیس =================
+def get_all_user_types_from_db():
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return ["همه", "ادمین", "کاربر"]
+    
+    try:
+        cursor.execute("USE inventory_system")
+        cursor.execute("SELECT DISTINCT usertype FROM employee_data ORDER BY usertype")
+        usertypes = cursor.fetchall()
+        usertype_list = ["همه"]
+        for usertype in usertypes:
+            if usertype[0]:  # اطمینان از خالی نبودن
+                usertype_list.append(usertype[0])
+        return usertype_list
+    except Exception as e:
+        print(f"خطا در دریافت انواع کاربری: {e}")
+        return ["همه", "ادمین", "کاربر"]
+    finally:
+        cursor.close()
+        connection.close()
+
+# ================= تابع صادر کردن CSV =================
 def export_employee_to_csv(treeview):
     items = treeview.get_children()
     if not items:
@@ -17,67 +141,106 @@ def export_employee_to_csv(treeview):
 
     file_path = filedialog.asksaveasfilename(
         defaultextension=".csv",
-        filetypes=[("CSV files", "*.csv")],
+        filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
         title="ذخیره فایل CSV"
     )
     if not file_path:
         return
 
-    with open(file_path, "w", newline="", encoding="utf-8-sig") as file:
-        writer = csv.writer(file)
-        writer.writerow([
-            "شماره پرسنلی", "نام", "ایمیل", "جنسیت", "تاریخ تولد",
-            "شماره تماس", "شیفت کاری", "آدرس", "نوع کاربری", "رمز عبور"
-        ])
-        for item in items:
-            writer.writerow(treeview.item(item)["values"])
+    try:
+        with open(file_path, "w", newline="", encoding="utf-8-sig") as file:
+            writer = csv.writer(file)
+            writer.writerow([
+                "شماره پرسنلی", "نام", "ایمیل", "جنسیت", "تاریخ تولد",
+                "شماره تماس", "شیفت کاری", "آدرس", "نوع کاربری", "رمز عبور"
+            ])
+            for item in items:
+                writer.writerow(treeview.item(item)["values"])
 
-    messagebox.showinfo("موفقیت", "خروجی CSV با موفقیت انجام شد")
+        messagebox.showinfo("موفقیت", f"داده‌ها با موفقیت در\n{file_path}\nذخیره شدند")
+    except Exception as e:
+        messagebox.showerror("خطا", f"خطا در ذخیره‌سازی: {str(e)}")
 
+# ================= تابع وارد کردن CSV =================
 def import_employee_from_csv(treeview):
-    file_path = filedialog.askopenfilename(
-        filetypes=[("CSV files", "*.csv")],
-        title="انتخاب فایل CSV"
-    )
-    if not file_path:
-        return
+    try:
+        file_path = filedialog.askopenfilename(
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+            title="انتخاب فایل CSV برای وارد کردن"
+        )
+        if not file_path:
+            return
 
-    cursor, connection = connect_database()
-    if not cursor or not connection:
-        return
+        cursor, connection = connect_database()
+        if not cursor or not connection:
+            return
 
-    cursor.execute("USE inventory_system")
-    imported, skipped = 0, 0
+        cursor.execute("USE inventory_system")
+        
+        imported_count = 0
+        skipped_count = 0
+        errors = []
+        
+        with open(file_path, "r", encoding="utf-8-sig") as file:
+            reader = csv.reader(file)
+            next(reader)  # رد کردن هدر
+            
+            for idx, row in enumerate(reader, start=2):
+                if len(row) < 10:
+                    skipped_count += 1
+                    errors.append(f"سطر {idx}: تعداد ستون‌ها ناکافی است")
+                    continue
+                    
+                try:
+                    empid = row[0].strip()
+                    
+                    # چک کردن وجود شماره پرسنلی
+                    cursor.execute("SELECT empid FROM employee_data WHERE empid=%s", (empid,))
+                    if cursor.fetchone():
+                        skipped_count += 1
+                        errors.append(f"سطر {idx}: شماره پرسنلی '{empid}' از قبل وجود دارد")
+                        continue
+                    
+                    # وارد کردن کارمند جدید
+                    cursor.execute(
+                        "INSERT INTO employee_data VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                        tuple(row)
+                    )
+                    imported_count += 1
+                    
+                except ValueError as ve:
+                    skipped_count += 1
+                    errors.append(f"سطر {idx}: خطا در فرمت داده‌ها - {str(ve)}")
+                except Exception as e:
+                    skipped_count += 1
+                    errors.append(f"سطر {idx}: خطای عمومی - {str(e)}")
+        
+        connection.commit()
+        
+        # نمایش نتایج
+        result_message = f"عملیات وارد کردن تکمیل شد:\n\n"
+        result_message += f"تعداد وارد شده: {imported_count}\n"
+        result_message += f"تعداد رد شده: {skipped_count}\n"
+        
+        if errors and len(errors) <= 10:
+            result_message += "\nخطاها:\n"
+            for error in errors[:10]:
+                result_message += f"• {error}\n"
+        elif errors:
+            result_message += f"\n{len(errors)} خطا رخ داده است (اولین 10 خطا نمایش داده شد)"
+        
+        messagebox.showinfo("عملیات وارد کردن", result_message)
+        
+        # تازه‌سازی داده‌ها
+        treeview_data()
+        
+        cursor.close()
+        connection.close()
+        
+    except Exception as e:
+        messagebox.showerror("خطا", f"خطا در وارد کردن فایل: {str(e)}")
 
-    with open(file_path, "r", encoding="utf-8-sig") as file:
-        reader = csv.reader(file)
-        next(reader)
-
-        for row in reader:
-            if len(row) < 10:
-                skipped += 1
-                continue
-
-            empid = row[0]
-
-            cursor.execute("SELECT empid FROM employee_data WHERE empid=%s", (empid,))
-            if cursor.fetchone():
-                skipped += 1
-                continue
-
-            cursor.execute(
-                "INSERT INTO employee_data VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                tuple(row)
-            )
-            imported += 1
-
-    connection.commit()
-    cursor.close()
-    connection.close()
-
-    treeview_data()
-    messagebox.showinfo("نتیجه", f"وارد شده: {imported}\nرد شده: {skipped}")
-
+# ================= توابع اصلی =================
 def treeview_data():
     cursor, connection = connect_database()
     if not cursor or not connection:
@@ -94,10 +257,6 @@ def treeview_data():
     finally:
         cursor.close()
         connection.close()
-
-
-# تابع connect_database دیگر اینجا تعریف نشود! از database.py استفاده می‌کنیم
-# تابع get_shifts_from_db هم از database.py استفاده می‌شود
 
 
 def create_database_table():
@@ -182,7 +341,7 @@ def add_employee(
     ):
         messagebox.showerror("خطا", "هیچ فیلدی نباید خالی باشد")
     else:
-        cursor, connection = connect_database()  # از database.py
+        cursor, connection = connect_database()
         if not cursor or not connection:
             return
         cursor.execute("USE inventory_system")
@@ -191,7 +350,7 @@ def add_employee(
             if cursor.fetchone():
                 messagebox.showerror("خطا", "شماره پرسنلی از قبل موجود می باشد")
                 return
-            address = address.strip()  # removes \n at the end of the address
+            address = address.strip()
             cursor.execute(
                 "INSERT INTO employee_data VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 (
@@ -253,7 +412,7 @@ def update_employee(
     if not selected:
         messagebox.showerror("خطا", "هیچ ردیفی برای بروزرسانی انتخاب نشده")
     else:
-        cursor, connection = connect_database()  # از database.py
+        cursor, connection = connect_database()
         if not cursor or not connection:
             return
         try:
@@ -314,7 +473,7 @@ def delete_employee(empid):
             "تایید", "آیا از حذف ردیف مورد نظر خود مطمئن هستید؟"
         )
         if result:
-            cursor, connection = connect_database()  # از database.py
+            cursor, connection = connect_database()
             if not cursor or not connection:
                 return
             try:
@@ -322,71 +481,19 @@ def delete_employee(empid):
                 cursor.execute("DELETE FROM employee_data WHERE empid = %s", (empid,))
                 connection.commit()
                 treeview_data()
-                messagebox.showinfo("عملیات موفق", "اطلاعات کارمند با موفقیت حذف شذ")
+                messagebox.showinfo("عملیات موفق", "اطلاعات کارمند با موفقیت حذف شد")
             except Exception as e:
                 messagebox.showerror("خطا", f"{e} خطای")
             finally:
                 cursor.close()
                 connection.close()
 
+# ================= تابع move_focus برای Tab =================
+def move_focus(widget):
+    widget.focus_set()
+    return "break"
 
-def search_employee(search_option, value):
-    if search_option == "جستجو بر اساس":
-        messagebox.showerror("خطا", "هیچ گزینه ای انتخاب نشده است")
-    elif value == "":
-        messagebox.showerror("خطا", "مقداری را برای جستجو وارد کنید")
-    else:
-        # ------------map for search columns:------------
-        column_mapping = {
-            "شماره پرسنلی": "empid",
-            "نام و نام خانوادگی": "name",
-            "جنسیت": "gender",
-            "تاریخ تولد": "dob",
-            "شیفت کاری": "work_shift",
-            "نوع کاربری": "usertype",
-        }
-        db_column = column_mapping.get(search_option)
-        # -----------------------------------------------
-
-        cursor, connection = connect_database()  # از database.py
-        if not cursor or not connection:
-            return
-        try:
-            cursor.execute("USE inventory_system")
-
-            # -------------db_column query--------------
-            # show all matches not just the exact ones
-            like_value = f"%{value.strip()}%"
-            query = f"SELECT * FROM employee_data WHERE {db_column} LIKE %s"
-            cursor.execute(query, (like_value,))
-            # ------------------------------------------
-
-            recordes = cursor.fetchall()
-
-            employee_treeview.delete(*employee_treeview.get_children())
-
-            # ------------check empty results------------
-            if not recordes:
-                messagebox.showinfo("نتیجه جستجو", "هیچ رکوردی یافت نشد")
-                return
-            # ------------------------------------------
-
-            for recorde in recordes:
-                employee_treeview.insert("", END, values=recorde)
-
-        except Exception as e:
-            messagebox.showerror("خطا", f"{e} خطای")
-        finally:
-            cursor.close()
-            connection.close()
-
-
-def show_all(search_entry_widget, search_combobox_widget):
-    treeview_data()
-    search_entry_widget.delete(0, END)
-    search_combobox_widget.set("جستجو بر اساس")
-
-
+# ================= تابع فرم کارمندان =================
 def employee_form(window):
 
     global back_image, employee_treeview
@@ -396,7 +503,9 @@ def employee_form(window):
         height=window.winfo_height(),
         bg="white",
     )
-    employee_frame.place(x=0, y=100)  # تنظیم موقعیت فرم در سمت چپ صفحه
+    employee_frame.place(x=0, y=100)
+    
+    # ================= هدر =================
     heading_label = Label(
         employee_frame,
         text="مدیریت کارمندان",
@@ -408,8 +517,125 @@ def employee_form(window):
 
     back_image = PhotoImage(file="images/back_button.png")
 
+    # ================= فریم فیلتر - بین هدر و TreeView =================
+    # ارتفاع هدر 40 پیکسل است، پس فیلتر از y=40 شروع می‌شود
+    # عرض فیلتر هم اندازه هدر (relwidth=1) به جز 30 پیکسل برای دکمه back
+    filter_frame = Frame(employee_frame, bg="white", bd=1, relief=SOLID)
+    filter_frame.place(x=30, y=40, relwidth=1, height=50)  # عرض فیکس شده با هدر
+    
+    # فونت فیلتر
+    f_font = ("fonts/Persian-Yekan.ttf", 10)
+    
+    # دریافت داده‌ها از دیتابیس برای Comboboxها
+    empid_list = get_employee_ids_from_db()
+    name_list = get_employee_names_from_db()
+    
+    # شماره پرسنلی (Combobox)
+    Label(filter_frame, text="شماره پرسنلی", bg="white", font=f_font).place(x=10, y=2)
+    empid_filter = ttk.Combobox(
+        filter_frame,
+        values=empid_list,
+        width=10,
+        state="readonly",
+        font=f_font
+    )
+    empid_filter.place(x=10, y=22)
+    empid_filter.set("همه")
+    
+    # نام و نام خانوادگی (Combobox)
+    Label(filter_frame, text="نام و نام خانوادگی", bg="white", font=f_font).place(x=100, y=2)
+    name_filter = ttk.Combobox(
+        filter_frame,
+        values=name_list,
+        width=12,
+        state="readonly",
+        font=f_font
+    )
+    name_filter.place(x=100, y=22)
+    name_filter.set("همه")
+    
+    # جنسیت
+    Label(filter_frame, text="جنسیت", bg="white", font=f_font).place(x=210, y=2)
+    gender_filter = ttk.Combobox(
+        filter_frame,
+        values=["همه", "زن", "مرد"],
+        width=8,
+        state="readonly",
+        font=f_font
+    )
+    gender_filter.place(x=210, y=22)
+    gender_filter.set("همه")
+    
+    # نوع کاربری - دریافت همه انواع کاربری از دیتابیس
+    Label(filter_frame, text="نوع کاربری", bg="white", font=f_font).place(x=290, y=2)
+    
+    # دریافت لیست انواع کاربری برای فیلتر
+    usertypes_list = get_all_user_types_from_db()
+    
+    usertype_filter = ttk.Combobox(
+        filter_frame,
+        values=usertypes_list,
+        width=10,
+        state="readonly",
+        font=f_font
+    )
+    usertype_filter.place(x=290, y=22)
+    usertype_filter.set("همه")
+    
+    # شیفت کاری
+    Label(filter_frame, text="شیفت کاری", bg="white", font=f_font).place(x=380, y=2)
+    
+    # دریافت لیست شیفت‌ها برای فیلتر
+    shifts_list = get_shifts_from_db()
+    shift_filter_values = ["همه"]
+    if shifts_list:
+        shift_filter_values.extend(shifts_list)
+    
+    shift_filter = ttk.Combobox(
+        filter_frame,
+        values=shift_filter_values,
+        width=10,
+        state="readonly",
+        font=f_font
+    )
+    shift_filter.place(x=380, y=22)
+    shift_filter.set("همه")
+    
+    # دکمه جستجو
+    search_btn = Button(
+        filter_frame,
+        text="جستجو",
+        bg="#00198f",
+        fg="white",
+        width=8,
+        font=("fonts/Persian-Yekan.ttf", 10),
+        command=lambda: multi_filter_employees(
+            employee_treeview,
+            empid_filter.get(),
+            name_filter.get(),
+            gender_filter.get(),
+            usertype_filter.get(),
+            shift_filter.get()
+        )
+    )
+    search_btn.place(x=480, y=20)
+    
+    # دکمه نمایش همه
+    show_all_btn = Button(
+        filter_frame,
+        text="نمایش همه",
+        bg="#4b39e9",
+        fg="white",
+        width=8,
+        font=("fonts/Persian-Yekan.ttf", 10),
+        command=lambda: treeview_data()
+    )
+    show_all_btn.place(x=560, y=20)
+
+    # ================= TreeView - زیر فیلتر =================
+    # فریم TreeView از y=90 شروع می‌شود (40 پیکسل هدر + 50 پیکسل فیلتر)
     top_Frame = Frame(employee_frame, bg="white")
-    top_Frame.place(x=0, y=40, relwidth=1, height=235)
+    top_Frame.place(x=0, y=90, relwidth=1, height=185)  # ارتفاع کاهش یافته
 
     back_button = Button(
         top_Frame,
@@ -420,52 +646,6 @@ def employee_form(window):
         command=lambda: employee_frame.place_forget(),
     )
     back_button.place(x=10, y=0)
-
-    search_frame = Frame(top_Frame)
-    search_frame.pack()
-    Search_combobox = ttk.Combobox(
-        search_frame,
-        values=(
-            "شماره پرسنلی",
-            "نام و نام خانوادگی",
-            "جنسیت",
-            "تاریخ تولد",
-            "شیفت کاری",
-            "نوع کاربری",
-        ),
-        font=("fonts/Persian-Yekan.ttf", 12),
-        state="readonly",
-        justify="center",
-    )
-    Search_combobox.set("جستجو بر اساس")
-    Search_combobox.grid(row=0, column=0, padx=20)
-
-    search_entry = Entry(
-        search_frame, font=("fonts/Persian-Yekan.ttf", 12), bg="lightblue"
-    )
-    search_entry.grid(row=0, column=1)
-
-    search_button = Button(
-        search_frame,
-        text="جستجو",
-        font=("fonts/Persian-Yekan.ttf", 12),
-        fg="white",
-        bg="#00198f",
-        command=lambda: search_employee(Search_combobox.get(), search_entry.get()),
-    )
-    search_button.grid(row=0, column=2, padx=20)
-
-    show_button = Button(
-        search_frame,
-        text="نمایش همه",
-        font=("fonts/Persian-Yekan.ttf", 12),
-        width=10,
-        cursor="hand2",
-        fg="white",
-        bg="#00198f",
-        command=lambda: show_all(search_entry, Search_combobox),
-    )
-    show_button.grid(row=0, column=3)
 
     style = ttk.Style()
     style.configure(
@@ -526,50 +706,16 @@ def employee_form(window):
     create_database_table()
     treeview_data()
 
-    # فریم جزئیات کارمند
+    # ================= فریم جزئیات کارمند - زیر TreeView =================
+    # TreeView ارتفاع 185 پیکسل دارد و از y=90 شروع می‌شود، پس از y=275 شروع می‌کنیم
     detail_frame = Frame(employee_frame, bg="white")
     detail_frame.place(x=30, y=280)
 
-    # ================= CSV BUTTONS (کنار فرم جزئیات کارمند) =================
-
-# تنظیم ستون‌ها برای اینکه نظم گرید به‌هم نریزه
+    # تنظیم ستون‌ها برای گرید
     for i in range(7):
         detail_frame.grid_columnconfigure(i, minsize=140)
 
-    csv_frame = Frame(detail_frame, bg="white")
-    csv_frame.grid(
-    row=0,
-    column=6,
-    rowspan=2,
-    padx=40,
-    pady=10,
-    sticky="n"
-)
-
-    import_button = Button(
-    csv_frame,
-    text="📥 وارد کردن CSV",
-    font=("fonts/Persian-Yekan.ttf", 11),
-    width=16,
-    fg="white",
-    bg="#4b39e9",
-    command=lambda: import_employee_from_csv(employee_treeview),
-)
-    import_button.pack(pady=8)
-
-    export_button = Button(
-    csv_frame,
-    text="📤 خروجی CSV",
-    font=("fonts/Persian-Yekan.ttf", 11),
-    width=16,
-    fg="white",
-    bg="#4b39e9",
-    command=lambda: export_employee_to_csv(employee_treeview),
-)
-    export_button.pack(pady=8)
-
-
-    # تعریف فیلدهای ورودی
+    # ================= فیلدهای ورودی =================
     empid_label = Label(
         detail_frame,
         text="شماره پرسنلی",
@@ -638,11 +784,13 @@ def employee_form(window):
     )
     dob_date_entry.grid(row=1, column=3)
 
-    work_shift_combobox = ttk.Combobox(
-        detail_frame, font=("fonts/Persian-Yekan.ttf", 12), width=18, state="readonly"
+    work_shift_label = Label(
+        detail_frame,
+        text="شیفت کاری",
+        font=("fonts/Persian-Yekan.ttf", 12, "bold"),
+        bg="white",
     )
-    work_shift_combobox.set("شیفت کاری را انتخاب کنید")
-    work_shift_combobox.grid(row=1, column=5)
+    work_shift_label.grid(row=1, column=4, padx=20, pady=10, sticky="w")
 
     # دریافت لیست شیفت‌ها از database.py
     shifts_list = get_shifts_from_db()
@@ -658,19 +806,7 @@ def employee_form(window):
         work_shift_combobox["values"] = ["اول شیفت تعریف کنید"]
         work_shift_combobox.set("اول شیفت تعریف کنید")
 
-    work_shift_combobox.grid(row=1, column=5)
-    # لیبل شیفت کاری
-    work_shift_label = Label(
-    detail_frame,
-    text="شیفت کاری",
-    font=("fonts/Persian-Yekan.ttf", 12, "bold"),
-    bg="white",
-)
-    work_shift_label.grid(row=1, column=4, padx=20, pady=10, sticky="w")
-
-# کمبوباکس شیفت کاری
     work_shift_combobox.grid(row=1, column=5, padx=20, pady=10)
-
 
     email_label = Label(
         detail_frame, text="ایمیل", font=("fonts/Persian-Yekan.ttf", 12,"bold"), bg="white"
@@ -702,21 +838,23 @@ def employee_form(window):
     )
     user_type_label.grid(row=3, column=4, padx=20, pady=10, sticky="w")
 
-    # دریافت لیست انواع کاربری از user_type.py
-    user_types_list = get_user_types_for_combobox()
-
+    # دریافت لیست انواع کاربری از دیتابیس (همه انواع کاربری موجود)
+    all_user_types = get_all_user_types_from_db()
+    # حذف "همه" از لیست برای انتخاب نوع کاربری
+    user_types_list_for_selection = [ut for ut in all_user_types if ut != "همه"]
+    
     user_type_combobox = ttk.Combobox(
         detail_frame,
-        values=user_types_list,
+        values=user_types_list_for_selection,
         font=("fonts/Persian-Yekan.ttf", 12),
         width=18,
         state="readonly",
     )
 
-    if user_types_list:
+    if user_types_list_for_selection:
         user_type_combobox.set("نوع کاربری را انتخاب کنید")
     else:
-        user_type_combobox.set("ادمین")  # مقدار پیش‌فرض
+        user_type_combobox.set("ادمین")
 
     user_type_combobox.grid(row=3, column=5)
 
@@ -729,15 +867,12 @@ def employee_form(window):
     )
     password_entry.grid(row=4, column=1, padx=20, pady=10)
 
-    # ================= CRUD BUTTONS (CENTERED) =================
-
-# فریم مادر برای وسط‌چین افقی
+    # ================= دکمه‌های CRUD + CSV =================
     button_container = Frame(employee_frame, bg="white")
     button_container.place(relx=0.5, y=520, anchor="n")
 
     button_frame = Frame(button_container, bg="white")
     button_frame.pack()
-
 
     add_button = Button(
         button_frame,
@@ -745,6 +880,7 @@ def employee_form(window):
         font=("fonts/Persian-Yekan.ttf", 12),
         fg="white",
         bg="#00198f",
+        width=8,
         command=lambda: add_employee(
             empid_entry.get(),
             empname_entry.get(),
@@ -758,7 +894,7 @@ def employee_form(window):
             password_entry.get(),
         ),
     )
-    add_button.grid(row=0, column=0, padx=20)
+    add_button.grid(row=0, column=0, padx=5)
 
     update_button = Button(
         button_frame,
@@ -766,6 +902,7 @@ def employee_form(window):
         font=("fonts/Persian-Yekan.ttf", 12),
         fg="white",
         bg="#00198f",
+        width=8,
         command=lambda: update_employee(
             empid_entry.get(),
             empname_entry.get(),
@@ -779,7 +916,7 @@ def employee_form(window):
             password_entry.get(),
         ),
     )
-    update_button.grid(row=0, column=1, padx=20)
+    update_button.grid(row=0, column=1, padx=5)
 
     delete_button = Button(
         button_frame,
@@ -787,9 +924,10 @@ def employee_form(window):
         font=("fonts/Persian-Yekan.ttf", 12),
         fg="white",
         bg="#00198f",
+        width=8,
         command=lambda: delete_employee(empid_entry.get()),
     )
-    delete_button.grid(row=0, column=2, padx=20)
+    delete_button.grid(row=0, column=2, padx=5)
 
     clear_button = Button(
         button_frame,
@@ -797,6 +935,7 @@ def employee_form(window):
         font=("fonts/Persian-Yekan.ttf", 12),
         fg="white",
         bg="#00198f",
+        width=8,
         command=lambda: clear_fields(
             empid_entry,
             empname_entry,
@@ -811,10 +950,34 @@ def employee_form(window):
             True,
         ),
     )
-    clear_button.grid(row=0, column=3, padx=20)
+    clear_button.grid(row=0, column=3, padx=5)
 
+    # ======= دکمه‌های CSV کنار دکمه‌های اصلی =======
+    import_button = Button(
+        button_frame,
+        text="📥 وارد کردن CSV",
+        font=("fonts/Persian-Yekan.ttf", 11),
+        fg="white",
+        bg="#4b39e9",
+        width=12,
+        command=lambda: import_employee_from_csv(employee_treeview),
+    )
+    import_button.grid(row=0, column=4, padx=5)
+
+    export_button = Button(
+        button_frame,
+        text="📤 خروجی CSV",
+        font=("fonts/Persian-Yekan.ttf", 11),
+        fg="white",
+        bg="#4b39e9",
+        width=12,
+        command=lambda: export_employee_to_csv(employee_treeview),
+    )
+    export_button.grid(row=0, column=5, padx=5)
+
+    # ================= اتصال رویدادها =================
     employee_treeview.bind(
-        "<ButtonRelease-1 >",
+        "<ButtonRelease-1>",
         lambda event: select_data(
             event,
             empid_entry,
@@ -829,3 +992,79 @@ def employee_form(window):
             password_entry,
         ),
     )
+
+    # ================= میانبرهای صفحه کلید =================
+    def add_shortcut(event=None):
+        add_button.invoke()
+
+    def update_shortcut(event=None):
+        update_button.invoke()
+
+    def delete_shortcut(event=None):
+        delete_button.invoke()
+
+    def clear_shortcut(event=None):
+        clear_button.invoke()
+
+    def import_shortcut(event=None):
+        import_button.invoke()
+
+    def export_shortcut(event=None):
+        export_button.invoke()
+
+    def filter_shortcut(event=None):
+        empid_filter.focus_set()
+
+    def close_form(event=None):
+        employee_frame.place_forget()
+
+    # Bind shortcuts
+    window.bind("<a>", add_shortcut)
+    window.bind("<A>", add_shortcut)
+    window.bind("<u>", update_shortcut)
+    window.bind("<U>", update_shortcut)
+    window.bind("<d>", delete_shortcut)
+    window.bind("<D>", delete_shortcut)
+    window.bind("<c>", clear_shortcut)
+    window.bind("<C>", clear_shortcut)
+    window.bind("<i>", import_shortcut)
+    window.bind("<I>", import_shortcut)
+    window.bind("<e>", export_shortcut)
+    window.bind("<E>", export_shortcut)
+    window.bind("<f>", filter_shortcut)
+    window.bind("<F>", filter_shortcut)
+    window.bind("<Escape>", close_form)
+
+    # ================= تنظیم فوکوس Tab =================
+    # تنظیم ترتیب Tab برای فیلدهای ورودی
+    empid_entry.bind("<Tab>", lambda e: move_focus(empname_entry))
+    empname_entry.bind("<Tab>", lambda e: move_focus(email_entry))
+    email_entry.bind("<Tab>", lambda e: move_focus(gender_combobox))
+    gender_combobox.bind("<Tab>", lambda e: move_focus(dob_date_entry))
+    dob_date_entry.bind("<Tab>", lambda e: move_focus(empnumber_entry))
+    empnumber_entry.bind("<Tab>", lambda e: move_focus(work_shift_combobox))
+    work_shift_combobox.bind("<Tab>", lambda e: move_focus(address_text))
+    address_text.bind("<Tab>", lambda e: move_focus(user_type_combobox))
+    user_type_combobox.bind("<Tab>", lambda e: move_focus(password_entry))
+    password_entry.bind("<Tab>", lambda e: move_focus(add_button))
+    
+    # تنظیم ترتیب Tab برای دکمه‌ها
+    add_button.bind("<Tab>", lambda e: move_focus(update_button))
+    update_button.bind("<Tab>", lambda e: move_focus(delete_button))
+    delete_button.bind("<Tab>", lambda e: move_focus(clear_button))
+    clear_button.bind("<Tab>", lambda e: move_focus(import_button))
+    import_button.bind("<Tab>", lambda e: move_focus(export_button))
+    export_button.bind("<Tab>", lambda e: move_focus(empid_filter))
+    
+    # تنظیم ترتیب Tab برای فیلترها
+    empid_filter.bind("<Tab>", lambda e: move_focus(name_filter))
+    name_filter.bind("<Tab>", lambda e: move_focus(gender_filter))
+    gender_filter.bind("<Tab>", lambda e: move_focus(usertype_filter))
+    usertype_filter.bind("<Tab>", lambda e: move_focus(shift_filter))
+    shift_filter.bind("<Tab>", lambda e: move_focus(search_btn))
+    search_btn.bind("<Tab>", lambda e: move_focus(show_all_btn))
+    show_all_btn.bind("<Tab>", lambda e: move_focus(employee_treeview))
+    employee_treeview.bind("<Tab>", lambda e: move_focus(empid_entry))
+
+    # تنظیم فوکوس اولیه
+    empid_entry.focus_set()
