@@ -518,10 +518,10 @@ def employee_form(window):
     back_image = PhotoImage(file="images/back_button.png")
 
     # ================= فریم فیلتر - بین هدر و TreeView =================
-    # ارتفاع هدر 40 پیکسل است، پس فیلتر از y=40 شروع می‌شود
-    # عرض فیلتر هم اندازه هدر (relwidth=1) به جز 30 پیکسل برای دکمه back
+    # افزایش عرض فریم فیلتر برای وسط قرار گرفتن بهتر
+    filter_frame_width = 750  # عرض افزایش یافته برای قرارگیری در مرکز
     filter_frame = Frame(employee_frame, bg="white", bd=1, relief=SOLID)
-    filter_frame.place(x=30, y=40, relwidth=1, height=50)  # عرض فیکس شده با هدر
+    filter_frame.place(relx=0.5, y=45, anchor="n", width=850, height=60)  # ارتفاع بیشتر
     
     # فونت فیلتر
     f_font = ("fonts/Persian-Yekan.ttf", 10)
@@ -530,44 +530,44 @@ def employee_form(window):
     empid_list = get_employee_ids_from_db()
     name_list = get_employee_names_from_db()
     
-    # شماره پرسنلی (Combobox)
-    Label(filter_frame, text="شماره پرسنلی", bg="white", font=f_font).place(x=10, y=2)
+    # شماره پرسنلی (Combobox) - موقعیت مرکزی
+    Label(filter_frame, text="شماره پرسنلی", bg="white", font=f_font).place(x=10, y=5)
     empid_filter = ttk.Combobox(
         filter_frame,
         values=empid_list,
-        width=10,
-        state="readonly",
-        font=f_font
-    )
-    empid_filter.place(x=10, y=22)
-    empid_filter.set("همه")
-    
-    # نام و نام خانوادگی (Combobox)
-    Label(filter_frame, text="نام و نام خانوادگی", bg="white", font=f_font).place(x=100, y=2)
-    name_filter = ttk.Combobox(
-        filter_frame,
-        values=name_list,
         width=12,
         state="readonly",
         font=f_font
     )
-    name_filter.place(x=100, y=22)
-    name_filter.set("همه")
+    empid_filter.place(x=10, y=28)
+    empid_filter.set("همه")
     
-    # جنسیت
-    Label(filter_frame, text="جنسیت", bg="white", font=f_font).place(x=210, y=2)
-    gender_filter = ttk.Combobox(
+    # نام و نام خانوادگی (Combobox)
+    Label(filter_frame, text="نام و نام خانوادگی", bg="white", font=f_font).place(x=130, y=5)
+    name_filter = ttk.Combobox(
         filter_frame,
-        values=["همه", "زن", "مرد"],
-        width=8,
+        values=name_list,
+        width=15,
         state="readonly",
         font=f_font
     )
-    gender_filter.place(x=210, y=22)
+    name_filter.place(x=130, y=28)
+    name_filter.set("همه")
+    
+    # جنسیت
+    Label(filter_frame, text="جنسیت", bg="white", font=f_font).place(x=265, y=5)
+    gender_filter = ttk.Combobox(
+        filter_frame,
+        values=["همه", "زن", "مرد"],
+        width=10,
+        state="readonly",
+        font=f_font
+    )
+    gender_filter.place(x=265, y=28)
     gender_filter.set("همه")
     
     # نوع کاربری - دریافت همه انواع کاربری از دیتابیس
-    Label(filter_frame, text="نوع کاربری", bg="white", font=f_font).place(x=290, y=2)
+    Label(filter_frame, text="نوع کاربری", bg="white", font=f_font).place(x=360, y=5)
     
     # دریافت لیست انواع کاربری برای فیلتر
     usertypes_list = get_all_user_types_from_db()
@@ -575,15 +575,15 @@ def employee_form(window):
     usertype_filter = ttk.Combobox(
         filter_frame,
         values=usertypes_list,
-        width=10,
+        width=12,
         state="readonly",
         font=f_font
     )
-    usertype_filter.place(x=290, y=22)
+    usertype_filter.place(x=360, y=28)
     usertype_filter.set("همه")
     
     # شیفت کاری
-    Label(filter_frame, text="شیفت کاری", bg="white", font=f_font).place(x=380, y=2)
+    Label(filter_frame, text="شیفت کاری", bg="white", font=f_font).place(x=480, y=5)
     
     # دریافت لیست شیفت‌ها برای فیلتر
     shifts_list = get_shifts_from_db()
@@ -594,11 +594,11 @@ def employee_form(window):
     shift_filter = ttk.Combobox(
         filter_frame,
         values=shift_filter_values,
-        width=10,
+        width=12,
         state="readonly",
         font=f_font
     )
-    shift_filter.place(x=380, y=22)
+    shift_filter.place(x=480, y=28)
     shift_filter.set("همه")
     
     # دکمه جستجو
@@ -607,7 +607,7 @@ def employee_form(window):
         text="جستجو",
         bg="#00198f",
         fg="white",
-        width=8,
+        width=10,
         font=("fonts/Persian-Yekan.ttf", 10),
         command=lambda: multi_filter_employees(
             employee_treeview,
@@ -618,7 +618,7 @@ def employee_form(window):
             shift_filter.get()
         )
     )
-    search_btn.place(x=480, y=20)
+    search_btn.place(x=600, y=26)
     
     # دکمه نمایش همه
     show_all_btn = Button(
@@ -626,16 +626,16 @@ def employee_form(window):
         text="نمایش همه",
         bg="#4b39e9",
         fg="white",
-        width=8,
+        width=10,
         font=("fonts/Persian-Yekan.ttf", 10),
         command=lambda: treeview_data()
     )
-    show_all_btn.place(x=560, y=20)
+    show_all_btn.place(x=680, y=26)
 
     # ================= TreeView - زیر فیلتر =================
-    # فریم TreeView از y=90 شروع می‌شود (40 پیکسل هدر + 50 پیکسل فیلتر)
+    # TreeView از y=115 شروع می‌شود (40 پیکسل هدر + 60 پیکسل فیلتر + 15 پیکسل فاصله)
     top_Frame = Frame(employee_frame, bg="white")
-    top_Frame.place(x=0, y=90, relwidth=1, height=185)  # ارتفاع کاهش یافته
+    top_Frame.place(x=0, y=115, relwidth=1, height=185)  # ارتفاع کاهش یافته
 
     back_button = Button(
         top_Frame,
@@ -707,9 +707,9 @@ def employee_form(window):
     treeview_data()
 
     # ================= فریم جزئیات کارمند - زیر TreeView =================
-    # TreeView ارتفاع 185 پیکسل دارد و از y=90 شروع می‌شود، پس از y=275 شروع می‌کنیم
+    # TreeView ارتفاع 185 پیکسل دارد و از y=115 شروع می‌شود، پس از y=305 شروع می‌کنیم
     detail_frame = Frame(employee_frame, bg="white")
-    detail_frame.place(x=30, y=280)
+    detail_frame.place(x=30, y=310)
 
     # تنظیم ستون‌ها برای گرید
     for i in range(7):
@@ -869,7 +869,7 @@ def employee_form(window):
 
     # ================= دکمه‌های CRUD + CSV =================
     button_container = Frame(employee_frame, bg="white")
-    button_container.place(relx=0.5, y=520, anchor="n")
+    button_container.place(relx=0.5, y=550, anchor="n")
 
     button_frame = Frame(button_container, bg="white")
     button_frame.pack()
