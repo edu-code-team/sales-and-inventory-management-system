@@ -122,6 +122,46 @@ def search_product(search_entry, products_treeview, category_filter, status_filt
         connection.close()
 
 
+def load_products_to_treeview(products_treeview):
+    """بارگذاری محصولات از دیتابیس به Treeview"""
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return
+
+    try:
+        cursor.execute("USE inventory_system")
+        cursor.execute(
+            """
+            SELECT id, name, price, quantity, status 
+            FROM product_data 
+            WHERE status = 'فعال'
+            ORDER BY name
+        """
+        )
+        products = cursor.fetchall()
+
+        products_treeview.delete(*products_treeview.get_children())
+
+        for product in products:
+            products_treeview.insert(
+                "",
+                END,
+                values=(
+                    product[0],
+                    product[1],
+                    f"{product[2]:,.0f}",
+                    product[3],
+                    product[4],
+                ),
+            )
+
+    except Exception as e:
+        messagebox.showerror("خطا", f"خطا در بارگذاری محصولات: {str(e)}")
+    finally:
+        cursor.close()
+        connection.close()
+
+
 def load_categories_for_filter(filter_combobox):
     cursor, connection = connect_database()
     if not cursor or not connection:
@@ -161,7 +201,9 @@ def select_product_for_invoice(event, products_treeview, cart_treeview, quantity
     add_to_invoice(cart_treeview, values[0], values[1], price, quantity, total)
 
 
-def create_invoice(customer_name_entry, customer_phone_entry, cart_treeview):
+def show_invoice_preview(
+    customer_name_entry, customer_phone_entry, cart_treeview, window
+):
     customer_name = customer_name_entry.get().strip()
     customer_phone = customer_phone_entry.get().strip()
 
@@ -202,6 +244,236 @@ def create_invoice(customer_name_entry, customer_phone_entry, cart_treeview):
             }
         )
 
+    # نمایش پیش‌نمایش فاکتور
+    show_invoice_preview_window(
+        customer_name,
+        customer_phone,
+        total_amount,
+        invoice_items,
+        cart_treeview,
+        customer_name_entry,
+        customer_phone_entry,
+        window,
+    )
+
+
+def show_invoice_preview_window(
+    customer_name,
+    customer_phone,
+    total_amount,
+    invoice_items,
+    cart_treeview,
+    customer_name_entry,
+    customer_phone_entry,
+    parent_window,
+):
+    preview_window = Toplevel(parent_window)
+    preview_window.title("پیش‌نمایش فاکتور")
+    preview_window.geometry("600x700")
+    preview_window.configure(bg="white")
+    preview_window.resizable(False, False)
+
+    # مرکز کردن پنجره
+    preview_window.update_idletasks()
+    width = 600
+    height = 700
+    x = (preview_window.winfo_screenwidth() // 2) - (width // 2)
+    y = (preview_window.winfo_screenheight() // 2) - (height // 2)
+    preview_window.geometry(f"{width}x{height}+{x}+{y}")
+
+    # عنوان
+    Label(
+        preview_window,
+        text="📋 پیش‌نمایش فاکتور",
+        font=("B Nazanin", 18, "bold"),
+        bg="white",
+        fg="#00198f",
+    ).pack(pady=15)
+
+    # اطلاعات فاکتور
+    info_frame = Frame(preview_window, bg="white", padx=20, pady=10)
+    info_frame.pack(fill=X)
+
+    jalali_date = jdatetime.datetime.now().strftime("%Y/%m/%d")
+    info_texts = [
+        f"تاریخ: {jalali_date}",
+        f"مشتری: {customer_name}",
+        f"شماره تماس: {customer_phone}",
+    ]
+
+    for text in info_texts:
+        Label(
+            info_frame, text=text, font=("B Nazanin", 12), bg="white", anchor="w"
+        ).pack(fill=X, pady=3)
+
+    # خط جداکننده
+    Label(
+        preview_window, text="─" * 50, font=("B Nazanin", 10), bg="white", fg="gray"
+    ).pack(pady=8)
+
+    # لیست محصولات
+    items_frame = Frame(preview_window, bg="white", padx=20)
+    items_frame.pack(fill=BOTH, expand=True)
+
+    # هدر جدول
+    header_frame = Frame(items_frame, bg="#f0f0f0", height=30)
+    header_frame.pack(fill=X)
+
+    headers = ["نام محصول", "تعداد", "قیمت", "جمع"]
+    widths = [250, 80, 100, 100]
+
+    for i, (header, width) in enumerate(zip(headers, widths)):
+        Label(
+            header_frame,
+            text=header,
+            font=("B Nazanin", 11, "bold"),
+            bg="#f0f0f0",
+            width=width // 10,
+            anchor="center",
+        ).pack(side=LEFT, padx=2)
+
+    # محتوای جدول
+    canvas = Canvas(items_frame, bg="white", height=300, highlightthickness=0)
+    scrollbar = Scrollbar(items_frame, orient=VERTICAL, command=canvas.yview)
+    items_container = Frame(canvas, bg="white")
+
+    canvas.configure(yscrollcommand=scrollbar.set)
+    canvas.create_window((0, 0), window=items_container, anchor="nw")
+
+    canvas.pack(side=LEFT, fill=BOTH, expand=True)
+    scrollbar.pack(side=RIGHT, fill=Y)
+
+    # اضافه کردن محصولات
+    for item in invoice_items:
+        item_frame = Frame(items_container, bg="white", height=25)
+        item_frame.pack(fill=X, pady=1)
+
+        Label(
+            item_frame,
+            text=item["product_name"][:30],
+            font=("B Nazanin", 10),
+            bg="white",
+            width=30,
+            anchor="w",
+        ).pack(side=LEFT, padx=2)
+        Label(
+            item_frame,
+            text=item["quantity"],
+            font=("B Nazanin", 10),
+            bg="white",
+            width=8,
+            anchor="center",
+        ).pack(side=LEFT, padx=2)
+        Label(
+            item_frame,
+            text=f"{item['price']:,}",
+            font=("B Nazanin", 10),
+            bg="white",
+            width=10,
+            anchor="center",
+        ).pack(side=LEFT, padx=2)
+        Label(
+            item_frame,
+            text=f"{item['total']:,}",
+            font=("B Nazanin", 10),
+            bg="white",
+            width=10,
+            anchor="center",
+        ).pack(side=LEFT, padx=2)
+
+    # به‌روزرسانی اسکرول منطقه
+    items_container.update_idletasks()
+    canvas.config(scrollregion=canvas.bbox("all"))
+
+    # خط جداکننده
+    Label(
+        preview_window, text="─" * 50, font=("B Nazanin", 10), bg="white", fg="gray"
+    ).pack(pady=8)
+
+    # جمع کل
+    total_frame = Frame(preview_window, bg="white", padx=20)
+    total_frame.pack(fill=X, pady=10)
+
+    Label(
+        total_frame,
+        text="مبلغ قابل پرداخت:",
+        font=("B Nazanin", 13, "bold"),
+        bg="white",
+    ).pack(side=RIGHT, padx=(10, 0))
+
+    Label(
+        total_frame,
+        text=f"{total_amount:,} تومان",
+        font=("B Nazanin", 15, "bold"),
+        bg="white",
+        fg="#28a745",
+    ).pack(side=LEFT)
+
+    # دکمه‌های پایین
+    button_frame = Frame(preview_window, bg="white", pady=20)
+    button_frame.pack()
+
+    def confirm_invoice():
+        # نمایش پیام تأیید
+        response = messagebox.askyesno(
+            "تأیید ثبت فاکتور",
+            "آیا از ثبت فاکتور اطمینان دارید؟",
+            parent=preview_window,
+        )
+
+        if response:  # اگر کاربر "بله" را زد
+            save_invoice_to_db(
+                customer_name,
+                customer_phone,
+                total_amount,
+                invoice_items,
+                cart_treeview,
+                customer_name_entry,
+                customer_phone_entry,
+            )
+            preview_window.destroy()
+        # اگر "خیر" زد، هیچ کاری نکن (باقی می‌ماند در همین پنجره)
+
+    # دکمه ثبت
+    confirm_button = Button(
+        button_frame,
+        text="✅ ثبت فاکتور",
+        font=("B Nazanin", 12, "bold"),
+        bg=BTN_SUCCESS,
+        fg="white",
+        width=15,
+        height=1,
+        bd=0,
+        cursor="hand2",
+        command=confirm_invoice,
+    )
+    confirm_button.pack(side=RIGHT, padx=10)
+
+    # دکمه انصراف
+    cancel_button = Button(
+        button_frame,
+        text="❌ انصراف",
+        font=("B Nazanin", 12),
+        bg=BTN_DANGER,
+        fg="white",
+        width=12,
+        height=1,
+        bd=0,
+        cursor="hand2",
+        command=preview_window.destroy,
+    )
+    cancel_button.pack(side=LEFT, padx=10)
+
+
+def save_invoice_to_db(
+    customer_name,
+    customer_phone,
+    total_amount,
+    invoice_items,
+    cart_treeview,
+    customer_name_entry,
+    customer_phone_entry,
+):
     cursor, connection = connect_database()
     if not cursor or not connection:
         return
@@ -259,175 +531,34 @@ def create_invoice(customer_name_entry, customer_phone_entry, cart_treeview):
 
         connection.commit()
 
-        show_receipt(
-            invoice_number,
-            customer_name,
-            customer_phone,
-            total_amount,
-            jalali_date,
-            invoice_items,
-            cart_treeview,
-        )
-
+        # پاک کردن فرم
         clear_invoice_form(customer_name_entry, customer_phone_entry, cart_treeview)
 
+        # تازه‌سازی لیست محصولات
+        for widget in cart_treeview.master.master.winfo_children():
+            if hasattr(widget, "winfo_children"):
+                for child in widget.winfo_children():
+                    if hasattr(child, "winfo_children"):
+                        for grandchild in child.winfo_children():
+                            if isinstance(grandchild, ttk.Treeview):
+                                if grandchild != cart_treeview:
+                                    load_products_to_treeview(grandchild)
+                                    break
+
         messagebox.showinfo(
-            "موفقیت", f"فاکتور شماره {invoice_number} با موفقیت صادر شد"
+            "موفقیت",
+            f"فاکتور شماره {invoice_number} با موفقیت ثبت شد و در تاریخچه ذخیره گردید.",
+            parent=cart_treeview.master.master,
         )
 
     except Exception as e:
-        messagebox.showerror("خطا", f"خطا در صدور فاکتور: {str(e)}")
+        messagebox.showerror(
+            "خطا", f"خطا در ثبت فاکتور: {str(e)}", parent=cart_treeview.master.master
+        )
         connection.rollback()
     finally:
         cursor.close()
         connection.close()
-
-
-def show_receipt(
-    invoice_number,
-    customer_name,
-    customer_phone,
-    total_amount,
-    invoice_date,
-    items,
-    cart_treeview,
-):
-    receipt_window = Toplevel(cart_treeview.master.master)
-    receipt_window.title(f"رسید فاکتور شماره {invoice_number}")
-    receipt_window.geometry("500x600")
-    receipt_window.configure(bg="white")
-    receipt_window.resizable(False, False)
-
-    receipt_window.update_idletasks()
-    width = 500
-    height = 600
-    x = (receipt_window.winfo_screenwidth() // 2) - (width // 2)
-    y = (receipt_window.winfo_screenheight() // 2) - (height // 2)
-    receipt_window.geometry(f"{width}x{height}+{x}+{y}")
-
-    Label(
-        receipt_window,
-        text="📋 رسید خرید",
-        font=("B Nazanin", 18, "bold"),
-        bg="white",
-        fg="#00198f",
-    ).pack(pady=15)
-
-    info_frame = Frame(receipt_window, bg="white")
-    info_frame.pack(pady=10, padx=20, fill=X)
-
-    info_texts = [
-        f"شماره فاکتور: {invoice_number}",
-        f"تاریخ: {invoice_date}",
-        f"مشتری: {customer_name}",
-        f"شماره تماس: {customer_phone}",
-    ]
-
-    for text in info_texts:
-        Label(
-            info_frame, text=text, font=("B Nazanin", 12), bg="white", anchor="w"
-        ).pack(fill=X, pady=3)
-
-    Label(
-        receipt_window, text="─" * 40, font=("B Nazanin", 10), bg="white", fg="gray"
-    ).pack(pady=8)
-
-    items_frame = Frame(receipt_window, bg="white")
-    items_frame.pack(pady=8, padx=20, fill=BOTH, expand=True)
-
-    header_frame = Frame(items_frame, bg="#f0f0f0")
-    header_frame.pack(fill=X)
-
-    headers = ["نام محصول", "تعداد", "قیمت", "جمع"]
-    for i, header in enumerate(headers):
-        Label(
-            header_frame,
-            text=header,
-            font=("B Nazanin", 11, "bold"),
-            bg="#f0f0f0",
-            width=12 if i == 0 else 8,
-        ).pack(side=LEFT, padx=2)
-
-    for item in items:
-        item_frame = Frame(items_frame, bg="white")
-        item_frame.pack(fill=X, pady=1)
-
-        Label(
-            item_frame,
-            text=item["product_name"][:20],
-            font=("B Nazanin", 10),
-            bg="white",
-            width=12,
-        ).pack(side=LEFT, padx=2)
-        Label(
-            item_frame,
-            text=item["quantity"],
-            font=("B Nazanin", 10),
-            bg="white",
-            width=8,
-        ).pack(side=LEFT, padx=2)
-        Label(
-            item_frame,
-            text=f"{item['price']:,}",
-            font=("B Nazanin", 10),
-            bg="white",
-            width=8,
-        ).pack(side=LEFT, padx=2)
-        Label(
-            item_frame,
-            text=f"{item['total']:,}",
-            font=("B Nazanin", 10),
-            bg="white",
-            width=8,
-        ).pack(side=LEFT, padx=2)
-
-    Label(
-        receipt_window, text="─" * 40, font=("B Nazanin", 10), bg="white", fg="gray"
-    ).pack(pady=8)
-
-    total_frame = Frame(receipt_window, bg="white")
-    total_frame.pack(pady=8, padx=20, fill=X)
-
-    Label(
-        total_frame,
-        text="مبلغ قابل پرداخت:",
-        font=("B Nazanin", 12, "bold"),
-        bg="white",
-    ).pack(side=LEFT)
-    Label(
-        total_frame,
-        text=f"{total_amount:,} تومان",
-        font=("B Nazanin", 14, "bold"),
-        bg="white",
-        fg="#28a745",
-    ).pack(side=RIGHT)
-
-    button_frame = Frame(receipt_window, bg="white")
-    button_frame.pack(pady=15)
-
-    Button(
-        button_frame,
-        text="🖨️ چاپ رسید",
-        font=("B Nazanin", 11),
-        bg="#007bff",
-        fg="white",
-        width=10,
-        command=lambda: print_receipt(receipt_window, invoice_number),
-    ).pack(side=LEFT, padx=8)
-
-    Button(
-        button_frame,
-        text="بستن",
-        font=("B Nazanin", 11),
-        bg="#6c757d",
-        fg="white",
-        width=8,
-        command=receipt_window.destroy,
-    ).pack(side=LEFT, padx=8)
-
-
-def print_receipt(window, invoice_number):
-    messagebox.showinfo("چاپ", f"رسید فاکتور شماره {invoice_number} آماده چاپ است")
 
 
 def clear_invoice_form(customer_name_entry, customer_phone_entry, cart_treeview):
@@ -485,7 +616,7 @@ def invoice_form(window):
 
     heading_label = Label(
         header_frame,
-        text="📋 صدور فاکتور فروش",
+        text="📋 صدور فاکتور",
         font=("B Nazanin", 16, "bold"),
         bg="#00198f",
         fg="white",
@@ -522,37 +653,7 @@ def invoice_form(window):
     search_card = create_card_frame(invoice_frame, "جستجوی محصولات")
     search_card.place(x=20, y=60, width=1150, height=70)
 
-    # فیلتر وضعیت (راست)
-    Label(search_card, text="وضعیت:", font=("B Nazanin", 11), bg=BG_WHITE).place(
-        x=1020, y=20
-    )
-
-    status_filter = ttk.Combobox(
-        search_card,
-        values=["همه", "فعال", "غیرفعال"],
-        font=("B Nazanin", 10),
-        width=12,
-        state="readonly",
-        justify="right",
-    )
-    status_filter.set("همه")
-    status_filter.place(x=900, y=18)
-
-    # فیلتر دسته‌بندی (وسط)
-    Label(search_card, text="دسته‌بندی:", font=("B Nazanin", 11), bg=BG_WHITE).place(
-        x=850, y=20
-    )
-
-    category_filter = ttk.Combobox(
-        search_card,
-        font=("B Nazanin", 10),
-        width=15,
-        state="readonly",
-        justify="right",
-    )
-    category_filter.place(x=700, y=18)
-
-    # جعبه جستجو
+    # جعبه جستجو (راست)
     search_entry = Entry(
         search_card,
         font=("B Nazanin", 11),
@@ -563,14 +664,14 @@ def invoice_form(window):
         relief=SOLID,
         fg="gray",
     )
-    search_entry.place(x=400, y=18)
+    search_entry.place(x=900, y=18)
     search_entry.insert(0, "جستجوی محصول...")
 
     # اتصال رویدادهای فوکوس
     search_entry.bind("<FocusIn>", lambda e: on_search_focus_in(e, search_entry))
     search_entry.bind("<FocusOut>", lambda e: on_search_focus_out(e, search_entry))
 
-    # دکمه جستجو (چپ)
+    # دکمه جستجو (سمت راست)
     search_button = Button(
         search_card,
         text="🔍 جستجو",
@@ -585,11 +686,61 @@ def invoice_form(window):
             search_entry, products_treeview, category_filter.get(), status_filter.get()
         ),
     )
-    search_button.place(x=250, y=18)
+    search_button.place(x=800, y=18)
 
-    # ============ بخش لیست محصولات (سمت راست) ============
+    # فیلتر وضعیت (وسط راست)
+    Label(search_card, text="وضعیت:", font=("B Nazanin", 11), bg=BG_WHITE).place(
+        x=750, y=20
+    )
+
+    status_filter = ttk.Combobox(
+        search_card,
+        values=["همه", "فعال", "غیرفعال"],
+        font=("B Nazanin", 10),
+        width=12,
+        state="readonly",
+        justify="right",
+    )
+    status_filter.set("همه")
+    status_filter.place(x=630, y=18)
+
+    # فیلتر دسته‌بندی (وسط چپ)
+    Label(search_card, text="دسته‌بندی:", font=("B Nazanin", 11), bg=BG_WHITE).place(
+        x=580, y=20
+    )
+
+    category_filter = ttk.Combobox(
+        search_card,
+        font=("B Nazanin", 10),
+        width=15,
+        state="readonly",
+        justify="right",
+    )
+    category_filter.place(x=430, y=18)
+
+    # ============ بخش لیست محصولات (سمت چپ) ============
     products_card = create_card_frame(invoice_frame, "لیست محصولات")
-    products_card.place(x=600, y=140, width=570, height=400)
+    products_card.place(x=20, y=140, width=560, height=400)
+
+    # دکمه افزودن محصول به سبد (بالای جدول)
+    add_button_frame = Frame(products_card, bg="white", height=35)
+    add_button_frame.pack(fill=X, side=TOP, pady=(5, 0))
+
+    add_to_cart_button = Button(
+        add_button_frame,
+        text="➕ افزودن به فاکتور",
+        font=("B Nazanin", 10),
+        bg=BTN_SUCCESS,
+        fg="white",
+        width=16,
+        height=1,
+        bd=0,
+        cursor="hand2",
+        command=lambda: select_product_for_invoice(
+            None, products_treeview, cart_treeview, None
+        ),
+    )
+    add_to_cart_button.pack(side=RIGHT, padx=(0, 10))
 
     # جدول محصولات
     products_tree_container = Frame(products_card, bg="white")
@@ -649,24 +800,17 @@ def invoice_form(window):
     prod_scroll_y.config(command=products_treeview.yview)
     prod_scroll_x.config(command=products_treeview.xview)
 
-    # ============ بخش مشخصات مشتری (سمت چپ بالا) ============
+    # ============ بخش مشخصات مشتری (سمت راست بالا) ============
     customer_card = create_card_frame(invoice_frame, "مشخصات مشتری")
-    customer_card.place(x=20, y=140, width=560, height=120)
+    customer_card.place(x=600, y=140, width=570, height=120)
 
-    # محتوای بخش مشتری
+    # محتوای بخش مشتری (راست‌چین)
     customer_content = Frame(customer_card, bg="white", padx=10, pady=10)
     customer_content.pack(fill=BOTH, expand=True)
 
     # نام مشتری
     customer_name_frame = Frame(customer_content, bg="white")
     customer_name_frame.pack(fill=X, pady=5)
-
-    Label(
-        customer_name_frame,
-        text="نام مشتری:",
-        font=("B Nazanin", 11),
-        bg="white",
-    ).pack(side=RIGHT, padx=(10, 5))
 
     customer_name_entry = Entry(
         customer_name_frame,
@@ -679,16 +823,16 @@ def invoice_form(window):
     )
     customer_name_entry.pack(side=RIGHT, fill=X, expand=True)
 
-    # شماره تماس
-    customer_phone_frame = Frame(customer_content, bg="white")
-    customer_phone_frame.pack(fill=X, pady=5)
-
     Label(
-        customer_phone_frame,
-        text="شماره تماس:",
+        customer_name_frame,
+        text="نام مشتری:",
         font=("B Nazanin", 11),
         bg="white",
     ).pack(side=RIGHT, padx=(10, 5))
+
+    # شماره تماس
+    customer_phone_frame = Frame(customer_content, bg="white")
+    customer_phone_frame.pack(fill=X, pady=5)
 
     customer_phone_entry = Entry(
         customer_phone_frame,
@@ -701,9 +845,16 @@ def invoice_form(window):
     )
     customer_phone_entry.pack(side=RIGHT, fill=X, expand=True)
 
-    # ============ بخش سبد خرید (سمت چپ پایین) ============
+    Label(
+        customer_phone_frame,
+        text="شماره تماس:",
+        font=("B Nazanin", 11),
+        bg="white",
+    ).pack(side=RIGHT, padx=(10, 5))
+
+    # ============ بخش سبد خرید (سمت راست پایین) ============
     cart_card = create_card_frame(invoice_frame, "سبد خرید")
-    cart_card.place(x=20, y=270, width=560, height=270)
+    cart_card.place(x=600, y=270, width=570, height=270)
 
     # جدول سبد خرید
     cart_tree_container = Frame(cart_card, bg="white")
@@ -748,7 +899,20 @@ def invoice_form(window):
     bottom_controls = Frame(cart_card, bg="white", height=35)
     bottom_controls.pack(fill=X, side=BOTTOM, pady=2)
 
-    # دکمه‌های مدیریت
+    # مجموع کل (سمت راست)
+    total_frame = Frame(bottom_controls, bg="white")
+    total_frame.pack(side=RIGHT, padx=10)
+
+    total_label = Label(
+        total_frame,
+        text="مجموع کل: 0 تومان",
+        font=("B Nazanin", 11, "bold"),
+        bg="white",
+        fg=BTN_SUCCESS,
+    )
+    total_label.pack()
+
+    # دکمه‌های مدیریت (سمت چپ)
     button_frame = Frame(bottom_controls, bg="white")
     button_frame.pack(side=LEFT, padx=10)
 
@@ -782,48 +946,36 @@ def invoice_form(window):
     )
     clear_cart_button.pack(side=LEFT)
 
-    # مجموع کل
-    total_frame = Frame(bottom_controls, bg="white")
-    total_frame.pack(side=RIGHT, padx=10)
-
-    total_label = Label(
-        total_frame,
-        text="مجموع کل: 0 تومان",
-        font=("B Nazanin", 11, "bold"),
-        bg="white",
-        fg=BTN_SUCCESS,
-    )
-    total_label.pack()
-
     # ============ دکمه‌های اصلی پایین صفحه ============
     action_frame = Frame(invoice_frame, bg="#f0f2f5")
     action_frame.place(x=20, y=550, width=1150, height=70)
 
-    # ردیف دکمه‌ها
+    # ردیف دکمه‌ها (راست‌چین)
     buttons_row = Frame(action_frame, bg="#f0f2f5")
     buttons_row.pack(expand=True)
 
-    create_invoice_button = Button(
+    # دکمه نمایش پیش‌نمایش فاکتور
+    preview_button = Button(
         buttons_row,
-        text="✅ صدور فاکتور",
-        font=("B Nazanin", 11, "bold"),
-        bg=BTN_SUCCESS,
+        text="👁️ نمایش فاکتور",
+        font=("B Nazanin", 12, "bold"),
+        bg=BTN_PRIMARY,
         fg="white",
-        width=14,
+        width=16,
         height=1,
         bd=0,
         cursor="hand2",
-        command=lambda: create_invoice(
-            customer_name_entry, customer_phone_entry, cart_treeview
+        command=lambda: show_invoice_preview(
+            customer_name_entry, customer_phone_entry, cart_treeview, window
         ),
     )
-    create_invoice_button.pack(side=RIGHT, padx=10)
+    preview_button.pack(side=RIGHT, padx=10)
 
     save_draft_button = Button(
         buttons_row,
         text="💾 ذخیره پیش‌نویس",
         font=("B Nazanin", 10),
-        bg=BTN_PRIMARY,
+        bg=BTN_INFO,
         fg="white",
         width=14,
         height=1,
@@ -864,9 +1016,7 @@ def invoice_form(window):
         search_button.invoke()
 
     def add_to_cart_shortcut(event=None):
-        selected = products_treeview.selection()
-        if selected:
-            select_product_for_invoice(None, products_treeview, cart_treeview, None)
+        add_to_cart_button.invoke()
 
     window.bind("<F1>", lambda e: search_entry.focus_set())
     window.bind("<F2>", lambda e: category_filter.focus_set())
@@ -875,27 +1025,28 @@ def invoice_form(window):
     window.bind("<F5>", add_to_cart_shortcut)
     window.bind("<F6>", lambda e: remove_button.invoke())
     window.bind("<F7>", lambda e: clear_cart_button.invoke())
-    window.bind("<F8>", lambda e: create_invoice_button.invoke())
+    window.bind("<F8>", lambda e: preview_button.invoke())
     window.bind("<F9>", lambda e: customer_name_entry.focus_set())
     window.bind("<F10>", lambda e: customer_phone_entry.focus_set())
     window.bind("<Escape>", lambda e: invoice_frame.place_forget())
 
-    # Tab Order
+    # Tab Order (راست‌چین)
     search_entry.focus_set()
     search_entry.bind("<Tab>", lambda e: move_focus(category_filter))
     category_filter.bind("<Tab>", lambda e: move_focus(status_filter))
     status_filter.bind("<Tab>", lambda e: move_focus(products_treeview))
-    products_treeview.bind("<Tab>", lambda e: move_focus(cart_treeview))
+    products_treeview.bind("<Tab>", lambda e: move_focus(add_to_cart_button))
+    add_to_cart_button.bind("<Tab>", lambda e: move_focus(cart_treeview))
     cart_treeview.bind("<Tab>", lambda e: move_focus(remove_button))
     remove_button.bind("<Tab>", lambda e: move_focus(clear_cart_button))
     clear_cart_button.bind("<Tab>", lambda e: move_focus(customer_name_entry))
     customer_name_entry.bind("<Tab>", lambda e: move_focus(customer_phone_entry))
-    customer_phone_entry.bind("<Tab>", lambda e: move_focus(create_invoice_button))
-    create_invoice_button.bind("<Tab>", lambda e: move_focus(search_entry))
+    customer_phone_entry.bind("<Tab>", lambda e: move_focus(preview_button))
+    preview_button.bind("<Tab>", lambda e: move_focus(search_entry))
 
     # ============ بارگذاری اولیه ============
     load_categories_for_filter(category_filter)
-    search_product("", products_treeview, "همه", "همه")
+    load_products_to_treeview(products_treeview)  # بارگذاری محصولات
 
     products_treeview.bind(
         "<Double-Button-1>",
