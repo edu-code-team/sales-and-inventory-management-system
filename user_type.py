@@ -555,9 +555,9 @@ def user_type_form(window):
         )
         back_button.place(x=10, y=45)
 
-    # ============ سمت چپ: جدول با سایز کوچکتر و اسکرول افقی ============
+    # ============ سمت چپ: جدول ============
     table_frame = Frame(main_frame, bg="white", bd=1, relief=SOLID)
-    table_frame.place(x=20, y=80, width=650, height=420)  # عرض کوچکتر برای جدول
+    table_frame.place(x=20, y=80, width=650, height=420)
 
     # عنوان برای جدول
     Label(
@@ -575,7 +575,7 @@ def user_type_form(window):
     scroll_y = Scrollbar(tree_container, orient=VERTICAL)
     scroll_x = Scrollbar(tree_container, orient=HORIZONTAL)
 
-    # ستون‌های treeview با عرض‌های فشرده
+    # ستون‌های treeview
     treeview = ttk.Treeview(
         tree_container,
         columns=(
@@ -595,10 +595,10 @@ def user_type_form(window):
         show="headings",
         yscrollcommand=scroll_y.set,
         xscrollcommand=scroll_x.set,
-        height=10,  # ارتفاع کمتر
+        height=10,
     )
 
-    # تنظیم هدرها با عرض‌های کوچکتر برای اسکرول افقی
+    # تنظیم هدرها
     headers = [
         "شناسه",
         "نام نوع",
@@ -616,17 +616,17 @@ def user_type_form(window):
 
     column_widths = [
         35,
-        70,  # شناسه و نام
+        70,
         55,
-        35,
-        45,  # کارمندان، شیفت، کاربری
-        65,
-        55,
-        45,  # تامین‌کننده، دسته‌بندی، محصولات
         35,
         45,
-        65,  # فروش، فاکتور، تاریخچه فاکتور
-        35,  # ادمین
+        65,
+        55,
+        45,
+        35,
+        45,
+        65,
+        35,
     ]
 
     for i, (header, width) in enumerate(zip(headers, column_widths)):
@@ -643,15 +643,12 @@ def user_type_form(window):
     tree_container.grid_rowconfigure(0, weight=1)
     tree_container.grid_columnconfigure(0, weight=1)
 
-    # ============ سمت راست: فرم ورودی با تغییرات ============
-    # محاسبه عرض فریم فرم بر اساس اندازه پنجره
+    # ============ سمت راست: فرم ورودی مطابق تصویر ============
     window_width = window.winfo_width()
-    form_frame_width = window_width - 200 - 690  # فاصله از لبه راست
+    form_frame_width = window_width - 200 - 690
 
     form_frame = Frame(main_frame, bg="white", bd=1, relief=SOLID)
-    form_frame.place(
-        x=690, y=80, width=form_frame_width - 20, height=420
-    )  # عرض تنظیم شده
+    form_frame.place(x=690, y=80, width=form_frame_width - 20, height=420)
 
     # عنوان برای فرم
     Label(
@@ -664,70 +661,85 @@ def user_type_form(window):
 
     # فریم داخلی برای المان‌های فرم
     inner_form = Frame(form_frame, bg="white")
-    inner_form.pack(fill=BOTH, expand=True, padx=10, pady=10)  # پدینگ کمتر
+    inner_form.pack(fill=BOTH, expand=True, padx=15, pady=10)
 
-    # ردیف 1: دکمه‌های CSV
+    # ============ ردیف 1: دکمه‌های CSV در بالای فرم با فاصله بیشتر ============
     csv_frame = Frame(inner_form, bg="white")
-    csv_frame.grid(row=0, column=0, columnspan=2, pady=(0, 10), sticky="ew")
+    csv_frame.pack(fill=X, pady=(0, 15))
 
-    # دکمه اکسپورت
+    # فاصله‌دهنده در وسط برای ایجاد فاصله بیشتر بین دکمه‌ها
+    spacer_frame = Frame(csv_frame, bg="white", width=30)
+    spacer_frame.pack(side=LEFT, expand=True, fill=X)
+
+    # دکمه اکسپورت CSV (سمت چپ)
     export_button = Button(
         csv_frame,
         text="📊 خروجی CSV",
         font=("fonts/Persian-Yekan.ttf", 11),
-        width=15,  # عرض کمتر
+        width=12,  # عرض کمتر برای فاصله بیشتر
+        height=1,
         fg="white",
         bg="#4b39e9",
         command=lambda: export_to_csv(treeview),
     )
-    export_button.pack(side=LEFT, padx=2)
+    export_button.pack(side=LEFT, padx=(0, 5))
 
-    # لیبل فاصله‌دهنده
-    Label(csv_frame, text="", width=2, bg="white").pack(side=LEFT)
-
-    # دکمه ایمپورت
+    # دکمه ایمپورت CSV (سمت راست)
     import_button = Button(
         csv_frame,
         text="📥 وارد کردن CSV",
         font=("fonts/Persian-Yekan.ttf", 11),
-        width=15,  # عرض کمتر
+        width=12,  # عرض کمتر برای فاصله بیشتر
+        height=1,
         fg="white",
         bg="#4b39e9",
         command=lambda: import_from_csv(treeview),
     )
-    import_button.pack(side=LEFT, padx=2)
+    import_button.pack(side=LEFT, padx=(5, 0))
 
-    # ردیف 2: نام نوع کاربری (لیبل سمت راست)
+    # فاصله‌دهنده دیگر
+    spacer_frame2 = Frame(csv_frame, bg="white", width=30)
+    spacer_frame2.pack(side=LEFT, expand=True, fill=X)
+
+    # ============ ردیف 2: نام نوع کاربری ============
+    name_frame = Frame(inner_form, bg="white")
+    name_frame.pack(fill=X, pady=(0, 15))
+
+    # لیبل نام نوع کاربری (سمت راست)
     Label(
-        inner_form,
+        name_frame,
         text="نام نوع کاربری",
-        font=("fonts/Persian-Yekan.ttf", 11, "bold"),  # فونت کوچکتر
+        font=("fonts/Persian-Yekan.ttf", 11, "bold"),
         bg="white",
-    ).grid(
-        row=1, column=1, padx=(10, 20), pady=(0, 10), sticky="e"
-    )  # پدینگ کمتر
+    ).pack(side=RIGHT, padx=(10, 0))
 
+    # Entry نام نوع کاربری (سمت چپ)
     type_name_entry = Entry(
-        inner_form,
-        font=("fonts/Persian-Yekan.ttf", 11),  # فونت کوچکتر
+        name_frame,
+        font=("fonts/Persian-Yekan.ttf", 11),
         bg="lightblue",
-        width=25,  # عرض کمتر
+        width=25,
     )
-    type_name_entry.grid(row=1, column=0, padx=(2, 5), pady=(0, 10), sticky="w")
+    type_name_entry.pack(side=LEFT, fill=X, expand=True)
 
-    # ردیف 3: عنوان دسترسی‌ها (لیبل سمت راست)
+    # ============ ردیف 3: دسترسی‌ها ============
+    # ایجاد فریم برای لیبل دسترسی‌ها و چک‌باکس‌ها
+    permissions_main_frame = Frame(inner_form, bg="white")
+    permissions_main_frame.pack(fill=BOTH, expand=True, pady=(0, 10))
+
+    # لیبل "دسترسی‌ها" در سمت راست بالای چک‌باکس‌ها
     Label(
-        inner_form,
+        permissions_main_frame,
         text="دسترسی‌ها",
-        font=("fonts/Persian-Yekan.ttf", 11, "bold"),  # فونت کوچکتر
+        font=("fonts/Persian-Yekan.ttf", 11, "bold"),
         bg="white",
-    ).grid(row=2, column=1, padx=(5, 2), pady=(0, 5), sticky="ne")
+    ).pack(anchor=E, pady=(0, 5), padx=(0, 10))
 
-    # فریم برای چک‌باکس‌ها (سمت چپ)
-    permissions_frame = Frame(inner_form, bg="white", bd=1, relief=GROOVE)
-    permissions_frame.grid(row=2, column=0, padx=(2, 5), pady=(0, 10), sticky="nsew")
+    # فریم برای چک‌باکس‌های دسترسی‌ها در دو ستون
+    permissions_frame = Frame(permissions_main_frame, bg="white", bd=1, relief=SOLID)
+    permissions_frame.pack(fill=BOTH, expand=True)
 
-    # لیست دسترسی‌ها
+    # لیست دسترسی‌ها مطابق تصویر
     permission_labels = [
         ("کارمندان", "can_employees"),
         ("تعریف شیفت", "can_shifts"),
@@ -735,78 +747,115 @@ def user_type_form(window):
         ("تامین کنندگان", "can_suppliers"),
         ("دسته بندی", "can_categories"),
         ("محصولات", "can_products"),
-        ("فروش", "can_sales"),
-        ("صدور فاکتور", "can_invoices"),
-        ("تاریخچه فاکتور", "can_invoice_history"),
+        ("صدور فاکتور", "can_sales"),
+        ("تاریخچه فاکتور", "can_invoices"),
     ]
 
     checkboxes = []
     permission_vars = []
 
-    # ایجاد چک‌باکس‌ها در 2 ستون (چون فضای بیشتری داریم)
-    for i, (label, _) in enumerate(permission_labels):
+    # تقسیم لیست به دو قسمت برای نمایش در دو ستون
+    middle_index = len(permission_labels) // 2
+    if len(permission_labels) % 2:
+        middle_index += 1
+
+    left_labels = permission_labels[:middle_index]
+    right_labels = permission_labels[middle_index:]
+
+    # ایجاد فریم برای دو ستون
+    left_column = Frame(permissions_frame, bg="white")
+    left_column.pack(side=LEFT, fill=BOTH, expand=True, padx=(10, 5))
+
+    right_column = Frame(permissions_frame, bg="white")
+    right_column.pack(side=RIGHT, fill=BOTH, expand=True, padx=(5, 10))
+
+    # ایجاد چک‌باکس‌ها در ستون سمت چپ
+    for i, (label, _) in enumerate(left_labels):
         var = IntVar(value=0)
         permission_vars.append(var)
 
-        row = i % 5  # 5 ردیف در هر ستون
-        col = i // 5  # ستون 0 یا 1
+        # فریم برای هر چک‌باکس
+        cb_frame = Frame(left_column, bg="white")
+        cb_frame.pack(fill=X, pady=2)
 
+        # چک‌باکس با متن راست‌چین
         cb = Checkbutton(
-            permissions_frame,
+            cb_frame,
             text=label,
             variable=var,
-            font=("fonts/Persian-Yekan.ttf", 10),  # فونت کوچکتر
+            font=("fonts/Persian-Yekan.ttf", 10),
             bg="white",
-            anchor="w",
+            anchor="e",
+            justify="right",
         )
-        cb.grid(
-            row=row,
-            column=col,
-            sticky="w",
-            pady=2,  # فاصله کمتر
-            padx=(8 if col == 1 else 0),  # پدینگ کمتر
-        )
+        cb.pack(side=RIGHT, fill=X, expand=True)
+
         checkboxes.append((cb, var))
 
-    # تنظیم ابعاد permissions_frame
-    permissions_frame.config(width=280, height=130)  # ابعاد کوچکتر
-    permissions_frame.grid_propagate(False)
+    # ایجاد چک‌باکس‌ها در ستون سمت راست
+    for i, (label, _) in enumerate(right_labels):
+        var = IntVar(value=0)
+        permission_vars.append(var)
 
-    # ردیف 4: دکمه‌های عملیات
+        # فریم برای هر چک‌باکس
+        cb_frame = Frame(right_column, bg="white")
+        cb_frame.pack(fill=X, pady=2)
+
+        # چک‌باکس با متن راست‌چین
+        cb = Checkbutton(
+            cb_frame,
+            text=label,
+            variable=var,
+            font=("fonts/Persian-Yekan.ttf", 10),
+            bg="white",
+            anchor="e",
+            justify="right",
+        )
+        cb.pack(side=RIGHT, fill=X, expand=True)
+
+        checkboxes.append((cb, var))
+
+    # تنظیم ارتفاع فریم دسترسی‌ها
+    permissions_frame.config(height=120)
+
+    # ============ ردیف 4: دکمه‌های عملیات ============
     button_frame = Frame(inner_form, bg="white")
-    button_frame.grid(row=3, column=0, columnspan=2, pady=(10, 0), sticky="ew")
+    button_frame.pack(fill=X, pady=(10, 0))
 
     # متغیر برای ذخیره ID انتخاب شده
     selected_id_var = StringVar()
-    # قرار دادن دکمه‌ها در مرکز
-    center_button_frame = Frame(button_frame, bg="white")
-    center_button_frame.pack()
+
     # ردیف اول دکمه‌ها
-    row1_frame = Frame(center_button_frame, bg="white")
+    row1_frame = Frame(button_frame, bg="white")
     row1_frame.pack(pady=(0, 5))
 
+    # دکمه افزودن
     add_button = Button(
         row1_frame,
-        text="➕ افزودن",
+        text="افزودن",
         font=("fonts/Persian-Yekan.ttf", 11),
         bg="#00198f",
         fg="white",
         width=10,
+        height=1,
         command=lambda: add_user_type(
             type_name_entry.get(), [var.get() for var in permission_vars], treeview
         ),
     )
     add_button.pack(side=LEFT, padx=3)
 
+    # فاصله بین دکمه‌ها
     Label(row1_frame, text="", width=3, bg="white").pack(side=LEFT)
 
+    # دکمه ویرایش
     update_button = Button(
         row1_frame,
-        text="✏️ ویرایش",
+        text="ویرایش",
         font=("fonts/Persian-Yekan.ttf", 11),
         bg="#00198f",
         fg="white",
         width=10,
+        height=1,
         command=lambda: update_user_type(
             selected_id_var.get(),
             type_name_entry.get(),
@@ -817,39 +866,39 @@ def user_type_form(window):
     update_button.pack(side=LEFT, padx=3)
 
     # ردیف دوم دکمه‌ها
-    row2_frame = Frame(center_button_frame, bg="white")
+    row2_frame = Frame(button_frame, bg="white")
     row2_frame.pack()
 
+    # دکمه حذف
     delete_button = Button(
         row2_frame,
-        text="🗑️ حذف",
+        text="حذف",
         font=("fonts/Persian-Yekan.ttf", 11),
         bg="#00198f",
         fg="white",
         width=10,
+        height=1,
         command=lambda: delete_user_type(selected_id_var.get(), treeview),
     )
     delete_button.pack(side=LEFT, padx=3)
 
+    # فاصله بین دکمه‌ها
     Label(row2_frame, text="", width=3, bg="white").pack(side=LEFT)
 
+    # دکمه پاک کردن
     clear_button = Button(
         row2_frame,
-        text="🧹 پاک کردن",
+        text="پاک کردن",
         font=("fonts/Persian-Yekan.ttf", 11),
         bg="#00198f",
         fg="white",
         width=10,
+        height=1,
         command=lambda: clear_fields(
             type_name_entry, permission_vars, selected_id_var, treeview
         ),
     )
     clear_button.pack(side=LEFT, padx=3)
-
-    # تنظیم وزن برای گرید
-    inner_form.grid_columnconfigure(0, weight=1)
-    inner_form.grid_columnconfigure(1, weight=0, minsize=90)  # حداقل عرض برای لیبل‌ها
-    inner_form.grid_rowconfigure(2, weight=1)
 
     # تنظیم ارتفاع اصلی فرم برای امکان اسکرول
     main_frame.config(height=530)
@@ -869,14 +918,24 @@ def user_type_form(window):
     type_name_entry.focus_set()
 
     # تنظیمات Tab Order
-    type_name_entry.bind("<Tab>", lambda e: move_focus(checkboxes[0][0]))
+    # مرتب کردن چک‌باکس‌ها بر اساس ترتیب ظاهری
+    ordered_checkboxes = []
+    for i in range(len(left_labels)):
+        if i < len(left_labels):
+            ordered_checkboxes.append(checkboxes[i])
+        if i < len(right_labels):
+            ordered_checkboxes.append(checkboxes[middle_index + i])
 
-    for i in range(len(checkboxes) - 1):
-        checkboxes[i][0].bind(
-            "<Tab>", lambda e, idx=i: move_focus(checkboxes[idx + 1][0])
-        )
+    if ordered_checkboxes:
+        type_name_entry.bind("<Tab>", lambda e: move_focus(ordered_checkboxes[0][0]))
 
-    checkboxes[-1][0].bind("<Tab>", lambda e: move_focus(add_button))
+        for i in range(len(ordered_checkboxes) - 1):
+            ordered_checkboxes[i][0].bind(
+                "<Tab>", lambda e, idx=i: move_focus(ordered_checkboxes[idx + 1][0])
+            )
+
+        ordered_checkboxes[-1][0].bind("<Tab>", lambda e: move_focus(add_button))
+
     add_button.bind("<Tab>", lambda e: move_focus(update_button))
     update_button.bind("<Tab>", lambda e: move_focus(delete_button))
     delete_button.bind("<Tab>", lambda e: move_focus(clear_button))
