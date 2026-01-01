@@ -33,11 +33,22 @@ def export_to_csv(treeview):
         if file_path:
             with open(file_path, "w", newline="", encoding="utf-8-sig") as file:
                 writer = csv.writer(file)
-                writer.writerow([
-                    "شناسه", "نام نوع", "کارمندان", "شیفت", "کاربری", 
-                    "تامین‌کننده", "دسته‌بندی", "محصولات", "فروش", 
-                    "فاکتور", "تاریخچه فاکتور", "ادمین"
-                ])
+                writer.writerow(
+                    [
+                        "شناسه",
+                        "نام نوع",
+                        "کارمندان",
+                        "شیفت",
+                        "کاربری",
+                        "تامین‌کننده",
+                        "دسته‌بندی",
+                        "محصولات",
+                        "فروش",
+                        "فاکتور",
+                        "تاریخچه فاکتور",
+                        "ادمین",
+                    ]
+                )
                 writer.writerows(data)
 
             messagebox.showinfo(
@@ -53,43 +64,49 @@ def import_from_csv(treeview):
     try:
         file_path = filedialog.askopenfilename(
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
-            title="انتخاب فایل CSV برای وارد کردن"
+            title="انتخاب فایل CSV برای وارد کردن",
         )
-        
+
         if not file_path:
             return
-            
+
         cursor, connection = connect_database()
         if not cursor or not connection:
             return
-            
+
         cursor.execute("USE inventory_system")
-        
+
         imported_count = 0
         skipped_count = 0
         errors = []
-        
-        with open(file_path, 'r', encoding='utf-8-sig') as file:
+
+        with open(file_path, "r", encoding="utf-8-sig") as file:
             reader = csv.reader(file)
             next(reader)  # رد کردن هدر
-            
+
             for idx, row in enumerate(reader, start=2):  # start=2 چون سطر 1 هدر است
                 if len(row) < 12:
                     skipped_count += 1
-                    errors.append(f"سطر {idx}: تعداد ستون‌ها ناکافی است (نیاز به 12 ستون)")
+                    errors.append(
+                        f"سطر {idx}: تعداد ستون‌ها ناکافی است (نیاز به 12 ستون)"
+                    )
                     continue
-                    
+
                 try:
                     # خواندن داده‌ها از ردیف CSV
                     type_name = row[1].strip()
-                    
+
                     # چک کردن وجود نوع کاربری
-                    cursor.execute("SELECT * FROM user_types WHERE type_name=%s", (type_name,))
+                    cursor.execute(
+                        "SELECT * FROM user_types WHERE type_name=%s", (type_name,)
+                    )
                     if cursor.fetchone():
                         skipped_count += 1
-                        errors.append(f"سطر {idx}: نوع کاربری '{type_name}' از قبل وجود دارد")
+                        errors.append(
+                            f"سطر {idx}: نوع کاربری '{type_name}' از قبل وجود دارد"
+                        )
                         continue
-                    
+
                     # تبدیل ✅/❌ به 1/0 برای دیتابیس
                     permissions = []
                     for i in range(2, 11):  # از ستون 2 تا 10 (دسترسی‌ها)
@@ -97,7 +114,7 @@ def import_from_csv(treeview):
                             permissions.append(1)
                         else:
                             permissions.append(0)
-                    
+
                     # اضافه کردن نوع کاربری
                     cursor.execute(
                         """
@@ -107,36 +124,38 @@ def import_from_csv(treeview):
                          can_sales, can_invoices, can_invoice_history)
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         """,
-                        (type_name, *permissions)
+                        (type_name, *permissions),
                     )
                     imported_count += 1
-                    
+
                 except Exception as e:
                     skipped_count += 1
                     errors.append(f"سطر {idx}: خطای عمومی - {str(e)}")
-        
+
         connection.commit()
-        
+
         # نمایش نتایج
         result_message = f"عملیات وارد کردن تکمیل شد:\n\n"
         result_message += f"تعداد وارد شده: {imported_count}\n"
         result_message += f"تعداد رد شده: {skipped_count}\n"
-        
+
         if errors and len(errors) <= 5:  # نمایش حداکثر 5 خطا
             result_message += "\nخطاها:\n"
             for error in errors[:5]:
                 result_message += f"• {error}\n"
         elif errors:
-            result_message += f"\n{len(errors)} خطا رخ داده است (اولین 5 خطا نمایش داده شد)"
-        
+            result_message += (
+                f"\n{len(errors)} خطا رخ داده است (اولین 5 خطا نمایش داده شد)"
+            )
+
         messagebox.showinfo("عملیات وارد کردن", result_message)
-        
+
         # تازه‌سازی داده‌ها
         load_user_types(treeview)
-        
+
         cursor.close()
         connection.close()
-        
+
     except Exception as e:
         messagebox.showerror("خطا", f"خطا در وارد کردن فایل: {str(e)}")
 
@@ -324,9 +343,9 @@ def update_user_type(selected_id, type_name, permissions, treeview):
         # بررسی تغییرات
         current_permissions = list(current_data[1:])
         permissions_list = list(permissions)
-        
+
         # اگر هیچ تغییری ایجاد نشده باشد
-        if (current_data[0] == type_name and current_permissions == permissions_list):
+        if current_data[0] == type_name and current_permissions == permissions_list:
             messagebox.showerror("خطا", "تغییراتی ایجاد نشده است")
             return
 
@@ -480,19 +499,18 @@ def user_type_form(window):
     # ایجاد اسکرول‌بار عمودی برای کل فرم
     canvas = Canvas(user_type_frame, bg="white", highlightthickness=0)
     scrollbar = Scrollbar(user_type_frame, orient="vertical", command=canvas.yview)
-    
+
     # فریم اصلی که روی کانواس قرار می‌گیرد
     main_frame = Frame(canvas, bg="white")
-    
+
     # تنظیم اسکرول‌بار
     main_frame.bind(
-        "<Configure>",
-        lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        "<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
     )
-    
+
     canvas_window = canvas.create_window((0, 0), window=main_frame, anchor="nw")
     canvas.configure(yscrollcommand=scrollbar.set)
-    
+
     # موقعیت‌دهی کانواس و اسکرول‌بار
     canvas.place(x=0, y=0, relwidth=1, relheight=1)
     scrollbar.place(x=window.winfo_width() - 200 - 17, y=0, relheight=1)
@@ -500,7 +518,7 @@ def user_type_form(window):
     # تنظیم اندازه کانواس هنگام تغییر اندازه پنجره
     def configure_canvas(event):
         canvas.itemconfig(canvas_window, width=event.width)
-    
+
     canvas.bind("<Configure>", configure_canvas)
 
     heading_label = Label(
@@ -547,7 +565,7 @@ def user_type_form(window):
         text="لیست انواع کاربری",
         font=("fonts/Persian-Yekan.ttf", 14, "bold"),
         bg="white",
-        fg="#00198f"
+        fg="#00198f",
     ).pack(pady=(10, 5))
 
     # Treeview با scrollbar
@@ -561,9 +579,18 @@ def user_type_form(window):
     treeview = ttk.Treeview(
         tree_container,
         columns=(
-            "id", "name", "emp", "shift", "user_type",
-            "sup", "cat", "prod", "sale", 
-            "inv", "inv_history", "admin"
+            "id",
+            "name",
+            "emp",
+            "shift",
+            "user_type",
+            "sup",
+            "cat",
+            "prod",
+            "sale",
+            "inv",
+            "inv_history",
+            "admin",
         ),
         show="headings",
         yscrollcommand=scroll_y.set,
@@ -573,18 +600,33 @@ def user_type_form(window):
 
     # تنظیم هدرها با عرض‌های کوچکتر برای اسکرول افقی
     headers = [
-        "شناسه", "نام نوع",
-        "کارمندان", "شیفت", "کاربری",
-        "تامین‌کننده", "دسته‌بندی", "محصولات",
-        "فروش", "فاکتور", "تاریخچه فاکتور", "ادمین"
+        "شناسه",
+        "نام نوع",
+        "کارمندان",
+        "شیفت",
+        "کاربری",
+        "تامین‌کننده",
+        "دسته‌بندی",
+        "محصولات",
+        "فروش",
+        "فاکتور",
+        "تاریخچه فاکتور",
+        "ادمین",
     ]
 
     column_widths = [
-        35, 70,   # شناسه و نام
-        55, 35, 45,  # کارمندان، شیفت، کاربری
-        65, 55, 45,  # تامین‌کننده، دسته‌بندی، محصولات
-        35, 45, 65,  # فروش، فاکتور، تاریخچه فاکتور
-        35  # ادمین
+        35,
+        70,  # شناسه و نام
+        55,
+        35,
+        45,  # کارمندان، شیفت، کاربری
+        65,
+        55,
+        45,  # تامین‌کننده، دسته‌بندی، محصولات
+        35,
+        45,
+        65,  # فروش، فاکتور، تاریخچه فاکتور
+        35,  # ادمین
     ]
 
     for i, (header, width) in enumerate(zip(headers, column_widths)):
@@ -605,9 +647,11 @@ def user_type_form(window):
     # محاسبه عرض فریم فرم بر اساس اندازه پنجره
     window_width = window.winfo_width()
     form_frame_width = window_width - 200 - 690  # فاصله از لبه راست
-    
+
     form_frame = Frame(main_frame, bg="white", bd=1, relief=SOLID)
-    form_frame.place(x=690, y=80, width=form_frame_width-20, height=420)  # عرض تنظیم شده
+    form_frame.place(
+        x=690, y=80, width=form_frame_width - 20, height=420
+    )  # عرض تنظیم شده
 
     # عنوان برای فرم
     Label(
@@ -615,7 +659,7 @@ def user_type_form(window):
         text="فرم مدیریت نوع کاربری",
         font=("fonts/Persian-Yekan.ttf", 14, "bold"),
         bg="white",
-        fg="#00198f"
+        fg="#00198f",
     ).pack(pady=(10, 5))
 
     # فریم داخلی برای المان‌های فرم
@@ -659,13 +703,15 @@ def user_type_form(window):
         text="نام نوع کاربری",
         font=("fonts/Persian-Yekan.ttf", 11, "bold"),  # فونت کوچکتر
         bg="white",
-    ).grid(row=1, column=1, padx=(5, 2), pady=(0, 10), sticky="e")  # پدینگ کمتر
+    ).grid(
+        row=1, column=1, padx=(10, 20), pady=(0, 10), sticky="e"
+    )  # پدینگ کمتر
 
     type_name_entry = Entry(
-        inner_form, 
+        inner_form,
         font=("fonts/Persian-Yekan.ttf", 11),  # فونت کوچکتر
-        bg="lightblue", 
-        width=25  # عرض کمتر
+        bg="lightblue",
+        width=25,  # عرض کمتر
     )
     type_name_entry.grid(row=1, column=0, padx=(2, 5), pady=(0, 10), sticky="w")
 
@@ -714,11 +760,11 @@ def user_type_form(window):
             anchor="w",
         )
         cb.grid(
-            row=row, 
-            column=col, 
-            sticky="w", 
+            row=row,
+            column=col,
+            sticky="w",
             pady=2,  # فاصله کمتر
-            padx=(8 if col == 1 else 0)  # پدینگ کمتر
+            padx=(8 if col == 1 else 0),  # پدینگ کمتر
         )
         checkboxes.append((cb, var))
 
@@ -732,10 +778,12 @@ def user_type_form(window):
 
     # متغیر برای ذخیره ID انتخاب شده
     selected_id_var = StringVar()
-
+    # قرار دادن دکمه‌ها در مرکز
+    center_button_frame = Frame(button_frame, bg="white")
+    center_button_frame.pack()
     # ردیف اول دکمه‌ها
-    row1_frame = Frame(button_frame, bg="white")
-    row1_frame.pack(fill=X, pady=(0, 5))
+    row1_frame = Frame(center_button_frame, bg="white")
+    row1_frame.pack(pady=(0, 5))
 
     add_button = Button(
         row1_frame,
@@ -743,14 +791,13 @@ def user_type_form(window):
         font=("fonts/Persian-Yekan.ttf", 11),
         bg="#00198f",
         fg="white",
-        width=10,  # عرض کمتر
+        width=10,
         command=lambda: add_user_type(
             type_name_entry.get(), [var.get() for var in permission_vars], treeview
         ),
     )
     add_button.pack(side=LEFT, padx=3)
 
-    # لیبل فاصله‌دهنده بین دکمه‌های افزودن و ویرایش
     Label(row1_frame, text="", width=3, bg="white").pack(side=LEFT)
 
     update_button = Button(
@@ -759,7 +806,7 @@ def user_type_form(window):
         font=("fonts/Persian-Yekan.ttf", 11),
         bg="#00198f",
         fg="white",
-        width=10,  # عرض کمتر
+        width=10,
         command=lambda: update_user_type(
             selected_id_var.get(),
             type_name_entry.get(),
@@ -770,8 +817,8 @@ def user_type_form(window):
     update_button.pack(side=LEFT, padx=3)
 
     # ردیف دوم دکمه‌ها
-    row2_frame = Frame(button_frame, bg="white")
-    row2_frame.pack(fill=X)
+    row2_frame = Frame(center_button_frame, bg="white")
+    row2_frame.pack()
 
     delete_button = Button(
         row2_frame,
@@ -779,12 +826,11 @@ def user_type_form(window):
         font=("fonts/Persian-Yekan.ttf", 11),
         bg="#00198f",
         fg="white",
-        width=10,  # عرض کمتر
+        width=10,
         command=lambda: delete_user_type(selected_id_var.get(), treeview),
     )
     delete_button.pack(side=LEFT, padx=3)
 
-    # لیبل فاصله‌دهنده بین دکمه‌های حذف و پاک کردن
     Label(row2_frame, text="", width=3, bg="white").pack(side=LEFT)
 
     clear_button = Button(
@@ -793,7 +839,7 @@ def user_type_form(window):
         font=("fonts/Persian-Yekan.ttf", 11),
         bg="#00198f",
         fg="white",
-        width=10,  # عرض کمتر
+        width=10,
         command=lambda: clear_fields(
             type_name_entry, permission_vars, selected_id_var, treeview
         ),
@@ -824,10 +870,12 @@ def user_type_form(window):
 
     # تنظیمات Tab Order
     type_name_entry.bind("<Tab>", lambda e: move_focus(checkboxes[0][0]))
-    
+
     for i in range(len(checkboxes) - 1):
-        checkboxes[i][0].bind("<Tab>", lambda e, idx=i: move_focus(checkboxes[idx + 1][0]))
-    
+        checkboxes[i][0].bind(
+            "<Tab>", lambda e, idx=i: move_focus(checkboxes[idx + 1][0])
+        )
+
     checkboxes[-1][0].bind("<Tab>", lambda e: move_focus(add_button))
     add_button.bind("<Tab>", lambda e: move_focus(update_button))
     update_button.bind("<Tab>", lambda e: move_focus(delete_button))
