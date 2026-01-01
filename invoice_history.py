@@ -25,7 +25,7 @@ def load_invoice_history(
         query = """
             SELECT invoice_number, customer_name, customer_phone, 
                    total_amount, invoice_date, items_count,
-                   DATE_FORMAT(created_at, '%H:%i:%s') as invoice_time
+                   DATE_FORMAT(created_at, '%%H:%%i:%%s') as invoice_time
             FROM invoice_history
             WHERE 1=1
         """
@@ -409,15 +409,16 @@ def invoice_history_form(window):
     )
     history_frame.place(x=0, y=100)
 
-    # هدر فرم
+    # هدر فرم - با رفع مشکل فونت
     heading_label = Label(
         history_frame,
         text="📜 تاریخچه فاکتورها",
-        font=("fonts/Persian-Yekan.ttf", 18, "bold"),
+        font=("B Nazanin", 18, "bold"),
         bg="#00198f",
         fg="white",
+        anchor="center",
     )
-    heading_label.place(x=0, y=0, relwidth=1)
+    heading_label.place(x=0, y=0, relwidth=1, height=40)
 
     # دکمه بازگشت
     try:
@@ -427,35 +428,36 @@ def invoice_history_form(window):
             image=back_image,
             bd=0,
             cursor="hand2",
-            bg="white",
+            bg="#00198f",
+            activebackground="#00198f",
             command=lambda: history_frame.place_forget(),
         )
-        back_button.place(x=10, y=45)
+        back_button.place(x=10, y=5)
     except:
         back_button = Button(
             history_frame,
             text="← بازگشت",
-            font=("fonts/Persian-Yekan.ttf", 12),
+            font=("B Nazanin", 12),
             bg="#00198f",
             fg="white",
             bd=0,
             cursor="hand2",
             command=lambda: history_frame.place_forget(),
         )
-        back_button.place(x=10, y=45)
+        back_button.place(x=10, y=5)
 
     # ============ فیلترها ============
     filter_frame = Frame(history_frame, bg="white", bd=1, relief=SOLID)
-    filter_frame.place(x=20, y=80, width=1150, height=80)
+    filter_frame.place(x=20, y=60, width=1150, height=80)
 
     # فیلتر تاریخ
-    Label(
-        filter_frame, text="تاریخ:", font=("fonts/Persian-Yekan.ttf", 12), bg="white"
-    ).place(x=1050, y=10)
+    Label(filter_frame, text="تاریخ:", font=("B Nazanin", 12), bg="white").place(
+        x=1050, y=10
+    )
 
     date_filter = ttk.Combobox(
         filter_frame,
-        font=("fonts/Persian-Yekan.ttf", 11),
+        font=("B Nazanin", 11),
         width=15,
         state="readonly",
         justify="right",
@@ -466,13 +468,13 @@ def invoice_history_form(window):
     Label(
         filter_frame,
         text="شماره فاکتور:",
-        font=("fonts/Persian-Yekan.ttf", 12),
+        font=("B Nazanin", 12),
         bg="white",
     ).place(x=860, y=10)
 
     invoice_filter = ttk.Combobox(
         filter_frame,
-        font=("fonts/Persian-Yekan.ttf", 11),
+        font=("B Nazanin", 11),
         width=15,
         state="readonly",
         justify="right",
@@ -480,13 +482,13 @@ def invoice_history_form(window):
     invoice_filter.place(x=710, y=10)
 
     # فیلتر مشتری
-    Label(
-        filter_frame, text="مشتری:", font=("fonts/Persian-Yekan.ttf", 12), bg="white"
-    ).place(x=670, y=10)
+    Label(filter_frame, text="مشتری:", font=("B Nazanin", 12), bg="white").place(
+        x=670, y=10
+    )
 
     customer_filter = ttk.Combobox(
         filter_frame,
-        font=("fonts/Persian-Yekan.ttf", 11),
+        font=("B Nazanin", 11),
         width=15,
         state="readonly",
         justify="right",
@@ -497,7 +499,7 @@ def invoice_history_form(window):
     apply_filter_button = Button(
         filter_frame,
         text="🔍 اعمال فیلتر",
-        font=("fonts/Persian-Yekan.ttf", 11),
+        font=("B Nazanin", 11),
         bg="#00198f",
         fg="white",
         width=12,
@@ -514,7 +516,7 @@ def invoice_history_form(window):
     show_all_button = Button(
         filter_frame,
         text="📋 نمایش همه",
-        font=("fonts/Persian-Yekan.ttf", 11),
+        font=("B Nazanin", 11),
         bg="#6c757d",
         fg="white",
         width=12,
@@ -527,7 +529,7 @@ def invoice_history_form(window):
 
     # ============ جدول تاریخچه ============
     table_frame = Frame(history_frame, bg="white")
-    table_frame.place(x=20, y=170, width=1150, height=400)
+    table_frame.place(x=20, y=150, width=1150, height=400)
 
     # اسکرول بارها
     scroll_y = Scrollbar(table_frame, orient=VERTICAL)
@@ -567,55 +569,56 @@ def invoice_history_form(window):
 
     # ============ دکمه‌های عملیات ============
     button_frame = Frame(history_frame, bg="white")
-    button_frame.place(x=20, y=580, width=1150, height=50)
+    button_frame.place(x=20, y=560, width=1150, height=50)
 
-    # دکمه مشاهده جزئیات
+    # فریم برای قرارگیری دکمه‌ها در وسط
+    center_frame = Frame(button_frame, bg="white")
+    center_frame.place(relx=0.5, rely=0.5, anchor="center")
+
+    # دکمه مشاهده جزئیات (سمت راست در مرکز)
     details_button = Button(
-        button_frame,
+        center_frame,
         text="👁️ مشاهده جزئیات",
-        font=("fonts/Persian-Yekan.ttf", 12),
+        font=("B Nazanin", 12, "bold"),
         bg="#007bff",
         fg="white",
-        width=15,
+        width=18,
+        height=1,
+        bd=0,
+        cursor="hand2",
         command=lambda: show_invoice_details(None, invoice_treeview),
     )
-    details_button.pack(side=RIGHT, padx=10)
+    details_button.pack(side=LEFT, padx=10)
 
-    # دکمه حذف
+    # دکمه حذف (وسط در مرکز)
     delete_button = Button(
-        button_frame,
+        center_frame,
         text="🗑️ حذف فاکتور",
-        font=("fonts/Persian-Yekan.ttf", 12),
+        font=("B Nazanin", 12, "bold"),
         bg="#dc3545",
         fg="white",
-        width=15,
+        width=18,
+        height=1,
+        bd=0,
+        cursor="hand2",
         command=lambda: delete_invoice(invoice_treeview),
     )
-    delete_button.pack(side=RIGHT, padx=10)
+    delete_button.pack(side=LEFT, padx=10)
 
-    # دکمه صدور به CSV
+    # دکمه صدور به CSV (سمت چپ در مرکز)
     export_button = Button(
-        button_frame,
+        center_frame,
         text="📥 صدور به CSV",
-        font=("fonts/Persian-Yekan.ttf", 12),
+        font=("B Nazanin", 12, "bold"),
         bg="#28a745",
         fg="white",
-        width=15,
+        width=18,
+        height=1,
+        bd=0,
+        cursor="hand2",
         command=lambda: export_invoice_history(invoice_treeview),
     )
-    export_button.pack(side=RIGHT, padx=10)
-
-    # دکمه تازه‌سازی
-    refresh_button = Button(
-        button_frame,
-        text="🔄 تازه‌سازی",
-        font=("fonts/Persian-Yekan.ttf", 12),
-        bg="#6c757d",
-        fg="white",
-        width=15,
-        command=lambda: load_invoice_history(invoice_treeview),
-    )
-    refresh_button.pack(side=RIGHT, padx=10)
+    export_button.pack(side=LEFT, padx=10)
 
     # ============ کنترل کیبورد ============
 
@@ -634,9 +637,6 @@ def invoice_history_form(window):
     def export_shortcut(event=None):
         export_button.invoke()
 
-    def refresh_shortcut(event=None):
-        refresh_button.invoke()
-
     def close_form(event=None):
         history_frame.place_forget()
 
@@ -649,7 +649,6 @@ def invoice_history_form(window):
     window.bind("<F6>", details_shortcut)
     window.bind("<F7>", delete_shortcut)
     window.bind("<F8>", export_shortcut)
-    window.bind("<F9>", refresh_shortcut)
     window.bind("<Escape>", close_form)
 
     # Tab Order
@@ -662,8 +661,7 @@ def invoice_history_form(window):
     invoice_treeview.bind("<Tab>", lambda e: move_focus(details_button))
     details_button.bind("<Tab>", lambda e: move_focus(delete_button))
     delete_button.bind("<Tab>", lambda e: move_focus(export_button))
-    export_button.bind("<Tab>", lambda e: move_focus(refresh_button))
-    refresh_button.bind("<Tab>", lambda e: move_focus(date_filter))
+    export_button.bind("<Tab>", lambda e: move_focus(date_filter))
 
     # ============ بارگذاری اولیه ============
     load_invoice_history(invoice_treeview)
