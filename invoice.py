@@ -268,8 +268,12 @@ def show_invoice_preview_window(
     parent_window,
 ):
     preview_window = Toplevel(parent_window)
-    preview_window.title("پیش‌نمایش فاکتور")
-    preview_window.geometry("600x700")
+    preview_window.title("پیش‌ نمایش فاکتور")
+    screen_height = preview_window.winfo_screenheight()
+    height = int(screen_height * 0.85)
+
+    preview_window.geometry(f"600x{height}")
+
     preview_window.configure(bg="white")
     preview_window.resizable(False, False)
 
