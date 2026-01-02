@@ -170,61 +170,92 @@ def show_invoice_details(event, treeview):
 def show_invoice_detail_window(invoice_number, invoice_info, items):
     detail_window = Toplevel()
     detail_window.title(f"جزئیات فاکتور شماره {invoice_number}")
-    detail_window.geometry("600x500")
+    detail_window.geometry("650x550")
     detail_window.configure(bg="white")
     detail_window.resizable(False, False)
 
+    # فریم اصلی
+    main_frame = Frame(detail_window, bg="white")
+    main_frame.pack(fill=BOTH, expand=True, padx=20, pady=20)
+
     # مرکز کردن پنجره
     detail_window.update_idletasks()
-    width = 600
-    height = 500
+    width = 650
+    height = 550
     x = (detail_window.winfo_screenwidth() // 2) - (width // 2)
     y = (detail_window.winfo_screenheight() // 2) - (height // 2)
     detail_window.geometry(f"{width}x{height}+{x}+{y}")
 
-    # عنوان
-    Label(
-        detail_window,
+    # عنوان (راست‌چین)
+    title_label = Label(
+        main_frame,
         text=f"📄 فاکتور شماره {invoice_number}",
-        font=("B Nazanin", 18, "bold"),
+        font=("fonts/Persian-Yekan.ttf", 16, "bold"),
         bg="white",
         fg="#00198f",
-    ).pack(pady=20)
+        anchor="e",
+    )
+    title_label.pack(fill=X, pady=(0, 20))
 
     # اطلاعات فاکتور
-    info_frame = Frame(detail_window, bg="white")
-    info_frame.pack(pady=10, padx=20, fill=X)
+    info_frame = Frame(main_frame, bg="white")
+    info_frame.pack(fill=X, pady=(0, 20))
 
     customer_name, customer_phone, total_amount, invoice_date = invoice_info
-
-    info_texts = [
-        f"مشتری: {customer_name}",
-        f"شماره تماس: {customer_phone}",
-        f"تاریخ: {invoice_date}",
-        f"تعداد آیتم‌ها: {len(items)}",
+    # اطلاعات به صورت راست‌چین
+    info_data = [
+        ("نام مشتری", customer_name),
+        ("شماره تماس", customer_phone),
+        ("تاریخ فاکتور", invoice_date),
+        ("تعداد اقلام", str(len(items))),
     ]
 
-    for text in info_texts:
-        Label(
-            info_frame, text=text, font=("B Nazanin", 14), bg="white", anchor="w"
-        ).pack(fill=X, pady=5)
+    for label_text, value_text in info_data:
+        row_frame = Frame(info_frame, bg="white")
+        row_frame.pack(fill=X, pady=5)
+
+        # برچسب (راست‌چین)
+        label = Label(
+            row_frame,
+            text=label_text,
+            font=("fonts/Persian-Yekan.ttf", 12, "bold"),
+            bg="white",
+            anchor="e",
+            width=15,
+        )
+        label.pack(side=RIGHT, padx=(10, 0))
+        # مقدار (راست‌چین)
+        value = Label(
+            row_frame,
+            text=value_text,
+            font=("fonts/Persian-Yekan.ttf", 12),
+            bg="white",
+            anchor="e",
+        )
+        value.pack(side=RIGHT, expand=True)
 
     # خط جداکننده
-    Label(
-        detail_window, text="─" * 50, font=("B Nazanin", 12), bg="white", fg="gray"
-    ).pack(pady=10)
+    separator1 = Frame(main_frame, height=2, bg="#e0e0e0")
+    separator1.pack(fill=X, pady=10)
 
-    # آیتم‌های فاکتور
-    Label(
-        detail_window, text="اقلام خرید:", font=("B Nazanin", 14, "bold"), bg="white"
-    ).pack(pady=5)
+    # عنوان آیتم‌ها (راست‌چین)
+    items_title = Label(
+        main_frame,
+        text=("اقلام خریداری شده"),
+        font=("fonts/Persian-Yekan.ttf", 13, "bold"),
+        bg="white",
+        anchor="e",
+    )
+    items_title.pack(fill=X, pady=(0, 10))
 
-    items_frame = Frame(detail_window, bg="white")
-    items_frame.pack(pady=10, padx=20, fill=BOTH, expand=True)
+    # فریم آیتم‌ها با اسکرول
+    items_container = Frame(main_frame, bg="white")
+    items_container.pack(fill=BOTH, expand=True, pady=(0, 10))
 
-    # ایجاد Canvas برای اسکرول
-    canvas = Canvas(items_frame, bg="white", height=200)
-    scrollbar = Scrollbar(items_frame, orient="vertical", command=canvas.yview)
+    # کانوس و اسکرول‌بار
+    canvas = Canvas(items_container, bg="white", highlightthickness=0)
+    scrollbar = Scrollbar(items_container, orient=VERTICAL, command=canvas.yview)
+
     scrollable_frame = Frame(canvas, bg="white")
 
     scrollable_frame.bind(
@@ -238,80 +269,123 @@ def show_invoice_detail_window(invoice_number, invoice_info, items):
     header_frame = Frame(scrollable_frame, bg="#f0f0f0")
     header_frame.pack(fill=X)
 
-    headers = ["نام محصول", "قیمت", "تعداد", "جمع"]
-    for i, header in enumerate(headers):
-        Label(
-            header_frame,
-            text=header,
-            font=("B Nazanin", 12, "bold"),
-            bg="#f0f0f0",
-            width=15,
-        ).pack(side=LEFT, padx=2)
+    # هدرهای راست‌چین
+    headers = [("نام محصول", "w"), ("قیمت واحد", "e"), ("تعداد", "e"), ("جمع کل", "e")]
 
-    # آیتم‌ها
+    for header_text, anchor_pos in headers:
+        header = Label(
+            header_frame,
+            text=header_text,
+            font=("fonts/Persian-Yekan.ttf", 11, "bold"),
+            bg="#f0f0f0",
+            anchor=anchor_pos,
+            width=20,
+        )
+        header.pack(side=LEFT, fill=X, expand=(header_text == "نام محصول"))
+    # آیتم‌های فاکتور
     for item in items:
+        product_name, price, quantity, total = item
+
         item_frame = Frame(scrollable_frame, bg="white")
         item_frame.pack(fill=X, pady=2)
 
-        product_name, price, quantity, total = item
-
-        Label(
+        # نام محصول (چپ‌چین)
+        name_label = Label(
             item_frame,
-            text=product_name[:20],
-            font=("B Nazanin", 11),
+            text=product_name,
+            font=("fonts/Persian-Yekan.ttf", 10),
             bg="white",
-            width=15,
-        ).pack(side=LEFT, padx=2)
-        Label(
+            anchor="w",
+            width=25,
+        )
+        name_label.pack(side=LEFT, fill=X, expand=True)
+
+        # قیمت (راست‌چین)
+        price_label = Label(
             item_frame,
             text=f"{price:,.0f}",
-            font=("B Nazanin", 11),
+            font=("fonts/Persian-Yekan.ttf", 10),
             bg="white",
+            anchor="e",
             width=15,
-        ).pack(side=LEFT, padx=2)
-        Label(
-            item_frame, text=quantity, font=("B Nazanin", 11), bg="white", width=15
-        ).pack(side=LEFT, padx=2)
-        Label(
+        )
+        price_label.pack(side=LEFT)
+
+        # تعداد (راست‌چین)
+        qty_label = Label(
+            item_frame,
+            text=f"{quantity}",
+            font=("fonts/Persian-Yekan.ttf", 10),
+            bg="white",
+            anchor="e",
+            width=10,
+        )
+        qty_label.pack(side=LEFT)
+
+        # جمع (راست‌چین)
+        total_label = Label(
             item_frame,
             text=f"{total:,.0f}",
-            font=("B Nazanin", 11),
+            font=("fonts/Persian-Yekan.ttf", 10),
             bg="white",
+            anchor="e",
             width=15,
-        ).pack(side=LEFT, padx=2)
+        )
+        total_label.pack(side=LEFT)
 
-    canvas.pack(side="left", fill="both", expand=True)
-    scrollbar.pack(side="right", fill="y")
+    canvas.pack(side=LEFT, fill=BOTH, expand=True)
+    scrollbar.pack(side=RIGHT, fill=Y)
 
-    # خط جداکننده
-    Label(
-        detail_window, text="─" * 50, font=("B Nazanin", 12), bg="white", fg="gray"
-    ).pack(pady=10)
+    # خط جداکننده پایین
+    separator2 = Frame(main_frame, height=2, bg="#e0e0e0")
+    separator2.pack(fill=X, pady=15)
 
-    # جمع کل
-    total_frame = Frame(detail_window, bg="white")
-    total_frame.pack(pady=10, padx=20, fill=X)
+    # فریم جمع کل
+    total_frame = Frame(main_frame, bg="white")
+    total_frame.pack(fill=X)
+    # برچسب جمع کل (راست‌چین)
+    total_label_text = Label(
+        total_frame,
+        text="مبلغ کل فاکتور:",
+        font=("fonts/Persian-Yekan.ttf", 13, "bold"),
+        bg="white",
+        anchor="e",
+    )
+    total_label_text.pack(side=RIGHT)
 
-    Label(
-        total_frame, text="مبلغ کل فاکتور:", font=("B Nazanin", 14, "bold"), bg="white"
-    ).pack(side=LEFT)
-    Label(
+    # مبلغ جمع کل (راست‌چین)
+    total_amount_label = Label(
         total_frame,
         text=f"{total_amount:,.0f} تومان",
-        font=("B Nazanin", 16, "bold"),
+        font=("fonts/Persian-Yekan.ttf", 14, "bold"),
         bg="white",
         fg="#28a745",
-    ).pack(side=RIGHT)
+        anchor="e",
+    )
+    total_amount_label.pack(side=RIGHT, padx=10)
 
     # دکمه بستن
-    Button(
-        detail_window,
-        text="بستن",
-        font=("B Nazanin", 12),
+    button_frame = Frame(main_frame, bg="white")
+    button_frame.pack(fill=X, pady=(20, 0))
+
+    close_button = Button(
+        button_frame,
+        text="بستن (Esc)",
+        font=("fonts/Persian-Yekan.ttf", 12),
         bg="#6c757d",
         fg="white",
+        width=15,
+        height=1,
+        bd=0,
+        cursor="hand2",
         command=detail_window.destroy,
-    ).pack(pady=20)
+    )
+    close_button.pack()
+    # کلید Escape برای بستن پنجره
+    detail_window.bind("<Escape>", lambda e: detail_window.destroy())
+
+    # فوکوس روی پنجره
+    detail_window.focus_set()
 
 
 def export_invoice_history(treeview):
@@ -413,7 +487,7 @@ def invoice_history_form(window):
     heading_label = Label(
         history_frame,
         text="📜 تاریخچه فاکتورها",
-        font=("B Nazanin", 18, "bold"),
+        font=("fonts/Persian-Yekan.ttf", 12),
         bg="#00198f",
         fg="white",
         anchor="center",
@@ -579,8 +653,8 @@ def invoice_history_form(window):
     details_button = Button(
         center_frame,
         text="👁️ مشاهده جزئیات",
-        font=("B Nazanin", 12, "bold"),
-        bg="#007bff",
+        font=("fonts/Persian-Yekan.ttf", 12),
+        bg="#00198f",
         fg="white",
         width=18,
         height=1,
@@ -594,8 +668,8 @@ def invoice_history_form(window):
     delete_button = Button(
         center_frame,
         text="🗑️ حذف فاکتور",
-        font=("B Nazanin", 12, "bold"),
-        bg="#dc3545",
+        font=("fonts/Persian-Yekan.ttf", 12),
+        bg="#00198f",
         fg="white",
         width=18,
         height=1,
@@ -609,8 +683,8 @@ def invoice_history_form(window):
     export_button = Button(
         center_frame,
         text="📥 صدور به CSV",
-        font=("B Nazanin", 12, "bold"),
-        bg="#28a745",
+        font=("fonts/Persian-Yekan.ttf", 12),
+        bg="#00198f",
         fg="white",
         width=18,
         height=1,
