@@ -284,7 +284,7 @@ def show_invoice_preview_window(
     # عنوان
     Label(
         preview_window,
-        text="📋 پیش‌نمایش فاکتور",
+        text="📋 پیش‌ نمایش فاکتور",
         font=("B Nazanin", 18, "bold"),
         bg="white",
         fg="#00198f",
@@ -397,14 +397,14 @@ def show_invoice_preview_window(
     Label(
         total_frame,
         text="مبلغ قابل پرداخت:",
-        font=("B Nazanin", 13, "bold"),
+        font=("B Nazanin", 12, "bold"),
         bg="white",
     ).pack(side=RIGHT, padx=(10, 0))
 
     Label(
         total_frame,
         text=f"{total_amount:,} تومان",
-        font=("B Nazanin", 15, "bold"),
+        font=("B Nazanin", 13, "bold"),
         bg="white",
         fg="#28a745",
     ).pack(side=LEFT)
@@ -651,72 +651,88 @@ def invoice_form(window):
 
     # ============ بخش جستجو ============
     search_card = create_card_frame(invoice_frame, "جستجوی محصولات")
-    search_card.place(x=20, y=60, width=1150, height=70)
+    search_card.place(x=20, y=60, width=1150, height=80)
 
-    # جعبه جستجو (راست)
+    search_content = Frame(search_card, bg=BG_WHITE)
+    search_content.pack(fill=BOTH, expand=True, padx=15, pady=15)
+
+    # تنظیم grid
+    for i in range(6):
+        search_content.columnconfigure(i, weight=1)
+
+# ورودی جستجو
+    search_frame = Frame(search_content, bg=BG_WHITE)
+    search_frame.grid(row=0, column=5, padx=10, sticky="e")
+
     search_entry = Entry(
-        search_card,
-        font=("B Nazanin", 11),
-        bg="white",
-        width=25,
-        justify="right",
-        bd=1,
-        relief=SOLID,
-        fg="gray",
-    )
-    search_entry.place(x=900, y=18)
-    search_entry.insert(0, "جستجوی محصول...")
+    search_frame,
+    font=("B Nazanin", 11),
+    justify="right",
+    fg="gray",
+    width=25,
+)
+    search_entry.pack(side=RIGHT)
 
-    # اتصال رویدادهای فوکوس
+    search_entry.insert(0, "جستجوی محصول...")
     search_entry.bind("<FocusIn>", lambda e: on_search_focus_in(e, search_entry))
     search_entry.bind("<FocusOut>", lambda e: on_search_focus_out(e, search_entry))
 
-    # دکمه جستجو (سمت راست)
     search_button = Button(
-        search_card,
-        text="🔍 جستجو",
-        font=("B Nazanin", 11),
-        bg=BTN_PRIMARY,
-        fg="white",
-        width=10,
-        height=1,
-        bd=0,
-        cursor="hand2",
-        command=lambda: search_product(
-            search_entry, products_treeview, category_filter.get(), status_filter.get()
-        ),
-    )
-    search_button.place(x=800, y=18)
+    search_frame,
+    text="🔍 جستجو",
+    font=("B Nazanin", 11,"bold"),
+    bg=BTN_PRIMARY,
+    fg="white",
+    width=7,
+    bd=0,
+    cursor="hand2",
+    command=lambda: search_product(
+        search_entry,
+        products_treeview,
+        category_filter.get(),
+        status_filter.get(),
+    ),
+)
+    search_button.pack(side=LEFT, padx=5)
 
-    # فیلتر وضعیت (وسط راست)
-    Label(search_card, text="وضعیت:", font=("B Nazanin", 11), bg=BG_WHITE).place(
-        x=750, y=20
-    )
+
+    status_frame = Frame(search_content, bg=BG_WHITE)
+    status_frame.grid(row=0, column=3, padx=10, sticky="e")
+
+    Label(
+    status_frame,
+    text="وضعیت",
+    font=("B Nazanin", 11,"bold"),
+    bg=BG_WHITE,
+).pack(side=RIGHT, padx=(5, 2))
 
     status_filter = ttk.Combobox(
-        search_card,
-        values=["همه", "فعال", "غیرفعال"],
-        font=("B Nazanin", 10),
-        width=12,
-        state="readonly",
-        justify="right",
-    )
-    status_filter.set("همه")
-    status_filter.place(x=630, y=18)
+    status_frame,
+    values=["همه", "فعال", "غیرفعال"],
+    state="readonly",
+    justify="right",
+    width=18,
+)
+    status_filter.pack(side=RIGHT)
 
-    # فیلتر دسته‌بندی (وسط چپ)
-    Label(search_card, text="دسته‌بندی:", font=("B Nazanin", 11), bg=BG_WHITE).place(
-        x=580, y=20
-    )
+    category_frame = Frame(search_content, bg=BG_WHITE)
+    category_frame.grid(row=0, column=1, padx=10, sticky="e")
+
+    Label(
+    category_frame,
+    text="دسته‌ بندی",
+    font=("B Nazanin", 11,"bold"),   
+    bg=BG_WHITE,
+).pack(side=RIGHT, padx=(5, 2))
 
     category_filter = ttk.Combobox(
-        search_card,
-        font=("B Nazanin", 10),
-        width=15,
-        state="readonly",
-        justify="right",
-    )
-    category_filter.place(x=430, y=18)
+    category_frame,
+    state="readonly",
+    justify="right",
+    width=18,                
+)
+    category_filter.pack(side=RIGHT)
+
 
     # ============ بخش لیست محصولات (سمت چپ) ============
     products_card = create_card_frame(invoice_frame, "لیست محصولات")
@@ -808,57 +824,79 @@ def invoice_form(window):
     customer_content = Frame(customer_card, bg="white", padx=10, pady=10)
     customer_content.pack(fill=BOTH, expand=True)
 
-    # نام مشتری
     customer_name_frame = Frame(customer_content, bg="white")
     customer_name_frame.pack(fill=X, pady=5)
+    
+
+    Label(
+    customer_name_frame,
+    text="نام مشتری",
+    font=("B Nazanin", 11),
+    bg="white",
+).pack(side=RIGHT, padx=(5, 10))   # ← اول لیبل
 
     customer_name_entry = Entry(
-        customer_name_frame,
-        font=("B Nazanin", 11),
-        bg="white",
-        width=30,
-        justify="right",
-        bd=1,
-        relief=SOLID,
-    )
-    customer_name_entry.pack(side=RIGHT, fill=X, expand=True)
+    customer_name_frame,
+    font=("B Nazanin", 11),
+    justify="right",
+    bd=1,
+    relief=SOLID,
+)
+    customer_name_entry.pack(side=RIGHT, fill=X, expand=True)  # ← بعد باکس
 
-    Label(
-        customer_name_frame,
-        text="نام مشتری:",
-        font=("B Nazanin", 11),
-        bg="white",
-    ).pack(side=RIGHT, padx=(10, 5))
 
-    # شماره تماس
     customer_phone_frame = Frame(customer_content, bg="white")
     customer_phone_frame.pack(fill=X, pady=5)
-
-    customer_phone_entry = Entry(
-        customer_phone_frame,
-        font=("B Nazanin", 11),
-        bg="white",
-        width=30,
-        justify="right",
-        bd=1,
-        relief=SOLID,
-    )
-    customer_phone_entry.pack(side=RIGHT, fill=X, expand=True)
+    customer_name_frame.pack_propagate(False)
+    customer_name_frame.config(height=35)
 
     Label(
-        customer_phone_frame,
-        text="شماره تماس:",
-        font=("B Nazanin", 11),
-        bg="white",
-    ).pack(side=RIGHT, padx=(10, 5))
+    customer_phone_frame,
+    text="شماره تماس",
+    font=("B Nazanin", 11),
+    bg="white",
+).pack(side=RIGHT, padx=(5, 10))   # ← اول لیبل
+
+    customer_phone_entry = Entry(
+    customer_phone_frame,
+    font=("B Nazanin", 11),
+    justify="right",
+    bd=1,
+    relief=SOLID,
+)
+    customer_phone_entry.pack(side=RIGHT, fill=X, expand=True)  # ← بعد باکس
+    customer_phone_frame.pack_propagate(False)
+    customer_phone_frame.config(height=35)
+
 
     # ============ بخش سبد خرید (سمت راست پایین) ============
     cart_card = create_card_frame(invoice_frame, "سبد خرید")
     cart_card.place(x=600, y=270, width=570, height=270)
 
+    # فریم جدول (بالا)
+    cart_table_frame = Frame(cart_card, bg="white")
+    cart_table_frame.pack(fill=BOTH, expand=True)
+
+# فریم دکمه‌ها (پایین)
+    cart_footer_frame = Frame(cart_card, bg="white")
+    cart_footer_frame.pack(fill=X, side=BOTTOM)
+
+
+    # دکمه‌ها (چپ)
+    button_frame = Frame(cart_footer_frame, bg="white")
+    button_frame.pack(side=LEFT, padx=10)
+
+# مجموع کل (راست)
+    total_frame = Frame(cart_footer_frame, bg="white")
+    total_frame.pack(side=RIGHT, padx=10)
+
+
+
     # جدول سبد خرید
-    cart_tree_container = Frame(cart_card, bg="white")
+    
+    cart_tree_container = Frame(cart_table_frame, bg="white")
     cart_tree_container.pack(fill=BOTH, expand=True, padx=2, pady=2)
+
 
     cart_scroll_y = Scrollbar(cart_tree_container, orient=VERTICAL)
     cart_scroll_x = Scrollbar(cart_tree_container, orient=HORIZONTAL)
@@ -897,7 +935,7 @@ def invoice_form(window):
 
     # دکمه‌های مدیریت سبد و مجموع کل
     bottom_controls = Frame(cart_card, bg="white", height=35)
-    bottom_controls.pack(fill=X, side=BOTTOM, pady=2)
+    bottom_controls.pack(fill=X, side=BOTTOM)
 
     # مجموع کل (سمت راست)
     total_frame = Frame(bottom_controls, bg="white")
@@ -919,10 +957,10 @@ def invoice_form(window):
     remove_button = Button(
         button_frame,
         text="🗑️ حذف",
-        font=("B Nazanin", 10),
+        font=("B Nazanin", 8),
         bg=BTN_DANGER,
         fg="white",
-        width=8,
+        width=10,
         height=1,
         bd=0,
         cursor="hand2",
@@ -933,7 +971,7 @@ def invoice_form(window):
     clear_cart_button = Button(
         button_frame,
         text="🧹 پاک کردن",
-        font=("B Nazanin", 10),
+        font=("B Nazanin", 8),
         bg=BTN_WARNING,
         fg="white",
         width=10,
@@ -971,39 +1009,13 @@ def invoice_form(window):
     )
     preview_button.pack(side=RIGHT, padx=10)
 
-    save_draft_button = Button(
-        buttons_row,
-        text="💾 ذخیره پیش‌نویس",
-        font=("B Nazanin", 10),
-        bg=BTN_INFO,
-        fg="white",
-        width=14,
-        height=1,
-        bd=0,
-        cursor="hand2",
-    )
-    save_draft_button.pack(side=RIGHT, padx=10)
-
-    print_button = Button(
-        buttons_row,
-        text="🖨️ چاپ فاکتور",
-        font=("B Nazanin", 10),
-        bg=BTN_INFO,
-        fg="white",
-        width=12,
-        height=1,
-        bd=0,
-        cursor="hand2",
-    )
-    print_button.pack(side=RIGHT, padx=10)
-
     cancel_button = Button(
         buttons_row,
         text="❌ انصراف",
-        font=("B Nazanin", 10),
+        font=("B Nazanin", 12,"bold"),
         bg=BTN_DANGER,
         fg="white",
-        width=12,
+        width=16,
         height=1,
         bd=0,
         cursor="hand2",
