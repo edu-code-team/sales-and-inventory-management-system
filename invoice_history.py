@@ -525,7 +525,7 @@ def invoice_history_form(window):
     filter_frame.place(x=20, y=60, width=1150, height=80)
 
     # فیلتر تاریخ
-    Label(filter_frame, text="تاریخ:", font=("B Nazanin", 12), bg="white").place(
+    Label(filter_frame, text="تاریخ", font=("B Nazanin", 12), bg="white").place(
         x=1050, y=10
     )
 
@@ -541,7 +541,7 @@ def invoice_history_form(window):
     # فیلتر شماره فاکتور
     Label(
         filter_frame,
-        text="شماره فاکتور:",
+        text="شماره فاکتور",
         font=("B Nazanin", 12),
         bg="white",
     ).place(x=860, y=10)
@@ -556,7 +556,7 @@ def invoice_history_form(window):
     invoice_filter.place(x=710, y=10)
 
     # فیلتر مشتری
-    Label(filter_frame, text="مشتری:", font=("B Nazanin", 12), bg="white").place(
+    Label(filter_frame, text="مشتری", font=("B Nazanin", 12), bg="white").place(
         x=670, y=10
     )
 
@@ -682,7 +682,7 @@ def invoice_history_form(window):
     # دکمه صدور به CSV (سمت چپ در مرکز)
     export_button = Button(
         center_frame,
-        text="📥 صدور به CSV",
+        text="📥 CSV صدور به ",
         font=("fonts/Persian-Yekan.ttf", 12),
         bg="#00198f",
         fg="white",
@@ -714,16 +714,29 @@ def invoice_history_form(window):
     def close_form(event=None):
         history_frame.place_forget()
 
-    # بایند کلیدهای کیبورد
-    window.bind("<F1>", lambda e: date_filter.focus_set())
-    window.bind("<F2>", lambda e: invoice_filter.focus_set())
-    window.bind("<F3>", lambda e: customer_filter.focus_set())
-    window.bind("<F4>", filter_shortcut)
-    window.bind("<F5>", show_all_shortcut)
-    window.bind("<F6>", details_shortcut)
-    window.bind("<F7>", delete_shortcut)
-    window.bind("<F8>", export_shortcut)
+   # ============ Keyboard Shortcuts (Invoice History - Ctrl based) ============
+
+# فوکوس فیلترها
+    window.bind("<Control-d>", lambda e: date_filter.focus_set())
+    window.bind("<Control-i>", lambda e: invoice_filter.focus_set())
+    window.bind("<Control-n>", lambda e: customer_filter.focus_set())
+
+# اعمال فیلتر
+    window.bind("<Control-Return>", filter_shortcut)
+
+# نمایش همه
+    window.bind("<Control-r>", show_all_shortcut)
+    window.bind("<Control-R>", show_all_shortcut)
+
+# عملیات روی فاکتور
+    window.bind("<Control-v>", details_shortcut)
+    window.bind("<Control-Shift-D>", delete_shortcut)
+    window.bind("<Control-e>", export_shortcut)
+    window.bind("<Control-E>", export_shortcut)
+
+# خروج
     window.bind("<Escape>", close_form)
+
 
     # Tab Order
     date_filter.focus_set()

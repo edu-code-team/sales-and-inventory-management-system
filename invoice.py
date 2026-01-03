@@ -1034,17 +1034,31 @@ def invoice_form(window):
     def add_to_cart_shortcut(event=None):
         add_to_cart_button.invoke()
 
-    window.bind("<F1>", lambda e: search_entry.focus_set())
-    window.bind("<F2>", lambda e: category_filter.focus_set())
-    window.bind("<F3>", lambda e: status_filter.focus_set())
-    window.bind("<F4>", search_shortcut)
-    window.bind("<F5>", add_to_cart_shortcut)
-    window.bind("<F6>", lambda e: remove_button.invoke())
-    window.bind("<F7>", lambda e: clear_cart_button.invoke())
-    window.bind("<F8>", lambda e: preview_button.invoke())
-    window.bind("<F9>", lambda e: customer_name_entry.focus_set())
-    window.bind("<F10>", lambda e: customer_phone_entry.focus_set())
+    # ========= Keyboard Shortcuts (Ctrl-based) =========
+
+# جستجو
+    window.bind("<Control-f>", lambda e: search_entry.focus_set())
+    window.bind("<Control-Return>", lambda e: search_button.invoke())
+
+# فیلترها
+    window.bind("<Control-Shift-C>", lambda e: category_filter.focus_set())
+    window.bind("<Control-Shift-S>", lambda e: status_filter.focus_set())
+
+# افزودن / حذف سبد
+    window.bind("<Control-a>", lambda e: add_to_cart_button.invoke())
+    window.bind("<Control-d>", lambda e: remove_button.invoke())
+    window.bind("<Control-Shift-D>", lambda e: clear_cart_button.invoke())
+
+# مشخصات مشتری
+    window.bind("<Control-n>", lambda e: customer_name_entry.focus_set())
+    window.bind("<Control-p>", lambda e: customer_phone_entry.focus_set())
+
+# پیش‌نمایش فاکتور
+    window.bind("<Control-Return>", lambda e: preview_button.invoke())
+
+# خروج
     window.bind("<Escape>", lambda e: invoice_frame.place_forget())
+
 
     # Tab Order (راست‌چین)
     search_entry.focus_set()
