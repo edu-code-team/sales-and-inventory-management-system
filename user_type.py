@@ -892,6 +892,47 @@ def user_type_form(window):
     )
     clear_button.pack(side=LEFT, padx=3)
 
+    # ================= میانبرهای صفحه انواع کاربری =================
+
+    def add_shortcut(event=None):
+        add_button.invoke()
+
+    def update_shortcut(event=None):
+        update_button.invoke()
+
+    def delete_shortcut(event=None):
+        delete_button.invoke()
+
+    def clear_shortcut(event=None):
+        clear_button.invoke()
+
+    def import_shortcut(event=None):
+        import_button.invoke()
+
+    def export_shortcut(event=None):
+        export_button.invoke()
+
+    def focus_name_shortcut(event=None):
+        type_name_entry.focus_set()
+
+    def close_form(event=None):
+        user_type_frame.place_forget()
+
+        # ================= Bind کلیدهای میانبر =================
+
+    window.bind("<Control-a>", add_shortcut)
+    window.bind("<Control-u>", update_shortcut)
+    window.bind("<Control-d>", delete_shortcut)
+    window.bind("<Control-c>", clear_shortcut)
+
+    window.bind("<Control-i>", import_shortcut)
+    window.bind("<Control-e>", export_shortcut)
+
+    window.bind("<Control-f>", focus_name_shortcut)
+    window.bind("<Escape>", close_form)
+
+
+
     # تنظیم ارتفاع اصلی فرم برای امکان اسکرول
     main_frame.config(height=530)
 
@@ -935,5 +976,7 @@ def user_type_form(window):
     import_button.bind("<Tab>", lambda e: move_focus(export_button))
     export_button.bind("<Tab>", lambda e: move_focus(treeview))
     treeview.bind("<Tab>", lambda e: move_focus(type_name_entry))
+
+    type_name_entry.focus_set()
 
     return user_type_frame

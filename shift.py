@@ -183,6 +183,9 @@ def get_shifts_for_combobox():
         cursor.close()
         connection.close()
 
+def move_focus(widget):
+    widget.focus_set()
+    return "break"
 
 def shift_form(window):
     """فرم تعریف شیفت"""
@@ -633,15 +636,72 @@ def shift_form(window):
     bg="#4b39e9",
     command=lambda: export_shift_to_csv(shift_treeview),
 )
+    # نام شیفت → ساعت شروع → ساعت پایان
+    shift_name_entry.bind("<Tab>", lambda e: move_focus(start_time_entry))
+    start_time_entry.bind("<Tab>", lambda e: move_focus(end_time_entry))
+    end_time_entry.bind("<Tab>", lambda e: move_focus(add_button))
+    add_button.bind("<Tab>", lambda e: move_focus(update_button))
+    update_button.bind("<Tab>", lambda e: move_focus(delete_button))
+    delete_button.bind("<Tab>", lambda e: move_focus(clear_button))
+    clear_button.bind("<Tab>", lambda e: move_focus(import_button))
+    import_button.bind("<Tab>", lambda e: move_focus(export_button))
+    export_button.bind("<Tab>", lambda e: move_focus(shift_treeview))
+    shift_treeview.bind("<Tab>", lambda e: move_focus(shift_name_entry))
+
+
+
 
 # ⬇️ ستون 1 و 2 یعنی وسط ۴ دکمه
     import_button.grid(row=1, column=1, padx=10, pady=10)
     export_button.grid(row=1, column=2, padx=10, pady=10)
+
+    # ================= میانبرهای صفحه شیفت =================
+
+    def add_shortcut(event=None):
+        add_button.invoke()
+
+    def update_shortcut(event=None):
+        update_button.invoke()
+
+    def delete_shortcut(event=None):
+        delete_button.invoke()
+
+    def clear_shortcut(event=None):
+        clear_button.invoke()
+
+    def import_shortcut(event=None):
+        import_button.invoke()
+
+    def export_shortcut(event=None):
+        export_button.invoke()
+
+    def focus_name_shortcut(event=None):
+        shift_name_entry.focus_set()
+
+    def close_form(event=None):
+        shift_frame.place_forget()
+
+        # ================= Bind کلیدهای میانبر =================
+
+    window.bind("<Control-a>", add_shortcut)   # افزودن
+    window.bind("<Control-u>", update_shortcut)  # ویرایش
+    window.bind("<Control-d>", delete_shortcut)  # حذف
+    window.bind("<Control-c>", clear_shortcut)   # پاک کردن
+
+    window.bind("<Control-i>", import_shortcut)  # Import CSV
+    window.bind("<Control-e>", export_shortcut)  # Export CSV
+
+    window.bind("<Control-f>", focus_name_shortcut)  # فوکوس نام شیفت
+    window.bind("<Escape>", close_form)  # بستن فرم
+
+
 
 
     shift_treeview.bind("<ButtonRelease-1>", lambda event: select_data(event))
 
     create_shift_table()
     treeview_data(shift_treeview)
+    shift_name_entry.focus_set()
+
 
     return shift_frame

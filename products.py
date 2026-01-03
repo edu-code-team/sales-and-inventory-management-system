@@ -7,8 +7,9 @@ import csv
 
 
 def move_focus(widget):
-    widget.focus_set()
+    widget.focus_force()
     return "break"
+
 
 
 def export_to_excel(treeview):
@@ -623,6 +624,7 @@ def product_form(window):
         width=15,
         fg="white",
         bg="#4b39e9",
+        takefocus=True,
         command=lambda: import_from_csv(treeview, category_combobox, supplier_combobox),
     )
     import_button.grid(row=0, column=0, padx=5)
@@ -635,9 +637,12 @@ def product_form(window):
         width=15,
         fg="white",
         bg="#4b39e9",
+        takefocus=True,
         command=lambda: export_to_excel(treeview),
     )
     export_button.grid(row=0, column=1, padx=5)
+
+
 
     # ================= KEYBOARD SHORTCUTS (PRODUCTS) =================
 
@@ -671,36 +676,55 @@ def product_form(window):
     def close_form(event=None):
         product_frame.place_forget()
 
+    def search_shortcut(event=None):
+        search_button.invoke()
+
+    def show_all_shortcut(event=None):
+        show_all_button.invoke()
+
+    def focus_filter_shortcut(event=None):
+        filter_category.focus_force()
+
+
     # Bind shortcuts
-    window.bind("<a>", add_shortcut)
-    window.bind("<A>", add_shortcut)
+    window.bind("<Control-a>", add_shortcut)
+    window.bind("<Control-A>", add_shortcut)
 
-    window.bind("<u>", update_shortcut)
-    window.bind("<U>", update_shortcut)
+    window.bind("<Control-u>", update_shortcut)
+    window.bind("<Control-U>", update_shortcut)
 
-    window.bind("<d>", delete_shortcut)
-    window.bind("<D>", delete_shortcut)
+    window.bind("<Control-d>", delete_shortcut)
+    window.bind("<Control-D>", delete_shortcut)
 
-    window.bind("<c>", clear_shortcut)
-    window.bind("<C>", clear_shortcut)
+    window.bind("<Control-c>", clear_shortcut)
+    window.bind("<Control-C>", clear_shortcut)
 
-    window.bind("<s>", search_shortcut)
-    window.bind("<S>", search_shortcut)
-    window.bind("<Return>", search_shortcut)
+    window.bind("<Control-s>", search_shortcut)
+    window.bind("<Control-S>", search_shortcut)
+    window.bind("<Control-Return>", search_shortcut)
 
-    window.bind("<r>", show_all_shortcut)
-    window.bind("<R>", show_all_shortcut)
+    window.bind("<Control-r>", show_all_shortcut)
+    window.bind("<Control-R>", show_all_shortcut)
 
-    window.bind("<f>", focus_category)
-    window.bind("<F>", focus_category)
+    window.bind("<Control-f>", focus_category)
+    window.bind("<Control-F>", focus_category)
 
-    window.bind("<i>", import_shortcut)
-    window.bind("<I>", import_shortcut)
+    window.bind("<Control-i>", import_shortcut)
+    window.bind("<Control-I>", import_shortcut)
 
-    window.bind("<e>", export_shortcut)
-    window.bind("<E>", export_shortcut)
+    window.bind("<Control-e>", export_shortcut)
+    window.bind("<Control-E>", export_shortcut)
 
     window.bind("<Escape>", close_form)
+
+    window.bind("<Control-Return>", search_shortcut)
+
+    window.bind("<Control-r>", show_all_shortcut)
+    window.bind("<Control-R>", show_all_shortcut)
+
+    window.bind("<Control-f>", focus_filter_shortcut)
+    window.bind("<Control-F>", focus_filter_shortcut)
+
 
     product_frame.focus_set()
 
@@ -838,17 +862,16 @@ def product_form(window):
     update_button.bind("<Tab>", lambda e: move_focus(delete_button))
     delete_button.bind("<Tab>", lambda e: move_focus(clear_button))
 
-    # ---- رفتن به دکمه ایمپورت ----
     clear_button.bind("<Tab>", lambda e: move_focus(import_button))
     import_button.bind("<Tab>", lambda e: move_focus(export_button))
     export_button.bind("<Tab>", lambda e: move_focus(filter_category))
-
     filter_category.bind("<Tab>", lambda e: move_focus(filter_supplier))
     filter_supplier.bind("<Tab>", lambda e: move_focus(filter_status))
+
+# ---- جستجو / نمایش همه ----
     filter_status.bind("<Tab>", lambda e: move_focus(search_button))
-
     search_button.bind("<Tab>", lambda e: move_focus(show_all_button))
-    show_all_button.bind("<Tab>", lambda e: move_focus(treeview))
 
-    # ---- جدول ----
+# ---- جدول ----
+    show_all_button.bind("<Tab>", lambda e: move_focus(treeview))
     treeview.bind("<Tab>", lambda e: move_focus(category_combobox))

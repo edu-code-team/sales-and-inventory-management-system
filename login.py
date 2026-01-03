@@ -46,6 +46,18 @@ class LoginSystem:
         # دکمه‌ها
         self.create_buttons()
 
+        # ورود
+        self.window.bind("<Return>", self.login_shortcut)
+        self.window.bind("<Control-l>", self.login_shortcut)
+
+# خروج
+        self.window.bind("<Escape>", self.exit_shortcut)
+        self.window.bind("<Control-q>", self.exit_shortcut)
+
+# نمایش / مخفی رمز عبور
+        self.window.bind("<Control-p>", self.toggle_password_shortcut)
+
+
         # کلیدهای کیبورد
         self.window.bind('<Return>', lambda e: self.login())
         self.window.bind('<Escape>', lambda e: self.window.destroy())
@@ -113,6 +125,17 @@ class LoginSystem:
                bd=2,
                cursor='hand2',
                command=self.window.destroy).pack(side=LEFT, padx=10)
+        
+    def login_shortcut(self, event=None):
+        self.login()
+
+    def exit_shortcut(self, event=None):
+        self.window.destroy()
+
+    def toggle_password_shortcut(self, event=None):
+        self.show_pass_var.set(1 if not self.show_pass_var.get() else 0)
+        self.toggle_password()
+
 
     def toggle_password(self):
         if self.show_pass_var.get():

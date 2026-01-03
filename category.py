@@ -544,26 +544,26 @@ def category_form(window):
         category_frame.place_forget()
 
     # Bind shortcuts
-    window.bind("<a>", add_shortcut)
-    window.bind("<A>", add_shortcut)
+    window.bind("<Control-a>", add_shortcut)
+    window.bind("<Control-A>", add_shortcut)
 
-    window.bind("<u>", update_shortcut)
-    window.bind("<U>", update_shortcut)
+    window.bind("<Control-u>", update_shortcut)
+    window.bind("<Control-U>", update_shortcut)
 
-    window.bind("<d>", delete_shortcut)
-    window.bind("<D>", delete_shortcut)
+    window.bind("<Control-d>", delete_shortcut)
+    window.bind("<Control-D>", delete_shortcut)
 
-    window.bind("<c>", clear_shortcut)
-    window.bind("<C>", clear_shortcut)
+    window.bind("<Control-c>", clear_shortcut)
+    window.bind("<Control-C>", clear_shortcut)
 
-    window.bind("<f>", focus_id)
-    window.bind("<F>", focus_id)
+    window.bind("<Control-f>", focus_id)
+    window.bind("<Control-F>", focus_id)
 
-    window.bind("<i>", import_shortcut)
-    window.bind("<I>", import_shortcut)
+    window.bind("<Control-i>", import_shortcut)
+    window.bind("<Control-I>", import_shortcut)
 
-    window.bind("<e>", export_shortcut)
-    window.bind("<E>", export_shortcut)
+    window.bind("<Control-e>", export_shortcut)
+    window.bind("<Control-E>", export_shortcut)
 
     window.bind("<Escape>", close_form)
     window.bind("<Return>", add_shortcut)
@@ -583,12 +583,10 @@ def category_form(window):
     add_button.bind("<Tab>", lambda e: move_focus(delete_button))
     delete_button.bind("<Tab>", lambda e: move_focus(update_button))
     update_button.bind("<Tab>", lambda e: move_focus(clear_button))
-    clear_button.bind("<Tab>", lambda e: move_focus(id_entry))
-
-    # اضافه کردن Tab برای دکمه‌های ایمپورت/اکسپورت
-    id_entry.bind("<Shift-Tab>", lambda e: move_focus(import_button))
+    clear_button.bind("<Tab>", lambda e: move_focus(import_button))
     import_button.bind("<Tab>", lambda e: move_focus(export_button))
-    export_button.bind("<Tab>", lambda e: move_focus(id_entry))
+    
+
 
     for i in range(4):
         button_frame.grid_columnconfigure(i, weight=1)
@@ -625,6 +623,11 @@ def category_form(window):
     treeview.column("desc", width=250, anchor="center")
 
     treeview_data(treeview)
+    # ---------- TAB FIX AFTER TREEVIEW CREATED ----------
+
+    export_button.bind("<Tab>", lambda e: move_focus(treeview))
+    treeview.bind("<Tab>", lambda e: move_focus(id_entry))
+
 
     treeview.bind(
         "<<TreeviewSelect>>",
