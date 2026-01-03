@@ -118,7 +118,7 @@ def get_all_user_types_from_db():
     
     try:
         cursor.execute("USE inventory_system")
-        cursor.execute("SELECT DISTINCT usertype FROM employee_data ORDER BY usertype")
+        cursor.execute("SELECT type_name FROM user_types ORDER BY type_name")
         usertypes = cursor.fetchall()
         usertype_list = ["همه"]
         for usertype in usertypes:

@@ -43,10 +43,8 @@ def export_to_csv(treeview):
                         "تامین‌کننده",
                         "دسته‌بندی",
                         "محصولات",
-                        "فروش",
                         "فاکتور",
                         "تاریخچه فاکتور",
-                        "ادمین",
                     ]
                 )
                 writer.writerows(data)
@@ -85,7 +83,7 @@ def import_from_csv(treeview):
             next(reader)  # رد کردن هدر
 
             for idx, row in enumerate(reader, start=2):  # start=2 چون سطر 1 هدر است
-                if len(row) < 12:
+                if len(row) < 11:
                     skipped_count += 1
                     errors.append(
                         f"سطر {idx}: تعداد ستون‌ها ناکافی است (نیاز به 12 ستون)"
@@ -116,15 +114,16 @@ def import_from_csv(treeview):
                             permissions.append(0)
 
                     # اضافه کردن نوع کاربری
+                    # ✅ درست شده:
                     cursor.execute(
                         """
                         INSERT INTO user_types 
                         (type_name, can_employees, can_shifts, can_user_types, 
                          can_suppliers, can_categories, can_products,
-                         can_sales, can_invoices, can_invoice_history)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                         can_invoices, can_invoice_history)  # 9 ستون
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)  # 9 پارامتر
                         """,
-                        (type_name, *permissions),
+                        (type_name, *permissions),  # permissions باید 8 آیتم باشد
                     )
                     imported_count += 1
 
@@ -178,8 +177,7 @@ def create_user_types_table():
             can_suppliers BOOLEAN DEFAULT 0,
             can_categories BOOLEAN DEFAULT 0,
             can_products BOOLEAN DEFAULT 0,
-            can_sales BOOLEAN DEFAULT 0,
-            can_invoices BOOLEAN DEFAULT 0,
+            can_invoices BOOLEAN DEFAULT 0,  # ✅ مستقیماً بعد از can_products
             can_invoice_history BOOLEAN DEFAULT 0,
             is_admin BOOLEAN DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -191,9 +189,9 @@ def create_user_types_table():
             """
             INSERT IGNORE INTO user_types 
             (type_name, can_employees, can_shifts, can_user_types, can_suppliers, 
-             can_categories, can_products, can_sales, can_invoices, can_invoice_history, is_admin)
-            VALUES ('ادمین', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
-        """
+             can_categories, can_products, can_invoices, can_invoice_history, is_admin)  # ✅
+            VALUES ('ادمین', 1, 1, 1, 1, 1, 1, 1, 1, 1)
+            """
         )
 
         connection.commit()
@@ -219,10 +217,10 @@ def load_user_types(treeview):
             SELECT id, type_name, 
                    can_employees, can_shifts, can_user_types,
                    can_suppliers, can_categories, can_products,
-                   can_sales, can_invoices, can_invoice_history, is_admin
+                   can_invoices, can_invoice_history
             FROM user_types 
             ORDER BY is_admin DESC, type_name
-        """
+            """
         )
         records = cursor.fetchall()
 
@@ -231,8 +229,8 @@ def load_user_types(treeview):
             # نمایش حالت فارسی برای دسترسی‌ها
             display_record = list(record[:2])  # id و type_name
 
-            # تبدیل 0/1 به ❌/✅
-            for i in range(2, len(record)):  # همه دسترسی‌ها شامل is_admin
+            # تبدیل 0/1 به ❌/✅ (فقط 8 دسترسی، نه is_admin)
+            for i in range(2, len(record)):  # فقط دسترسی‌ها (بدون is_admin)
                 display_record.append("✅" if record[i] == 1 else "❌")
 
             treeview.insert("", END, values=display_record, tags=(record[0],))
@@ -286,9 +284,9 @@ def add_user_type(type_name, permissions, treeview):
             """
             INSERT INTO user_types 
             (type_name, can_employees, can_shifts, can_user_types, can_suppliers,
-             can_categories, can_products, can_sales, can_invoices, can_invoice_history)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """,
+             can_categories, can_products, can_invoices, can_invoice_history)  # ✅
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """,
             (type_name, *permissions),
         )
 
@@ -329,9 +327,9 @@ def update_user_type(selected_id, type_name, permissions, treeview):
             SELECT type_name, 
                    can_employees, can_shifts, can_user_types,
                    can_suppliers, can_categories, can_products,
-                   can_sales, can_invoices, can_invoice_history
+                   can_invoices, can_invoice_history  # ✅
             FROM user_types WHERE id = %s
-        """,
+            """,
             (selected_id,),
         )
         current_data = cursor.fetchone()
@@ -356,9 +354,9 @@ def update_user_type(selected_id, type_name, permissions, treeview):
             SET type_name = %s, 
                 can_employees = %s, can_shifts = %s, can_user_types = %s,
                 can_suppliers = %s, can_categories = %s, can_products = %s,
-                can_sales = %s, can_invoices = %s, can_invoice_history = %s
+                can_invoices = %s, can_invoice_history = %s
             WHERE id = %s
-        """,
+            """,
             (type_name, *permissions, selected_id),
         )
 
@@ -446,9 +444,9 @@ def select_data(event, treeview, type_name_entry, checkboxes):
             SELECT type_name, 
                    can_employees, can_shifts, can_user_types,
                    can_suppliers, can_categories, can_products,
-                   can_sales, can_invoices, can_invoice_history
+                   can_invoices, can_invoice_history
             FROM user_types WHERE id = %s
-        """,
+            """,
             (selected_id,),
         )
 
@@ -587,10 +585,8 @@ def user_type_form(window):
             "sup",
             "cat",
             "prod",
-            "sale",
             "inv",
             "inv_history",
-            "admin",
         ),
         show="headings",
         yscrollcommand=scroll_y.set,
@@ -608,10 +604,8 @@ def user_type_form(window):
         "تامین‌کننده",
         "دسته‌بندی",
         "محصولات",
-        "فروش",
         "فاکتور",
         "تاریخچه فاکتور",
-        "ادمین",
     ]
 
     column_widths = [
@@ -623,10 +617,8 @@ def user_type_form(window):
         65,
         55,
         45,
-        35,
-        45,
-        65,
-        35,
+        45,  # برای "فاکتور"
+        65,  # برای "تاریخچه فاکتور"
     ]
 
     for i, (header, width) in enumerate(zip(headers, column_widths)):
@@ -739,7 +731,7 @@ def user_type_form(window):
     permissions_frame = Frame(permissions_main_frame, bg="white", bd=1, relief=SOLID)
     permissions_frame.pack(fill=BOTH, expand=True)
 
-    # لیست دسترسی‌ها مطابق تصویر
+    # لیست دسترسی‌ها
     permission_labels = [
         ("کارمندان", "can_employees"),
         ("تعریف شیفت", "can_shifts"),
@@ -747,8 +739,8 @@ def user_type_form(window):
         ("تامین کنندگان", "can_suppliers"),
         ("دسته بندی", "can_categories"),
         ("محصولات", "can_products"),
-        ("صدور فاکتور", "can_sales"),
-        ("تاریخچه فاکتور", "can_invoices"),
+        ("صدور فاکتور", "can_invoices"),
+        ("تاریخچه فاکتور", "can_invoice_history"),
     ]
 
     checkboxes = []

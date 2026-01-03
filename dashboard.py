@@ -447,7 +447,7 @@ def main(user_info=None):
         font=("fonts/Persian-Yekan.ttf", 25, "bold"),
     )
     totl_sup_count.pack()
-    totl_sup_count.config(text=str(get_count("supplier_data")))
+    totl_sup_count.config(text=str(get_count("suppliers")))
 
     category_frame = Frame(content, bg="#00198f", bd=4, relief=RIDGE)
     category_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")

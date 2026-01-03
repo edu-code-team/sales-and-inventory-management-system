@@ -13,12 +13,12 @@ def get_user_permissions(user_type_name):
         cursor.execute('''
             SELECT can_employees, can_shifts, can_user_types,
                    can_suppliers, can_categories, can_products,
-                   can_sales, can_invoices, can_invoice_history
+                   can_invoices, can_invoice_history  # ❗ فقط 8 ستون
             FROM user_types WHERE type_name = %s
         ''', (user_type_name,))
 
         result = cursor.fetchone()
-        return result if result else (0, 0, 0, 0, 0, 0, 0, 0, 0)
+        return result if result else (0, 0, 0, 0, 0, 0, 0, 0)  # ❗ 8 تا صفر
 
     except Exception as e:
         # فقط خطاهای واقعی را نمایش بده
@@ -26,8 +26,8 @@ def get_user_permissions(user_type_name):
         error_msg = str(e)
         if "can_invoice_history" in error_msg:
             # ستون وجود ندارد، مقادیر پیش‌فرض برگردان
-            return (0, 0, 0, 0, 0, 0, 0, 0, 0)
-        return (0, 0, 0, 0, 0, 0, 0, 0, 0)
+            return (0, 0, 0, 0, 0, 0, 0, 0)  # ❗ 8 تا صفر
+        return (0, 0, 0, 0, 0, 0, 0, 0)  # ❗ 8 تا صفر
     finally:
         cursor.close()
         connection.close()
@@ -46,9 +46,8 @@ def can_access(user_type_name, permission_name):
         'suppliers': 3,
         'categories': 4,
         'products': 5,
-        'sales': 6,
-        'invoices': 7,
-        'invoice_history': 8
+        'invoices': 6,           # ❗ قبلاً 7 بود
+        'invoice_history': 7     # ❗ قبلاً 8 بود
     }
 
     index = permission_map.get(permission_name, -1)

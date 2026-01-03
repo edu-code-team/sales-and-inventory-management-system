@@ -243,7 +243,6 @@ def get_user_info(username, password):
                 COALESCE(ut.can_suppliers, 0),
                 COALESCE(ut.can_categories, 0),
                 COALESCE(ut.can_products, 0),
-                COALESCE(ut.can_sales, 0),
                 COALESCE(ut.can_invoices, 0),
                 COALESCE(ut.can_invoice_history, 0)
             FROM employee_data e
@@ -266,9 +265,8 @@ def get_user_info(username, password):
                     "suppliers": bool(user[6]),
                     "categories": bool(user[7]),
                     "products": bool(user[8]),
-                    "sales": bool(user[9]),
-                    "invoices": bool(user[10]),
-                    "invoice_history": bool(user[11]),
+                    "invoices": bool(user[9]),
+                    "invoice_history": bool(user[10]),
                 },
             }
 
