@@ -493,6 +493,26 @@ def move_focus(widget):
     widget.focus_set()
     return "break"
 
+def validate_email_input(value):
+    if value == "":
+        return True
+
+    # محدوده یونیکد حروف فارسی
+    for char in value:
+        if '\u0600' <= char <= '\u06FF':
+            messagebox.showwarning(
+                "ورودی نامعتبر",
+                "لطفاً ایمیل را فقط با حروف انگلیسی وارد کنید"
+            )
+            return False
+
+    allowed_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@._-"
+    for char in value:
+        if char not in allowed_chars:
+            return False
+
+    return True
+
 # ================= تابع فرم کارمندان =================
 def employee_form(window):
 
@@ -812,8 +832,10 @@ def employee_form(window):
         detail_frame, text="ایمیل", font=("fonts/Persian-Yekan.ttf", 12,"bold"), bg="white"
     )
     email_label.grid(row=3, column=0, padx=20, pady=10)
+    vcmd_email = (window.register(validate_email_input), "%P")
     email_entry = Entry(
-        detail_frame, font=("fonts/Persian-Yekan.ttf", 12), bg="lightblue"
+        detail_frame, font=("fonts/Persian-Yekan.ttf", 12), bg="lightblue",validate="key",
+    validatecommand=vcmd_email
     )
     email_entry.grid(row=3, column=1, padx=20, pady=10)
 
@@ -1018,35 +1040,49 @@ def employee_form(window):
     def close_form(event=None):
         employee_frame.place_forget()
 
+    def search_shortcut(event=None):
+        search_btn.invoke()
+
+    def show_all_shortcut(event=None):
+        show_all_btn.invoke()
+
+
     # Bind shortcuts
-    window.bind("<a>", add_shortcut)
-    window.bind("<A>", add_shortcut)
-    window.bind("<u>", update_shortcut)
-    window.bind("<U>", update_shortcut)
-    window.bind("<d>", delete_shortcut)
-    window.bind("<D>", delete_shortcut)
-    window.bind("<c>", clear_shortcut)
-    window.bind("<C>", clear_shortcut)
-    window.bind("<i>", import_shortcut)
-    window.bind("<I>", import_shortcut)
-    window.bind("<e>", export_shortcut)
-    window.bind("<E>", export_shortcut)
-    window.bind("<f>", filter_shortcut)
-    window.bind("<F>", filter_shortcut)
+    window.bind("<Control-a>", add_shortcut)
+    window.bind("<Control-A>", add_shortcut)
+    window.bind("<Control-u>", update_shortcut)
+    window.bind("<Control-U>", update_shortcut)
+    window.bind("<Control-d>", delete_shortcut)
+    window.bind("<Control-D>", delete_shortcut)
+    window.bind("<Control-c>", clear_shortcut)
+    window.bind("<Control-C>", clear_shortcut)
+    window.bind("<Control-i>", import_shortcut)
+    window.bind("<Control-I>", import_shortcut)
+    window.bind("<Control-e>", export_shortcut)
+    window.bind("<Control-E>", export_shortcut)
+    window.bind("<Control-f>", filter_shortcut)
+    window.bind("<Control-F>", filter_shortcut)
     window.bind("<Escape>", close_form)
+    window.bind("<Control-Return>", search_shortcut)
+    window.bind("<Control-Shift-A>", show_all_shortcut)
+
 
     # ================= تنظیم فوکوس Tab =================
     # تنظیم ترتیب Tab برای فیلدهای ورودی
     empid_entry.bind("<Tab>", lambda e: move_focus(empname_entry))
-    empname_entry.bind("<Tab>", lambda e: move_focus(email_entry))
-    email_entry.bind("<Tab>", lambda e: move_focus(gender_combobox))
+    empname_entry.bind("<Tab>", lambda e: move_focus(empnumber_entry))
+    empnumber_entry.bind("<Tab>", lambda e: move_focus(gender_combobox))
+
     gender_combobox.bind("<Tab>", lambda e: move_focus(dob_date_entry))
-    dob_date_entry.bind("<Tab>", lambda e: move_focus(empnumber_entry))
-    empnumber_entry.bind("<Tab>", lambda e: move_focus(work_shift_combobox))
-    work_shift_combobox.bind("<Tab>", lambda e: move_focus(address_text))
+    dob_date_entry.bind("<Tab>", lambda e: move_focus(work_shift_combobox))
+    work_shift_combobox.bind("<Tab>", lambda e: move_focus(email_entry))
+
+    email_entry.bind("<Tab>", lambda e: move_focus(address_text))
     address_text.bind("<Tab>", lambda e: move_focus(user_type_combobox))
     user_type_combobox.bind("<Tab>", lambda e: move_focus(password_entry))
+
     password_entry.bind("<Tab>", lambda e: move_focus(add_button))
+
     
     # تنظیم ترتیب Tab برای دکمه‌ها
     add_button.bind("<Tab>", lambda e: move_focus(update_button))
