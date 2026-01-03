@@ -9,6 +9,60 @@ from user_type import get_user_types_for_combobox
 from tkinter import filedialog
 import csv
 
+def validate_phone_input(value):
+    # اجازه پاک کردن کامل
+    if value == "":
+        return True
+
+    # فقط عدد
+    if not value.isdigit():
+        messagebox.showerror(
+            "خطای ورودی",
+            "❌ شماره تماس باید فقط شامل عدد باشد"
+        )
+        return False
+
+    # بیشتر از 11 رقم نشود
+    if len(value) > 11:
+        messagebox.showerror(
+            "خطای ورودی",
+            "❌ شماره تماس باید دقیقاً ۱۱ رقم باشد"
+        )
+        return False
+
+    return True
+
+def validate_password_input(value):
+    if value == "":
+        return True  # اجازه پاک کردن کامل
+
+    # تشخیص حروف فارسی (Unicode)
+    for char in value:
+        if '\u0600' <= char <= '\u06FF':
+            messagebox.showerror(
+                "خطای ورودی",
+                "❌ رمز عبور نباید شامل حروف فارسی باشد"
+            )
+            return False
+
+    # کاراکترهای مجاز (می‌تونی کم/زیاد کنی)
+    allowed_chars = (
+        "abcdefghijklmnopqrstuvwxyz"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "0123456789"
+        "!@#$%^&*_-"
+    )
+
+    for char in value:
+        if char not in allowed_chars:
+            messagebox.showerror(
+                "خطای ورودی",
+                "❌ فقط حروف انگلیسی، عدد و کاراکترهای مجاز استفاده کنید"
+            )
+            return False
+
+    return True
+
 # ================= تابع فیلتر چند ملاکه جدید =================
 def multi_filter_employees(treeview, empid_filter, name_filter, gender_filter, usertype_filter, shift_filter):
     cursor, connection = connect_database()
@@ -369,6 +423,12 @@ def add_employee(
             connection.commit()
             treeview_data()
             messagebox.showinfo("عملیات موفق", "اطلاعات کارمند با موفقیت ثبت شد")
+            if len(contact) != 11:
+                messagebox.showerror(
+        "خطا",
+        "شماره تماس باید دقیقاً ۱۱ رقم باشد"
+    )
+            return
         except Exception as e:
             messagebox.showerror("خطا", f"{e} خطای")
         finally:
@@ -403,6 +463,7 @@ def clear_fields(
     password_entry.delete(0, END)
     if check:
         employee_treeview.selection_remove(employee_treeview.selection())
+
 
 
 def update_employee(
@@ -767,8 +828,12 @@ def employee_form(window):
         bg="white",
     )
     empnumber_label.grid(row=0, column=4, padx=20, pady=10,sticky="w")
+
+    vcmd_phone = (window.register(validate_phone_input), "%P")
+
     empnumber_entry = Entry(
-        detail_frame, font=("fonts/Persian-Yekan.ttf", 12), bg="lightblue"
+        detail_frame, font=("fonts/Persian-Yekan.ttf", 12), bg="lightblue",validate="key",
+    validatecommand=vcmd_phone
     )
     empnumber_entry.grid(row=0, column=5, padx=20, pady=10)
 
@@ -884,8 +949,13 @@ def employee_form(window):
         detail_frame, text="رمزعبور", font=("fonts/Persian-Yekan.ttf", 12,"bold"), bg="white"
     )
     password_label.grid(row=4, column=0, padx=20, pady=10, sticky="w")
+
+    vcmd_password = (window.register(validate_password_input), "%P")
+
     password_entry = Entry(
-        detail_frame, font=("fonts/Persian-Yekan.ttf", 12), bg="lightblue"
+        detail_frame, font=("fonts/Persian-Yekan.ttf", 12), bg="lightblue",show="*",
+    validate="key",
+    validatecommand=vcmd_password
     )
     password_entry.grid(row=4, column=1, padx=20, pady=10)
 

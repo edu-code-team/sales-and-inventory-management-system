@@ -13,6 +13,29 @@ BTN_DANGER = "#dc3545"
 BTN_WARNING = "#ffc107"
 BTN_INFO = "#17a2b8"
 
+def validate_phone_input(value):
+    # اجازه پاک کردن کامل
+    if value == "":
+        return True
+
+    # فقط عدد
+    if not value.isdigit():
+        messagebox.showerror(
+            "خطای ورودی",
+            "❌ شماره تماس باید فقط شامل عدد باشد"
+        )
+        return False
+
+    # بیشتر از 11 رقم نشود
+    if len(value) > 11:
+        messagebox.showerror(
+            "خطای ورودی",
+            "❌ شماره تماس باید دقیقاً ۱۱ رقم باشد"
+        )
+        return False
+
+    return True
+
 
 def move_focus(widget):
     widget.focus_set()
@@ -860,13 +883,15 @@ def invoice_form(window):
     font=("B Nazanin", 11),
     bg="white",
 ).pack(side=RIGHT, padx=(5, 10))   # ← اول لیبل
+    vcmd_phone = (window.register(validate_phone_input), "%P")
 
     customer_phone_entry = Entry(
     customer_phone_frame,
     font=("B Nazanin", 11),
     justify="right",
     bd=1,
-    relief=SOLID,
+    relief=SOLID,validate="key",
+    validatecommand=vcmd_phone
 )
     customer_phone_entry.pack(side=RIGHT, fill=X, expand=True)  # ← بعد باکس
     customer_phone_frame.pack_propagate(False)

@@ -11,6 +11,28 @@ def move_focus(widget):
     widget.focus_set()
     return "break"
 
+def validate_phone_input(value):
+    # اجازه پاک کردن کامل
+    if value == "":
+        return True
+
+    # فقط عدد
+    if not value.isdigit():
+        messagebox.showerror(
+            "خطای ورودی",
+            "❌ شماره تماس باید فقط شامل عدد باشد"
+        )
+        return False
+
+    # بیشتر از 11 رقم نشود
+    if len(value) > 11:
+        messagebox.showerror(
+            "خطای ورودی",
+            "❌ شماره تماس باید دقیقاً ۱۱ رقم باشد"
+        )
+        return False
+
+    return True
 
 def load_invoice_history(
     treeview, date_filter=None, invoice_filter=None, customer_filter=None
@@ -569,22 +591,29 @@ def invoice_history_form(window):
     )
     customer_filter.place(x=520, y=10)
 
-    # دکمه اعمال فیلتر
-    apply_filter_button = Button(
-        filter_frame,
-        text="🔍 اعمال فیلتر",
-        font=("B Nazanin", 11),
-        bg="#00198f",
-        fg="white",
-        width=12,
-        command=lambda: load_invoice_history(
-            invoice_treeview,
-            date_filter.get(),
-            invoice_filter.get(),
-            customer_filter.get(),
-        ),
+    def apply_filter_with_validation():
+        phone = customer_filter.get()
+
+        if not validate_phone_11_digits(phone):
+            return
+
+        load_invoice_history(
+        invoice_treeview,
+        date_filter.get(),
+        invoice_filter.get(),
+        phone,
     )
-    apply_filter_button.place(x=370, y=8)
+
+    apply_filter_button = Button(
+    filter_frame,
+    text="🔍 اعمال فیلتر",
+    font=("B Nazanin", 11),
+    bg="#00198f",
+    fg="white",
+    width=12,
+    command=apply_filter_with_validation,
+)
+
 
     # دکمه نمایش همه
     show_all_button = Button(
