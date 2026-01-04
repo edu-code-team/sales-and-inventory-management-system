@@ -743,7 +743,7 @@ def invoice_history_form(window):
     def close_form(event=None):
         history_frame.place_forget()
 
-   # ============ Keyboard Shortcuts (Invoice History - Ctrl based) ============
+   # ============ KEYBOARD SHORTCUTS (Invoice History) ============
 
 # فوکوس فیلترها
     window.bind("<Control-d>", lambda e: date_filter.focus_set())
@@ -751,33 +751,38 @@ def invoice_history_form(window):
     window.bind("<Control-n>", lambda e: customer_filter.focus_set())
 
 # اعمال فیلتر
-    window.bind("<Control-Return>", filter_shortcut)
+    window.bind("<Control-Return>", lambda e: apply_filter_button.invoke())
 
 # نمایش همه
-    window.bind("<Control-r>", show_all_shortcut)
-    window.bind("<Control-R>", show_all_shortcut)
+    window.bind("<Control-r>", lambda e: show_all_button.invoke())
+
+# جدول
+    window.bind("<Control-t>", lambda e: invoice_treeview.focus_set())
 
 # عملیات روی فاکتور
-    window.bind("<Control-v>", details_shortcut)
-    window.bind("<Control-Shift-D>", delete_shortcut)
-    window.bind("<Control-e>", export_shortcut)
-    window.bind("<Control-E>", export_shortcut)
+    window.bind("<Control-v>", lambda e: details_button.invoke())
+    window.bind("<Control-Shift-D>", lambda e: delete_button.invoke())
+    window.bind("<Control-e>", lambda e: export_button.invoke())
 
 # خروج
-    window.bind("<Escape>", close_form)
+    window.bind("<Escape>", lambda e: history_frame.place_forget())
 
+# ============ TAB ORDER (Invoice History - RTL) ============
 
-    # Tab Order
     date_filter.focus_set()
+
     date_filter.bind("<Tab>", lambda e: move_focus(invoice_filter))
     invoice_filter.bind("<Tab>", lambda e: move_focus(customer_filter))
-    customer_filter.bind("<Tab>", lambda e: move_focus(apply_filter_button))
-    apply_filter_button.bind("<Tab>", lambda e: move_focus(show_all_button))
+    customer_filter.bind("<Tab>", lambda e: move_focus(show_all_button))
+
     show_all_button.bind("<Tab>", lambda e: move_focus(invoice_treeview))
-    invoice_treeview.bind("<Tab>", lambda e: move_focus(details_button))
-    details_button.bind("<Tab>", lambda e: move_focus(delete_button))
-    delete_button.bind("<Tab>", lambda e: move_focus(export_button))
-    export_button.bind("<Tab>", lambda e: move_focus(date_filter))
+    invoice_treeview.bind("<Tab>", lambda e: move_focus(export_button))
+
+    export_button.bind("<Tab>", lambda e: move_focus(delete_button))
+    delete_button.bind("<Tab>", lambda e: move_focus(details_button))
+
+    details_button.bind("<Tab>", lambda e: move_focus(date_filter))
+
 
     # ============ بارگذاری اولیه ============
     load_invoice_history(invoice_treeview)

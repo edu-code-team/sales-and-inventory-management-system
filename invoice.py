@@ -323,15 +323,15 @@ def show_invoice_preview_window(
 
     jalali_date = jdatetime.datetime.now().strftime("%Y/%m/%d")
     info_texts = [
-        f"تاریخ: {jalali_date}",
-        f"مشتری: {customer_name}",
-        f"شماره تماس: {customer_phone}",
+        f" تاریخ : {jalali_date}",
+        f" مشتری : {customer_name}",
+        f" شماره تماس : {customer_phone}",
     ]
 
     for text in info_texts:
         Label(
-            info_frame, text=text, font=("B Nazanin", 12), bg="white", anchor="w"
-        ).pack(fill=X, pady=3)
+            info_frame, text=text, font=("B Nazanin", 12), bg="white", anchor="e"
+        ).pack(fill=X, pady=3,padx=10)
 
     # خط جداکننده
     Label(
@@ -423,7 +423,7 @@ def show_invoice_preview_window(
 
     Label(
         total_frame,
-        text="مبلغ قابل پرداخت:",
+        text=" : مبلغ قابل پرداخت",
         font=("B Nazanin", 12, "bold"),
         bg="white",
     ).pack(side=RIGHT, padx=(10, 0))
@@ -1059,45 +1059,52 @@ def invoice_form(window):
     def add_to_cart_shortcut(event=None):
         add_to_cart_button.invoke()
 
-    # ========= Keyboard Shortcuts (Ctrl-based) =========
+   # ========== KEYBOARD SHORTCUTS ==========
 
 # جستجو
     window.bind("<Control-f>", lambda e: search_entry.focus_set())
-    window.bind("<Control-Return>", lambda e: search_button.invoke())
+    window.bind("<Control-Shift-F>", lambda e: search_button.invoke())
 
 # فیلترها
     window.bind("<Control-Shift-C>", lambda e: category_filter.focus_set())
     window.bind("<Control-Shift-S>", lambda e: status_filter.focus_set())
 
-# افزودن / حذف سبد
+# محصولات
     window.bind("<Control-a>", lambda e: add_to_cart_button.invoke())
     window.bind("<Control-d>", lambda e: remove_button.invoke())
     window.bind("<Control-Shift-D>", lambda e: clear_cart_button.invoke())
 
-# مشخصات مشتری
+# مشتری
     window.bind("<Control-n>", lambda e: customer_name_entry.focus_set())
     window.bind("<Control-p>", lambda e: customer_phone_entry.focus_set())
 
-# پیش‌نمایش فاکتور
+# فاکتور
     window.bind("<Control-Return>", lambda e: preview_button.invoke())
-
-# خروج
     window.bind("<Escape>", lambda e: invoice_frame.place_forget())
 
 
-    # Tab Order (راست‌چین)
+
+    # ========== TAB ORDER (RTL - Custom) ==========
+
     search_entry.focus_set()
-    search_entry.bind("<Tab>", lambda e: move_focus(category_filter))
-    category_filter.bind("<Tab>", lambda e: move_focus(status_filter))
-    status_filter.bind("<Tab>", lambda e: move_focus(products_treeview))
-    products_treeview.bind("<Tab>", lambda e: move_focus(add_to_cart_button))
-    add_to_cart_button.bind("<Tab>", lambda e: move_focus(cart_treeview))
-    cart_treeview.bind("<Tab>", lambda e: move_focus(remove_button))
-    remove_button.bind("<Tab>", lambda e: move_focus(clear_cart_button))
-    clear_cart_button.bind("<Tab>", lambda e: move_focus(customer_name_entry))
+
+    search_entry.bind("<Tab>", lambda e: move_focus(status_filter))
+    status_filter.bind("<Tab>", lambda e: move_focus(category_filter))
+
+    category_filter.bind("<Tab>", lambda e: move_focus(customer_name_entry))
     customer_name_entry.bind("<Tab>", lambda e: move_focus(customer_phone_entry))
-    customer_phone_entry.bind("<Tab>", lambda e: move_focus(preview_button))
-    preview_button.bind("<Tab>", lambda e: move_focus(search_entry))
+
+    customer_phone_entry.bind("<Tab>", lambda e: move_focus(add_to_cart_button))
+    add_to_cart_button.bind("<Tab>", lambda e: move_focus(products_treeview))
+
+    products_treeview.bind("<Tab>", lambda e: move_focus(clear_cart_button))
+    clear_cart_button.bind("<Tab>", lambda e: move_focus(remove_button))
+
+    remove_button.bind("<Tab>", lambda e: move_focus(preview_button))
+    preview_button.bind("<Tab>", lambda e: move_focus(cancel_button))
+
+    cancel_button.bind("<Tab>", lambda e: move_focus(search_entry))
+
 
     # ============ بارگذاری اولیه ============
     load_categories_for_filter(category_filter)
@@ -1167,3 +1174,5 @@ def create_invoice_tables():
 
 def show_invoice_form(window):
     invoice_form(window)
+
+    
