@@ -7,8 +7,9 @@ from tkinter import filedialog
 import csv
 from tkinter import messagebox
 
+
 # تابع برای ذخیره داده‌های تامین‌کنندگان در فایل CSV
-def export_supplier_to_csv(treeview):
+def export_supplier_to_csv(treeview, show_all_btn):
     items = treeview.get_children()
     if not items:
         messagebox.showwarning("هشدار", "داده‌ای برای خروجی وجود ندارد")
@@ -17,24 +18,29 @@ def export_supplier_to_csv(treeview):
     file_path = filedialog.asksaveasfilename(
         defaultextension=".csv",
         filetypes=[("CSV files", "*.csv")],
-        title="ذخیره فایل CSV"
+        title="ذخیره فایل CSV",
     )
     if not file_path:
         return
 
     with open(file_path, "w", newline="", encoding="utf-8-sig") as file:
         writer = csv.writer(file)
-        writer.writerow(["کد تامین‌کننده", "نام تامین‌کننده", "شماره تماس", "توضیحات"])
+        writer.writerow(
+            ["شماره فاکتور", "نام تامین‌کننده", "شماره تماس", "توضیحات"]
+        )  # به دلخواه شما
         for item in items:
             writer.writerow(treeview.item(item)["values"])
 
     messagebox.showinfo("موفقیت", "خروجی CSV با موفقیت انجام شد")
+    show_all_btn.focus_set()
+
+    
+
 
 # تابع برای وارد کردن داده‌ها از فایل CSV به دیتابیس تامین‌کنندگان
 def import_supplier_from_csv(treeview):
     file_path = filedialog.askopenfilename(
-        filetypes=[("CSV files", "*.csv")],
-        title="انتخاب فایل CSV"
+        filetypes=[("CSV files", "*.csv")], title="انتخاب فایل CSV"
     )
     if not file_path:
         return
@@ -56,15 +62,17 @@ def import_supplier_from_csv(treeview):
                 skipped += 1
                 continue
 
-            supplier_id = row[0]
-            cursor.execute("SELECT supplier_id FROM suppliers WHERE supplier_id = %s", (supplier_id,))
+            invoice = row[0]
+            cursor.execute(
+                "SELECT invoice FROM supplier_data WHERE invoice = %s", (invoice,)
+            )
             if cursor.fetchone():
                 skipped += 1
                 continue
 
             cursor.execute(
-                "INSERT INTO suppliers (supplier_id, name, contact, description) VALUES (%s, %s, %s, %s)",
-                tuple(row)
+                "INSERT INTO supplier_data (invoice, name, contact, description) VALUES (%s, %s, %s, %s)",
+                tuple(row),
             )
             imported += 1
 
@@ -75,13 +83,14 @@ def import_supplier_from_csv(treeview):
     treeview_data(treeview)
     messagebox.showinfo("نتیجه", f"وارد شده: {imported}\nرد شده: {skipped}")
 
+
 def fetch_supplier_search_values(invoice_cb, name_cb, contact_cb):
     cursor, connection = connect_database()
     if not cursor or not connection:
         return
 
     cursor.execute("USE inventory_system")
-    cursor.execute("SELECT supplier_id, name, contact FROM suppliers")
+    cursor.execute("SELECT invoice, name, contact FROM supplier_data")
     rows = cursor.fetchall()
 
     invoices = ["همه"]
@@ -109,34 +118,36 @@ def search_supplier_multi(invoice, name, contact, treeview):
     if not cursor or not connection:
         return
 
-    query = "SELECT * FROM suppliers WHERE 1=1"
+    query = "SELECT * FROM supplier_data WHERE 1=1"
     params = []
 
     if invoice and invoice != "همه":
-        query += " AND supplier_id = %s"
+        query += " AND invoice = %s"
         params.append(invoice)
-    
+
     if name and name != "همه":
         query += " AND name LIKE %s"
         params.append(f"%{name}%")
-    
+
     if contact and contact != "همه":
         query += " AND contact LIKE %s"
         params.append(f"%{contact}%")
-    
+
     cursor.execute("USE inventory_system")
     cursor.execute(query, tuple(params))
     records = cursor.fetchall()
-    
+
     treeview.delete(*treeview.get_children())
     for record in records:
         treeview.insert("", END, values=record)
-    
+
     cursor.close()
     connection.close()
 
 
-def delete_supplier(supplier_id, treeview, search_supplier_id_cb, search_name_cb, search_contact_cb):
+def delete_supplier(
+    invoice, treeview, search_invoice_cb, search_name_cb, search_contact_cb
+):
     index = treeview.selection()
     if not index:
         messagebox.showerror("خطا", "هیچ ردیفی انتخاب نشده است")
@@ -146,11 +157,13 @@ def delete_supplier(supplier_id, treeview, search_supplier_id_cb, search_name_cb
         return
     try:
         cursor.execute("use inventory_system")
-        cursor.execute("DELETE FROM suppliers WHERE supplier_id=%s", (supplier_id,))
+        cursor.execute(" DELETE FROM supplier_data WHERE invoice=%s", (invoice,))
         connection.commit()
         treeview_data(treeview)
         # به‌روزرسانی لیست‌های جستجو
-        fetch_supplier_search_values(search_supplier_id_cb, search_name_cb, search_contact_cb)
+        fetch_supplier_search_values(
+            search_invoice_cb, search_name_cb, search_contact_cb
+        )
         messagebox.showinfo("اطلاعات", "ردیف انتخاب شده حذف شد")
     except Exception as e:
         messagebox.showerror("خطا", f"خطا به دلیل {e}")
@@ -159,8 +172,8 @@ def delete_supplier(supplier_id, treeview, search_supplier_id_cb, search_name_cb
         connection.close()
 
 
-def clear(supplier_id_entry, name_entry, contact_entry, description_text, treeview):
-    supplier_id_entry.delete(0, END)
+def clear(invoice_entry, name_entry, contact_entry, description_text, treeview):
+    invoice_entry.delete(0, END)
     name_entry.delete(0, END)
     contact_entry.delete(0, END)
     description_text.delete(1.0, END)
@@ -169,14 +182,14 @@ def clear(supplier_id_entry, name_entry, contact_entry, description_text, treevi
 
 def search_supplier(search_value, treeview):
     if search_value == "":
-        messagebox.showerror("خطا", "لطفا کد تامین‌کننده را وارد کنید")
+        messagebox.showerror("خطا", "لطفا شماره فاکتور را وارد کنید")
     else:
         cursor, connection = connect_database()
         if not cursor or not connection:
             return
     try:
         cursor.execute("use inventory_system")
-        cursor.execute("SELECT * from suppliers WHERE supplier_id=%s", (search_value,))
+        cursor.execute(" SELECT * from supplier_data WHERE invoice=%s", (search_value,))
         record = cursor.fetchone()
         if not record:
             messagebox.showerror("خطا", "اطلاعاتی پیدا نشد!")
@@ -196,30 +209,43 @@ def show_all(treeview, search_entry):
     search_entry.delete(0, END)
 
 
-def update_supplier(supplier_id, name, contact, description, treeview, search_supplier_id_cb, search_name_cb,
-                    search_contact_cb):
+def update_supplier(
+    invoice,
+    name,
+    contact,
+    description,
+    treeview,
+    search_invoice_cb,
+    search_name_cb,
+    search_contact_cb,
+):
     index = treeview.selection()
     if not index:
         messagebox.showerror("خطا", "هیچ ردیفی انتخاب نشده است")
         return
 
-    if not supplier_id:
-        messagebox.showerror("خطا", "کد تامین‌کننده قابل تغییر نیست. لطفاً برای ویرایش اطلاعات دیگر از این ردیف استفاده کنید.")
+    # بررسی اینکه آیا شماره فاکتور در ورودی خالی است یا خیر
+    if not invoice:
+        messagebox.showerror(
+            "خطا",
+            "شماره فاکتور قابل تغییر نیست. لطفاً برای ویرایش اطلاعات دیگر از این ردیف استفاده کنید.",
+        )
         return
-    
+
     try:
         cursor, connection = connect_database()
         if not cursor or not connection:
             return
         cursor.execute("use inventory_system")
 
-        cursor.execute("SELECT * from suppliers WHERE supplier_id=%s", (supplier_id,))
+        # بررسی وجود شماره فاکتور در دیتابیس
+        cursor.execute(" SELECT * from supplier_data WHERE invoice=%s", (invoice,))
         current_data = cursor.fetchone()
-        
+
         if not current_data:
-            messagebox.showerror("خطا", "کد تامین‌کننده قابل تغییر نیست...")
+            messagebox.showerror("خطا", "شماره فاکتور قابل تغییر نیست!")
             return
-            
+
         current_data = current_data[1:]
 
         new_data = (name, contact, description)
@@ -229,14 +255,16 @@ def update_supplier(supplier_id, name, contact, description, treeview, search_su
             return
 
         cursor.execute(
-            "UPDATE suppliers SET name=%s,contact=%s,description=%s WHERE supplier_id=%s",
-            (name, contact, description, supplier_id),
+            " UPDATE supplier_data SET name=%s,contact=%s,description=%s WHERE invoice=%s",
+            (name, contact, description, invoice),
         )
         connection.commit()
         messagebox.showinfo("اطلاعات", "اطلاعات به روز رسانی شد")
         treeview_data(treeview)
         # به‌روزرسانی لیست‌های جستجو
-        fetch_supplier_search_values(search_supplier_id_cb, search_name_cb, search_contact_cb)
+        fetch_supplier_search_values(
+            search_invoice_cb, search_name_cb, search_contact_cb
+        )
     except Exception as e:
         messagebox.showerror("خطا", f"خطا به دلیل {e}")
     finally:
@@ -245,16 +273,16 @@ def update_supplier(supplier_id, name, contact, description, treeview, search_su
 
 
 def select_data(
-    event, supplier_id_entry, name_entry, contact_entry, description_text, treeview
+    event, invoice_entry, name_entry, contact_entry, description_text, treeview
 ):
     index = treeview.selection()
     content = treeview.item(index)
     actual_content = content["values"]
-    supplier_id_entry.delete(0, END)
+    invoice_entry.delete(0, END)
     name_entry.delete(0, END)
     contact_entry.delete(0, END)
     description_text.delete(1.0, END)
-    supplier_id_entry.insert(0, actual_content[0])
+    invoice_entry.insert(0, actual_content[0])
     name_entry.insert(0, actual_content[1])
     contact_entry.insert(0, actual_content[2])
     description_text.insert(1.0, actual_content[3])
@@ -267,10 +295,10 @@ def treeview_data(treeview):
     try:
         cursor.execute("USE inventory_system")
         cursor.execute(
-            "CREATE TABLE IF NOT EXISTS suppliers (supplier_id INT AUTO_INCREMENT PRIMARY KEY,name VARCHAR(100),"
+            "CREATE TABLE IF NOT EXISTS supplier_data (invoice INT PRIMARY KEY,name VARCHAR(100),"
             "contact VARCHAR(15), description TEXT)"
         )
-        cursor.execute("SELECT supplier_id, name, contact, description FROM suppliers")
+        cursor.execute("Select * from supplier_data")
         records = cursor.fetchall()
         treeview.delete(*treeview.get_children())
         for record in records:
@@ -282,34 +310,41 @@ def treeview_data(treeview):
         connection.close()
 
 
-def add_supplier(supplier_id, name, contact, description, treeview, search_supplier_id_cb, search_name_cb,
-                 search_contact_cb):
-    if supplier_id == "" or name == "" or contact == "" or description == "":
+def add_supplier(
+    invoice,
+    name,
+    contact,
+    description,
+    treeview,
+    search_invoice_cb,
+    search_name_cb,
+    search_contact_cb,
+):
+    if invoice == "" or name == "" or contact == "" or description == "":
         messagebox.showerror("خطا", "پر کردن تمام فیلدها الزامیست")
     else:
         cursor, connection = connect_database()
         if not cursor or not connection:
             return
         try:
-            cursor.execute("USE inventory_system")
+            cursor.execute("Use inventory_system")
 
-            # چک کردن تکراری نبودن کد تامین‌کننده
-            cursor.execute("SELECT * FROM suppliers WHERE supplier_id=%s", (supplier_id,))
+            cursor.execute("Select * from supplier_data where invoice=%s", (invoice,))
             if cursor.fetchone():
-                messagebox.showerror("خطا", "کد تامین‌کننده تکراری است")
+                messagebox.showerror("خطا", "شماره فاکتور تکراری است")
                 return
 
-            # اضافه کردن به دیتابیس
             cursor.execute(
-                "INSERT INTO suppliers (supplier_id, name, contact, description) VALUES (%s, %s, %s, %s)",
-                (supplier_id, name, contact, description),
+                "INSERT INTO supplier_data VALUES(%s,%s,%s,%s)",
+                (invoice, name, contact, description),
             )
             connection.commit()
-            messagebox.showinfo("اطلاعات", "با موفقیت وارد شد")
+            messagebox.showinfo("اطلاعات", " با موفقیت وارد شد")
             treeview_data(treeview)
-
             # به‌روزرسانی لیست‌های جستجو
-            fetch_supplier_search_values(search_supplier_id_cb, search_name_cb, search_contact_cb)
+            fetch_supplier_search_values(
+                search_invoice_cb, search_name_cb, search_contact_cb
+            )
         except Exception as e:
             messagebox.showerror("خطا", f"خطا به دلیل {e}")
         finally:
@@ -348,7 +383,7 @@ def supplier_form(window):
 
     # ==================== سرچ + جدول سمت چپ (قبلاً سمت راست) ====================
     left_frame = Frame(supplier_frame, bg="white")
-    left_frame.place(x=10, y=105, width=600, height=450)
+    left_frame.place(x=60, y=105, width=600, height=480)
 
     # ---------- سرچ ----------
     search_frame = Frame(left_frame, bg="white", bd=1, relief=SOLID)
@@ -357,7 +392,7 @@ def supplier_form(window):
     label_font = ("fonts/Persian-Yekan.ttf", 12, "bold")
     entry_font = ("fonts/Persian-Yekan.ttf", 14)
 
-    Label(search_frame, text="کد تامین‌کننده", font=label_font, bg="white").grid(
+    Label(search_frame, text="شماره فاکتور", font=label_font, bg="white").grid(
         row=0, column=0, padx=10, sticky="w"
     )
     Label(search_frame, text="نام تأمین‌کننده", font=label_font, bg="white").grid(
@@ -367,44 +402,47 @@ def supplier_form(window):
         row=0, column=2, padx=10, sticky="w"
     )
     cb_font = ("fonts/Persian-Yekan.ttf", 11)
-    search_supplier_id = ttk.Combobox(
-        search_frame, font=cb_font, width=11, state="readonly"
+    search_invoice = ttk.Combobox(
+        search_frame, font=cb_font, width=11, state="readonly",takefocus=True
     )
-    search_supplier_id.grid(row=1, column=0, padx=10, pady=5)
-    search_supplier_id.set("همه")
-    search_name = ttk.Combobox(search_frame, font=cb_font, width=11, state="readonly")
+    search_invoice.grid(row=1, column=0, padx=10, pady=5)
+    search_invoice.set("همه")
+    search_name = ttk.Combobox(search_frame, font=cb_font, width=11, state="readonly",takefocus=True)
     search_name.grid(row=1, column=1, padx=10, pady=5)
     search_name.set("همه")
 
     search_contact = ttk.Combobox(
-        search_frame, font=cb_font, width=11, state="readonly"
+        search_frame, font=cb_font, width=11, state="readonly",takefocus=True
     )
     search_contact.grid(row=1, column=2, padx=10, pady=5)
     search_contact.set("همه")
 
-    Button(
-        search_frame,
-        text="جستجو",
-        font=("fonts/Persian-Yekan.ttf", 11),
-        fg="white",
-        bg="#00198f",
-        width=8,
-        command=lambda: search_supplier_multi(
-            search_supplier_id.get(), search_name.get(), search_contact.get(), treeview
-        ),
-    ).grid(row=1, column=3, padx=10)
+    search_btn = Button(
+    search_frame,
+    text="جستجو",
+    font=("fonts/Persian-Yekan.ttf", 11),
+    fg="white",
+    bg="#00198f",
+    width=8,
+    takefocus=True,
+    command=lambda: search_supplier_multi(
+        search_invoice.get(), search_name.get(), search_contact.get(), treeview
+    ),
+)
+    search_btn.grid(row=1, column=3, padx=10)
 
-    Button(
-        search_frame,
-        text="نمایش همه",
-        font=("fonts/Persian-Yekan.ttf", 11),
-        fg="white",
-        bg="#7a7a7a",
-        width=8,
-        command=lambda: treeview_data(treeview),
-    ).grid(row=1, column=4, padx=5)
+    show_all_btn = Button(
+    search_frame,
+    text="نمایش همه",
+    font=("fonts/Persian-Yekan.ttf", 11),
+    fg="white",
+    bg="#7a7a7a",
+    width=8,
+    takefocus=True,
+    command=lambda: treeview_data(treeview),
+)
+    show_all_btn.grid(row=1, column=4, padx=5)
 
-    fetch_supplier_search_values(search_supplier_id, search_name, search_contact)
 
     # ---------- جدول ----------
     table_frame = Frame(left_frame, bg="white")
@@ -415,7 +453,7 @@ def supplier_form(window):
 
     treeview = ttk.Treeview(
         table_frame,
-        columns=("supplier_id", "name", "contact", "description"),
+        columns=("invoice", "name", "contact", "description"),
         show="headings",
         yscrollcommand=scrolly.set,
         xscrollcommand=scrollx.set,
@@ -426,7 +464,7 @@ def supplier_form(window):
     scrolly.config(command=treeview.yview)
     treeview.pack(fill=BOTH, expand=1)
 
-    treeview.heading("supplier_id", text="کد تامین‌کننده")
+    treeview.heading("invoice", text="شماره فاکتور")
     treeview.heading("name", text="نام تامین کننده")
     treeview.heading("contact", text="شماره تماس")
     treeview.heading("description", text="توضیحات")
@@ -435,26 +473,31 @@ def supplier_form(window):
 
     # ==================== فرم سمت راست (قبلاً سمت چپ) ====================
     right_frame = Frame(supplier_frame, bg="white")
-    right_frame.place(x=620, y=100)
+    right_frame.place(x=820, y=150)
+
 
     # برچسب‌ها در سمت راست و فیلدهای ورودی در سمت چپ
     Label(
         right_frame,
-        text="کد تامین‌کننده",
+        text="شماره فاکتور",
         font=("fonts/Persian-Yekan.ttf", 14, "bold"),
         bg="white",
-    ).grid(row=0, column=1, padx=(40, 20), sticky="e")  # تغییر به ستون 1 و sticky="e"
-    supplier_id_entry = Entry(
+    ).grid(
+        row=0, column=1, padx=(40, 20), sticky="e"
+    )  # تغییر به ستون 1 و sticky="e"
+    invoice_entry = Entry(
         right_frame, font=("fonts/Persian-Yekan.ttf", 16, "bold"), bg="lightblue"
     )
-    supplier_id_entry.grid(row=0, column=0, padx=(20, 40))  # تغییر به ستون 0
+    invoice_entry.grid(row=0, column=0, padx=(20, 40))  # تغییر به ستون 0
 
     Label(
         right_frame,
         text="نام تامین کننده",
         font=("fonts/Persian-Yekan.ttf", 14, "bold"),
         bg="white",
-    ).grid(row=1, column=1, padx=(40, 20), pady=25, sticky="e")  # تغییر به ستون 1 و sticky="e"
+    ).grid(
+        row=1, column=1, padx=(40, 20), pady=25, sticky="e"
+    )  # تغییر به ستون 1 و sticky="e"
     name_entry = Entry(
         right_frame, font=("fonts/Persian-Yekan.ttf", 16, "bold"), bg="lightblue"
     )
@@ -465,7 +508,9 @@ def supplier_form(window):
         text="شماره تماس",
         font=("fonts/Persian-Yekan.ttf", 14, "bold"),
         bg="white",
-    ).grid(row=2, column=1, padx=(40, 20), sticky="e")  # تغییر به ستون 1 و sticky="e"
+    ).grid(
+        row=2, column=1, padx=(40, 20), sticky="e"
+    )  # تغییر به ستون 1 و sticky="e"
     contact_entry = Entry(
         right_frame, font=("fonts/Persian-Yekan.ttf", 16, "bold"), bg="lightblue"
     )
@@ -476,12 +521,17 @@ def supplier_form(window):
         text="توضیحات",
         font=("fonts/Persian-Yekan.ttf", 14, "bold"),
         bg="white",
-    ).grid(row=3, column=1, padx=(40, 20), sticky="ne", pady=25)  # تغییر به ستون 1 و sticky="ne"
+    ).grid(
+        row=3, column=1, padx=(40, 20), sticky="ne", pady=25
+    )  # تغییر به ستون 1 و sticky="ne"
     description_text = Text(right_frame, width=30, height=6, bg="lightblue")
     description_text.grid(row=3, column=0, padx=(20, 40), pady=25)  # تغییر به ستون 0
 
     button_frame = Frame(right_frame, bg="white")
-    button_frame.grid(row=4, columnspan=2, pady=20)
+    button_frame.grid(row=4, column=0, columnspan=2, pady=20)
+    right_frame.grid_columnconfigure(0, weight=1)
+    right_frame.grid_columnconfigure(1, weight=1)
+
 
     Button(
         button_frame,
@@ -491,14 +541,14 @@ def supplier_form(window):
         fg="white",
         bg="#00198f",
         command=lambda: add_supplier(
-            supplier_id_entry.get(),
+            invoice_entry.get(),
             name_entry.get(),
             contact_entry.get(),
             description_text.get(1.0, END).strip(),
             treeview,
-            search_supplier_id,
+            search_invoice,
             search_name,
-            search_contact
+            search_contact,
         ),
     ).grid(row=0, column=0, padx=20)
 
@@ -510,14 +560,14 @@ def supplier_form(window):
         fg="white",
         bg="#00198f",
         command=lambda: update_supplier(
-            supplier_id_entry.get(),
+            invoice_entry.get(),
             name_entry.get(),
             contact_entry.get(),
             description_text.get(1.0, END).strip(),
             treeview,
-            search_supplier_id,
+            search_invoice,
             search_name,
-            search_contact
+            search_contact,
         ),
     ).grid(row=0, column=1)
 
@@ -529,11 +579,7 @@ def supplier_form(window):
         fg="white",
         bg="#00198f",
         command=lambda: delete_supplier(
-            supplier_id_entry.get(),
-            treeview,
-            search_supplier_id,
-            search_name,
-            search_contact
+            invoice_entry.get(), treeview, search_invoice, search_name, search_contact
         ),
     ).grid(row=0, column=2, padx=20)
 
@@ -545,12 +591,27 @@ def supplier_form(window):
         fg="white",
         bg="#00198f",
         command=lambda: clear(
-            supplier_id_entry, name_entry, contact_entry, description_text, treeview
+            invoice_entry, name_entry, contact_entry, description_text, treeview
         ),
     ).grid(row=0, column=3)
 
+    # ===== رفع گیر کردن Tab در Text توضیحات =====
+
+    def description_tab_to_button(event):
+    # فوکوس بره روی اولین دکمه (افزودن)
+        button_frame.children[list(button_frame.children)[0]].focus_set()
+        return "break"
+
+    description_text.bind("<Tab>", description_tab_to_button)
+
+
     import_export_frame = Frame(button_frame, bg="white")
     import_export_frame.grid(row=1, column=0, columnspan=4, pady=(10, 10), sticky="ew")
+    button_frame.grid_columnconfigure(0, weight=1)
+    button_frame.grid_columnconfigure(1, weight=1)
+    button_frame.grid_columnconfigure(2, weight=1)
+    button_frame.grid_columnconfigure(3, weight=1)
+
 
     # دکمه اکسپورت
     export_button = Button(
@@ -580,6 +641,73 @@ def supplier_form(window):
     treeview.bind(
         "<ButtonRelease-1>",
         lambda e: select_data(
-            e, supplier_id_entry, name_entry, contact_entry, description_text, treeview
+            e, invoice_entry, name_entry, contact_entry, description_text, treeview
         ),
     )
+    # ========= Tab Order کل صفحه =========
+
+# فوکوس اولیه
+    invoice_entry.focus_set()
+
+# بعد از آخرین دکمه فرم → سرچ
+    button_frame.children[list(button_frame.children)[-1]].bind(
+    "<Tab>",
+    lambda e: (search_invoice.focus_set(), "break")
+)
+
+# بعد از نمایش همه → برگرد اول فرم
+    show_all_btn.bind(
+    "<Tab>",
+    lambda e: (invoice_entry.focus_set(), "break")
+)
+
+    # ================== میانبرهای صفحه تامین‌کنندگان ==================
+
+    def shortcut_add(event=None):
+        add_supplier(
+        invoice_entry.get(),
+        name_entry.get(),
+        contact_entry.get(),
+        description_text.get(1.0, END).strip(),
+        treeview,
+        search_invoice,
+        search_name,
+        search_contact,
+    )
+
+    def shortcut_update(event=None):
+        update_supplier(
+        invoice_entry.get(),
+        name_entry.get(),
+        contact_entry.get(),
+        description_text.get(1.0, END).strip(),
+        treeview,
+        search_invoice,
+        search_name,
+        search_contact,
+    )
+
+    def shortcut_delete(event=None):
+        delete_supplier(
+        invoice_entry.get(), treeview, search_invoice, search_name, search_contact
+    )
+
+    def shortcut_clear(event=None):
+        clear(invoice_entry, name_entry, contact_entry, description_text, treeview)
+
+    def shortcut_search(event=None):
+        search_supplier_multi(
+        search_invoice.get(), search_name.get(), search_contact.get(), treeview
+    )
+    window.bind("<Control-n>", shortcut_add)      # افزودن
+    window.bind("<Control-s>", shortcut_update)   # ویرایش
+    window.bind("<Control-d>", shortcut_delete)   # حذف
+    window.bind("<Control-c>", shortcut_clear)    # پاک کردن
+    window.bind("<Control-f>", shortcut_search)   # جستجو
+    window.bind("<Control-a>", lambda e: treeview_data(treeview))  # نمایش همه
+    window.bind("<Escape>", lambda e: supplier_frame.place_forget())  # خروج فرم
+
+
+
+
+
