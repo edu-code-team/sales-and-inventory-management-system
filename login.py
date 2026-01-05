@@ -67,7 +67,7 @@ class LoginSystem:
         form_frame.pack(pady=20)
 
         # نام کاربری
-        Label(form_frame, text="نام کاربری:",
+        Label(form_frame, text="نام کاربری",
               font=('B Nazanin', 12),
               bg='white').grid(row=0, column=0, padx=10, pady=10, sticky='e')
 
@@ -82,7 +82,7 @@ class LoginSystem:
         # اطلاعات کاربری به صورت پیش‌فرض وارد نمی‌شود
 
         # رمز عبور
-        Label(form_frame, text="رمز عبور:",
+        Label(form_frame, text="رمز عبور",
               font=('B Nazanin', 12),
               bg='white').grid(row=1, column=0, padx=10, pady=10, sticky='e')
 

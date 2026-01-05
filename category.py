@@ -618,9 +618,9 @@ def category_form(window):
     treeview.heading("name", text="نام دسته بندی")
     treeview.heading("desc", text="توضیحات")
 
-    treeview.column("id", width=80, anchor="center")
-    treeview.column("name", width=150, anchor="center")
-    treeview.column("desc", width=250, anchor="center")
+    treeview.column("id", width=120, anchor="center")
+    treeview.column("name", width=200, anchor="center")
+    treeview.column("desc", width=300, anchor="center")
 
     treeview_data(treeview)
     # ---------- TAB FIX AFTER TREEVIEW CREATED ----------

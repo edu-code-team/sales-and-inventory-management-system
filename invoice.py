@@ -347,7 +347,7 @@ def show_invoice_preview_window(
     header_frame.pack(fill=X)
 
     headers = ["نام محصول", "تعداد", "قیمت", "جمع"]
-    widths = [250, 80, 100, 100]
+    widths = [300, 200, 250, 250]
 
     for i, (header, width) in enumerate(zip(headers, widths)):
         Label(
@@ -821,11 +821,11 @@ def invoice_form(window):
     )
 
     headers = [
-        ("شناسه", 50),
-        ("نام محصول", 180),
-        ("قیمت", 90),
-        ("موجودی", 70),
-        ("وضعیت", 80),
+        ("شناسه", 100),
+        ("نام محصول", 200),
+        ("قیمت", 120),
+        ("موجودی", 100),
+        ("وضعیت", 125),
     ]
 
     for i, (header, width) in enumerate(headers):
@@ -940,11 +940,11 @@ def invoice_form(window):
     )
 
     cart_headers = [
-        ("شناسه", 50),
-        ("نام محصول", 180),
-        ("قیمت", 90),
-        ("تعداد", 70),
-        ("جمع", 90),
+        ("شناسه", 100),
+        ("نام محصول", 200),
+        ("قیمت", 125),
+        ("تعداد", 100),
+        ("جمع", 150),
     ]
 
     for i, (header, width) in enumerate(cart_headers):

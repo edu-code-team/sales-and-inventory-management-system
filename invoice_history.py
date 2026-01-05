@@ -548,7 +548,7 @@ def invoice_history_form(window):
 
     # فیلتر تاریخ
     Label(filter_frame, text="تاریخ", font=("B Nazanin", 12), bg="white").place(
-        x=1050, y=10
+        x=1080, y=10
     )
 
     date_filter = ttk.Combobox(
@@ -558,7 +558,7 @@ def invoice_history_form(window):
         state="readonly",
         justify="right",
     )
-    date_filter.place(x=900, y=10)
+    date_filter.place(x=930, y=10)
 
     # فیلتر شماره فاکتور
     Label(
@@ -566,7 +566,7 @@ def invoice_history_form(window):
         text="شماره فاکتور",
         font=("B Nazanin", 12),
         bg="white",
-    ).place(x=860, y=10)
+    ).place(x=840, y=10)
 
     invoice_filter = ttk.Combobox(
         filter_frame,
@@ -575,11 +575,11 @@ def invoice_history_form(window):
         state="readonly",
         justify="right",
     )
-    invoice_filter.place(x=710, y=10)
+    invoice_filter.place(x=680, y=10)
 
     # فیلتر مشتری
     Label(filter_frame, text="مشتری", font=("B Nazanin", 12), bg="white").place(
-        x=670, y=10
+        x=610, y=10
     )
 
     customer_filter = ttk.Combobox(
@@ -589,7 +589,7 @@ def invoice_history_form(window):
         state="readonly",
         justify="right",
     )
-    customer_filter.place(x=520, y=10)
+    customer_filter.place(x=450, y=10)
 
     def apply_filter_with_validation():
         phone = customer_filter.get()
@@ -625,7 +625,7 @@ def invoice_history_form(window):
         width=12,
         command=lambda: load_invoice_history(invoice_treeview),
     )
-    show_all_button.place(x=240, y=8)
+    show_all_button.place(x=100, y=10)
 
     # بارگذاری فیلترها
     load_filters(date_filter, invoice_filter, customer_filter)
@@ -634,9 +634,13 @@ def invoice_history_form(window):
     table_frame = Frame(history_frame, bg="white")
     table_frame.place(x=20, y=150, width=1150, height=400)
 
-    # اسکرول بارها
-    scroll_y = Scrollbar(table_frame, orient=VERTICAL)
+    # اسکرول بار عمودی (سمت راست)
+    scroll_y = Scrollbar(table_frame)
+    scroll_y.pack(side=RIGHT, fill=Y)
+
+    # اسکرول بار افقی (پایین)
     scroll_x = Scrollbar(table_frame, orient=HORIZONTAL)
+    scroll_x.pack(side=BOTTOM, fill=X)
 
     # Treeview تاریخچه
     invoice_treeview = ttk.Treeview(
@@ -647,28 +651,28 @@ def invoice_history_form(window):
         xscrollcommand=scroll_x.set,
         height=15,
     )
+    invoice_treeview.pack(side=LEFT, fill=BOTH, expand=True)
+
+    # اتصال اسکرول‌بارها
+    scroll_y.config(command=invoice_treeview.yview)
+    scroll_x.config(command=invoice_treeview.xview)
 
     # تنظیم هدرها
     headers = [
-        ("شماره فاکتور", 120),
-        ("نام مشتری", 180),
-        ("شماره تماس", 120),
-        ("مبلغ کل", 150),
-        ("تاریخ", 100),
-        ("تعداد اقلام", 100),
-        ("زمان", 80),
+        ("شماره فاکتور", 175),
+        ("نام مشتری", 225),
+        ("شماره تماس", 175),
+        ("مبلغ کل", 190),
+        ("تاریخ", 150),
+        ("تعداد اقلام", 150),
+        ("زمان", 120),
     ]
 
     for i, (header, width) in enumerate(headers):
         invoice_treeview.heading(f"#{i+1}", text=header)
         invoice_treeview.column(f"#{i+1}", width=width, anchor="center")
 
-    scroll_y.config(command=invoice_treeview.yview)
-    scroll_x.config(command=invoice_treeview.xview)
-
-    invoice_treeview.pack(side=LEFT, fill=BOTH, expand=True)
-    scroll_y.pack(side=RIGHT, fill=Y)
-    scroll_x.pack(side=BOTTOM, fill=X)
+    # ============ دکمه‌های عملیات ============
 
     # ============ دکمه‌های عملیات ============
     button_frame = Frame(history_frame, bg="white")

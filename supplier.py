@@ -9,7 +9,7 @@ from tkinter import messagebox
 
 
 # تابع برای ذخیره داده‌های تامین‌کنندگان در فایل CSV
-def export_supplier_to_csv(treeview, show_all_btn):
+def export_supplier_to_csv(treeview):
     items = treeview.get_children()
     if not items:
         messagebox.showwarning("هشدار", "داده‌ای برای خروجی وجود ندارد")
@@ -26,7 +26,7 @@ def export_supplier_to_csv(treeview, show_all_btn):
     with open(file_path, "w", newline="", encoding="utf-8-sig") as file:
         writer = csv.writer(file)
         writer.writerow(
-            ["شماره فاکتور", "نام تامین‌کننده", "شماره تماس", "توضیحات"]
+            ["شناسه تامین کننده", "نام تامین‌کننده", "شماره تماس", "توضیحات"]
         )  # به دلخواه شما
         for item in items:
             writer.writerow(treeview.item(item)["values"])
@@ -182,7 +182,7 @@ def clear(invoice_entry, name_entry, contact_entry, description_text, treeview):
 
 def search_supplier(search_value, treeview):
     if search_value == "":
-        messagebox.showerror("خطا", "لطفا شماره فاکتور را وارد کنید")
+        messagebox.showerror("خطا", "لطفا شناسه تامین کننده را وارد کنید")
     else:
         cursor, connection = connect_database()
         if not cursor or not connection:
@@ -223,12 +223,11 @@ def update_supplier(
     if not index:
         messagebox.showerror("خطا", "هیچ ردیفی انتخاب نشده است")
         return
-
-    # بررسی اینکه آیا شماره فاکتور در ورودی خالی است یا خیر
+    # بررسی اینکه آیا شماره شناسه تامین کننده در ورودی خالی است یا خیر
     if not invoice:
         messagebox.showerror(
             "خطا",
-            "شماره فاکتور قابل تغییر نیست. لطفاً برای ویرایش اطلاعات دیگر از این ردیف استفاده کنید.",
+            "شناسه تامین کننده قابل تغییر نیست. لطفاً برای ویرایش اطلاعات دیگر از این ردیف استفاده کنید.",
         )
         return
 
@@ -238,12 +237,12 @@ def update_supplier(
             return
         cursor.execute("use inventory_system")
 
-        # بررسی وجود شماره فاکتور در دیتابیس
+        # بررسی وجود شماره شناسه تامین کننده در دیتابیس
         cursor.execute(" SELECT * from supplier_data WHERE invoice=%s", (invoice,))
         current_data = cursor.fetchone()
 
         if not current_data:
-            messagebox.showerror("خطا", "شماره فاکتور قابل تغییر نیست!")
+            messagebox.showerror("خطا", "شناسه تامین کننده قابل تغییر نیست!")
             return
 
         current_data = current_data[1:]
@@ -331,7 +330,7 @@ def add_supplier(
 
             cursor.execute("Select * from supplier_data where invoice=%s", (invoice,))
             if cursor.fetchone():
-                messagebox.showerror("خطا", "شماره فاکتور تکراری است")
+                messagebox.showerror("خطا", "شناسه تامین کننده تکراری است")
                 return
 
             cursor.execute(
@@ -392,7 +391,7 @@ def supplier_form(window):
     label_font = ("fonts/Persian-Yekan.ttf", 12, "bold")
     entry_font = ("fonts/Persian-Yekan.ttf", 14)
 
-    Label(search_frame, text="شماره فاکتور", font=label_font, bg="white").grid(
+    Label(search_frame, text="شناسه تامین کننده", font=label_font, bg="white").grid(
         row=0, column=0, padx=10, sticky="w"
     )
     Label(search_frame, text="نام تأمین‌کننده", font=label_font, bg="white").grid(
@@ -464,12 +463,14 @@ def supplier_form(window):
     scrolly.config(command=treeview.yview)
     treeview.pack(fill=BOTH, expand=1)
 
-    treeview.heading("invoice", text="شماره فاکتور")
+    treeview.heading("invoice", text="شناسه تامین کننده")
     treeview.heading("name", text="نام تامین کننده")
     treeview.heading("contact", text="شماره تماس")
     treeview.heading("description", text="توضیحات")
 
     treeview_data(treeview)
+
+    fetch_supplier_search_values(search_invoice, search_name, search_contact)
 
     # ==================== فرم سمت راست (قبلاً سمت چپ) ====================
     right_frame = Frame(supplier_frame, bg="white")
@@ -479,7 +480,7 @@ def supplier_form(window):
     # برچسب‌ها در سمت راست و فیلدهای ورودی در سمت چپ
     Label(
         right_frame,
-        text="شماره فاکتور",
+        text="شناسه تامین کننده",
         font=("fonts/Persian-Yekan.ttf", 14, "bold"),
         bg="white",
     ).grid(
@@ -540,16 +541,25 @@ def supplier_form(window):
         width=8,
         fg="white",
         bg="#00198f",
-        command=lambda: add_supplier(
-            invoice_entry.get(),
-            name_entry.get(),
-            contact_entry.get(),
-            description_text.get(1.0, END).strip(),
-            treeview,
-            search_invoice,
-            search_name,
-            search_contact,
-        ),
+        command=lambda: (
+    add_supplier(
+        invoice_entry.get(),
+        name_entry.get(),
+        contact_entry.get(),
+        description_text.get(1.0, END).strip(),
+        treeview,
+        search_invoice,
+        search_name,
+        search_contact,
+    ),
+    clear(
+        invoice_entry,
+        name_entry,
+        contact_entry,
+        description_text,
+        treeview,
+    ),
+)
     ).grid(row=0, column=0, padx=20)
 
     Button(
@@ -578,9 +588,22 @@ def supplier_form(window):
         width=8,
         fg="white",
         bg="#00198f",
-        command=lambda: delete_supplier(
-            invoice_entry.get(), treeview, search_invoice, search_name, search_contact
-        ),
+        command=lambda: (
+    delete_supplier(
+        invoice_entry.get(),
+        treeview,
+        search_invoice,
+        search_name,
+        search_contact,
+    ),
+    clear(
+        invoice_entry,
+        name_entry,
+        contact_entry,
+        description_text,
+        treeview,
+    ),
+)
     ).grid(row=0, column=2, padx=20)
 
     Button(
