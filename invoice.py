@@ -300,6 +300,22 @@ def show_invoice_preview_window(
     preview_window.configure(bg="white")
     preview_window.resizable(False, False)
 
+    # محاسبه شماره فاکتور جدید
+    cursor, connection = connect_database()
+    if cursor and connection:
+        try:
+            cursor.execute("USE inventory_system")
+            cursor.execute("SELECT MAX(invoice_number) FROM invoice_history")
+            max_invoice = cursor.fetchone()[0]
+            next_invoice_number = (max_invoice or 0) + 1
+        except:
+            next_invoice_number = 1
+        finally:
+            cursor.close()
+            connection.close()
+    else:
+        next_invoice_number = 1
+
     # مرکز کردن پنجره
     preview_window.update_idletasks()
     width = 600
@@ -323,6 +339,7 @@ def show_invoice_preview_window(
 
     jalali_date = jdatetime.datetime.now().strftime("%Y/%m/%d")
     info_texts = [
+        f" شماره فاکتور : {next_invoice_number}",
         f" تاریخ : {jalali_date}",
         f" مشتری : {customer_name}",
         f" شماره تماس : {customer_phone}",
@@ -331,7 +348,8 @@ def show_invoice_preview_window(
     for text in info_texts:
         Label(
             info_frame, text=text, font=("B Nazanin", 12), bg="white", anchor="e"
-        ).pack(fill=X, pady=3,padx=10)
+        ).pack(fill=X, pady=3, padx=10)
+
 
     # خط جداکننده
     Label(
@@ -491,7 +509,6 @@ def show_invoice_preview_window(
     )
     cancel_button.pack(side=LEFT, padx=10)
 
-
 def save_invoice_to_db(
     customer_name,
     customer_phone,
@@ -510,9 +527,15 @@ def save_invoice_to_db(
 
         jalali_date = jdatetime.datetime.now().strftime("%Y/%m/%d")
 
+        # دریافت آخرین شماره فاکتور و افزایش آن از 1 شروع شود
         cursor.execute("SELECT MAX(invoice_number) FROM invoice_history")
         max_invoice = cursor.fetchone()[0]
-        invoice_number = (max_invoice or 1000) + 1
+        
+        # اگر جدول خالی باشد، از 1 شروع کن
+        if max_invoice is None:
+            invoice_number = 1
+        else:
+            invoice_number = max_invoice + 1
 
         cursor.execute(
             """
