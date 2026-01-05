@@ -219,21 +219,30 @@ def load_user_types(treeview):
                    can_suppliers, can_categories, can_products,
                    can_invoices, can_invoice_history
             FROM user_types 
-            ORDER BY is_admin DESC, type_name
+            ORDER BY id ASC
             """
         )
         records = cursor.fetchall()
 
         treeview.delete(*treeview.get_children())
+
+        # شمارنده برای نمایش ردیف
+        row_number = 1
+
         for record in records:
-            # نمایش حالت فارسی برای دسترسی‌ها
-            display_record = list(record[:2])  # id و type_name
+            # نمایش شماره ردیف به جای ID
+            display_record = [row_number]  # شماره ردیف
+
+            # اضافه کردن نام نوع
+            display_record.append(record[1])  # type_name
 
             # تبدیل 0/1 به ❌/✅ (فقط 8 دسترسی، نه is_admin)
             for i in range(2, len(record)):  # فقط دسترسی‌ها (بدون is_admin)
                 display_record.append("✅" if record[i] == 1 else "❌")
 
+            # ذخیره ID واقعی در tags
             treeview.insert("", END, values=display_record, tags=(record[0],))
+            row_number += 1
 
     except Exception as e:
         messagebox.showerror("خطا", f"خطا در بارگذاری انواع کاربری: {e}")
@@ -371,7 +380,13 @@ def update_user_type(selected_id, type_name, permissions, treeview):
         connection.close()
 
 
-def delete_user_type(selected_id, treeview):
+def delete_user_type(
+    selected_id,
+    treeview,
+    type_name_entry=None,
+    permission_vars=None,
+    selected_id_var=None,
+):
     """حذف نوع کاربری"""
     if not selected_id:
         messagebox.showerror("خطا", "هیچ نوع کاربری انتخاب نشده است")
@@ -411,7 +426,13 @@ def delete_user_type(selected_id, treeview):
         connection.commit()
 
         messagebox.showinfo("موفقیت", "نوع کاربری با موفقیت حذف شد")
+
+        # بارگذاری مجدد داده‌ها
         load_user_types(treeview)
+
+        # پاک کردن فیلدهای ورودی اگر پارامترها داده شده باشند
+        if type_name_entry and permission_vars and selected_id_var:
+            clear_fields(type_name_entry, permission_vars, selected_id_var, treeview)
 
     except Exception as e:
         messagebox.showerror("خطا", f"خطا در حذف نوع کاربری: {e}")
@@ -870,7 +891,13 @@ def user_type_form(window):
         fg="white",
         width=10,
         height=1,
-        command=lambda: delete_user_type(selected_id_var.get(), treeview),
+        command=lambda: delete_user_type(
+            selected_id_var.get(),
+            treeview,
+            type_name_entry,
+            permission_vars,
+            selected_id_var,
+        ),
     )
     delete_button.pack(side=LEFT, padx=3)
 
@@ -930,8 +957,6 @@ def user_type_form(window):
 
     window.bind("<Control-f>", focus_name_shortcut)
     window.bind("<Escape>", close_form)
-
-
 
     # تنظیم ارتفاع اصلی فرم برای امکان اسکرول
     main_frame.config(height=530)
