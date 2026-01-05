@@ -722,14 +722,27 @@ def supplier_form(window):
         search_supplier_multi(
         search_invoice.get(), search_name.get(), search_contact.get(), treeview
     )
-    window.bind("<Control-n>", shortcut_add)      # افزودن
-    window.bind("<Control-s>", shortcut_update)   # ویرایش
-    window.bind("<Control-d>", shortcut_delete)   # حذف
-    window.bind("<Control-c>", shortcut_clear)    # پاک کردن
-    window.bind("<Control-f>", shortcut_search)   # جستجو
-    window.bind("<Control-a>", lambda e: treeview_data(treeview))  # نمایش همه
-    window.bind("<Escape>", lambda e: supplier_frame.place_forget())  # خروج فرم
+        
+    def shortcut_import(event=None): 
+        import_supplier_from_csv(treeview) 
+     
+    def shortcut_export(event=None): 
+        export_supplier_to_csv(treeview) 
+     
+    window.bind("<Control-a>", shortcut_add)      # افزودن 
+    window.bind("<Control-u>", shortcut_update)   # ویرایش 
+    window.bind("<Control-d>", shortcut_delete)   # حذف 
+    window.bind("<Control-c>", shortcut_clear)    # پاک کردن 
+    window.bind("<Control-s>", shortcut_search)   # جستجو 
+    window.bind("<Control-n>", lambda e: treeview_data(treeview))  # نمایش همه
 
+    # میانبرهای اضافه شده از کد category.py 
+    window.bind("<Control-i>", shortcut_import)   # وارد کردن CSV 
+    window.bind("<Control-I>", shortcut_import)   # وارد کردن CSV 
+    window.bind("<Control-e>", shortcut_export)   # خروجی CSV 
+    window.bind("<Control-E>", shortcut_export)   # خروجی CSV 
+     
+    window.bind("<Escape>", lambda e: supplier_frame.place_forget())  # خروج فرم
 
 
 

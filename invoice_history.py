@@ -13,7 +13,7 @@ def move_focus(widget):
 
 def validate_phone_input(value):
     # اجازه پاک کردن کامل
-    if value == "":
+    if value == "" or value == "همه":
         return True
 
     # فقط عدد
@@ -53,20 +53,21 @@ def load_invoice_history(
         """
         params = []
 
-        if date_filter and date_filter != "همه":
+        if date_filter and date_filter.strip():
             query += " AND invoice_date = %s"
-            params.append(date_filter)
+            params.append(date_filter.strip())
 
-        if invoice_filter and invoice_filter != "همه":
+        if invoice_filter and invoice_filter.strip():
             query += " AND invoice_number = %s"
-            params.append(invoice_filter)
+            params.append(invoice_filter.strip())
 
-        if customer_filter and customer_filter != "همه":
+        if customer_filter and customer_filter.strip():
             query += " AND customer_name LIKE %s"
-            params.append(f"%{customer_filter}%")
+            params.append(f"%{customer_filter.strip()}%")
 
         query += " ORDER BY invoice_number DESC"
-
+        print(f"Query: {query}")  # برای دیباگ
+        print(f"Params: {params}")  # برای دیباگ
         cursor.execute(query, tuple(params))
         invoices = cursor.fetchall()
 
@@ -495,7 +496,23 @@ def delete_invoice(treeview):
         cursor.close()
         connection.close()
 
-
+def apply_filter_with_validation():
+    """اعمال فیلتر با اعتبارسنجی شماره تماس"""
+    phone = customer_filter.get()
+    
+    # اگر شماره تماس وارد شده، اعتبارسنجی کن
+    if phone and phone.strip():
+        if not validate_phone_input(phone.strip()):
+            return False
+    
+    # اعمال فیلتر
+    load_invoice_history(
+        invoice_treeview,
+        date_filter.get() if date_filter.get() != "همه" else None,
+        invoice_filter.get() if invoice_filter.get().strip() else None,
+        customer_filter.get() if customer_filter.get().strip() else None,
+    )
+    return True
 def invoice_history_form(window):
     history_frame = Frame(
         window,
@@ -547,61 +564,67 @@ def invoice_history_form(window):
     filter_frame.place(x=20, y=60, width=1150, height=80)
 
     # فیلتر تاریخ
-    Label(filter_frame, text="تاریخ", font=("B Nazanin", 12), bg="white").place(
-        x=1080, y=10
+    Label(filter_frame, text="تاریخ", font=("B Nazanin", 12,"bold"), bg="white").place(
+        x=1080, y=14
     )
 
     date_filter = ttk.Combobox(
-        filter_frame,
-        font=("B Nazanin", 11),
-        width=15,
-        state="readonly",
-        justify="right",
-    )
-    date_filter.place(x=930, y=10)
+    filter_frame,
+    font=("B Nazanin", 11),
+    width=15,
+    state="readonly",
+    justify="right",
+)
+    date_filter.place(x=930, y=14)
 
     # فیلتر شماره فاکتور
     Label(
         filter_frame,
         text="شماره فاکتور",
-        font=("B Nazanin", 12),
+        font=("B Nazanin", 12,"bold"),
         bg="white",
-    ).place(x=840, y=10)
+    ).place(x=820, y=14)
 
-    invoice_filter = ttk.Combobox(
-        filter_frame,
-        font=("B Nazanin", 11),
-        width=15,
-        state="readonly",
-        justify="right",
-    )
-    invoice_filter.place(x=680, y=10)
+    invoice_filter = Entry(  # تغییر از ttk.Combobox به Entry
+    filter_frame,
+    font=("B Nazanin", 11),
+    width=18,
+    justify="right",
+)
+    invoice_filter.place(x=660, y=14)
 
     # فیلتر مشتری
-    Label(filter_frame, text="مشتری", font=("B Nazanin", 12), bg="white").place(
-        x=610, y=10
+    Label(filter_frame, text="مشتری", font=("B Nazanin", 12,"bold"), bg="white").place(
+        x=590, y=14
     )
 
-    customer_filter = ttk.Combobox(
-        filter_frame,
-        font=("B Nazanin", 11),
-        width=15,
-        state="readonly",
-        justify="right",
-    )
-    customer_filter.place(x=450, y=10)
+    customer_filter = Entry(  # تغییر از ttk.Combobox به Entry
+    filter_frame,
+    font=("B Nazanin", 11),
+    width=18,
+    justify="right",
+)
+    customer_filter.place(x=430, y=14)
 
     def apply_filter_with_validation():
+        """اعمال فیلتر با اعتبارسنجی شماره تماس"""
         phone = customer_filter.get()
 
-        if not validate_phone_11_digits(phone):
-            return
+        # اگر شماره تماس وارد شده، اعتبارسنجی کن
+        if phone and phone.strip():
+            if not validate_phone_input(phone.strip()):
+                return False
+            
+    # --- دکمه اعمال فیلتر (بدون اعتبارسنجی پیچیده) ---
 
+    def simple_search():
+        """تابع ساده برای جستجو"""
+        print(f"جستجو با: تاریخ={date_filter.get()}, فاکتور={invoice_filter.get()}, مشتری={customer_filter.get()}")
         load_invoice_history(
         invoice_treeview,
-        date_filter.get(),
-        invoice_filter.get(),
-        phone,
+        date_filter.get() if date_filter.get() != "همه" else None,
+        invoice_filter.get() if invoice_filter.get().strip() else None,
+        customer_filter.get() if customer_filter.get().strip() else None,
     )
 
     apply_filter_button = Button(
@@ -611,9 +634,10 @@ def invoice_history_form(window):
     bg="#00198f",
     fg="white",
     width=12,
-    command=apply_filter_with_validation,
+    command=simple_search, 
+    
 )
-
+    apply_filter_button.place(x=280, y=10)
 
     # دکمه نمایش همه
     show_all_button = Button(
@@ -627,8 +651,22 @@ def invoice_history_form(window):
     )
     show_all_button.place(x=100, y=10)
 
-    # بارگذاری فیلترها
-    load_filters(date_filter, invoice_filter, customer_filter)
+    # بارگذاری فیلتر تاریخ
+    cursor, connection = connect_database()
+    if cursor and connection:
+        try:
+            cursor.execute("USE inventory_system")
+            cursor.execute(
+            "SELECT DISTINCT invoice_date FROM invoice_history ORDER BY invoice_date DESC"
+        )
+            dates = ["همه"] + [date[0] for date in cursor.fetchall()]
+            date_filter["values"] = dates[:20]
+            date_filter.set("همه")
+            cursor.close()
+            connection.close()
+        except Exception as e:
+            print(f"خطا: {e}")
+        date_filter["values"] = ["همه"]
 
     # ============ جدول تاریخچه ============
     table_frame = Frame(history_frame, bg="white")
@@ -786,6 +824,9 @@ def invoice_history_form(window):
     delete_button.bind("<Tab>", lambda e: move_focus(details_button))
 
     details_button.bind("<Tab>", lambda e: move_focus(date_filter))
+    # کلید Enter برای اعمال فیلتر
+    invoice_filter.bind("<Return>", lambda e: simple_search())
+    customer_filter.bind("<Return>", lambda e: simple_search())
 
 
     # ============ بارگذاری اولیه ============
