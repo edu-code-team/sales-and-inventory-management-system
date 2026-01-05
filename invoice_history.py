@@ -11,29 +11,6 @@ def move_focus(widget):
     widget.focus_set()
     return "break"
 
-def validate_phone_input(value):
-    # اجازه پاک کردن کامل
-    if value == "" or value == "همه":
-        return True
-
-    # فقط عدد
-    if not value.isdigit():
-        messagebox.showerror(
-            "خطای ورودی",
-            "❌ شماره تماس باید فقط شامل عدد باشد"
-        )
-        return False
-
-    # بیشتر از 11 رقم نشود
-    if len(value) > 11:
-        messagebox.showerror(
-            "خطای ورودی",
-            "❌ شماره تماس باید دقیقاً ۱۱ رقم باشد"
-        )
-        return False
-
-    return True
-
 def load_invoice_history(
     treeview, date_filter=None, invoice_filter=None, customer_filter=None
 ):
@@ -62,8 +39,12 @@ def load_invoice_history(
             params.append(invoice_filter.strip())
 
         if customer_filter and customer_filter.strip():
-            query += " AND customer_name LIKE %s"
+            query += " AND customer_name COLLATE utf8_general_ci LIKE %s"
             params.append(f"%{customer_filter.strip()}%")
+
+
+
+
 
         query += " ORDER BY invoice_number DESC"
         print(f"Query: {query}")  # برای دیباگ
@@ -496,23 +477,6 @@ def delete_invoice(treeview):
         cursor.close()
         connection.close()
 
-def apply_filter_with_validation():
-    """اعمال فیلتر با اعتبارسنجی شماره تماس"""
-    phone = customer_filter.get()
-    
-    # اگر شماره تماس وارد شده، اعتبارسنجی کن
-    if phone and phone.strip():
-        if not validate_phone_input(phone.strip()):
-            return False
-    
-    # اعمال فیلتر
-    load_invoice_history(
-        invoice_treeview,
-        date_filter.get() if date_filter.get() != "همه" else None,
-        invoice_filter.get() if invoice_filter.get().strip() else None,
-        customer_filter.get() if customer_filter.get().strip() else None,
-    )
-    return True
 def invoice_history_form(window):
     history_frame = Frame(
         window,
@@ -606,26 +570,18 @@ def invoice_history_form(window):
 )
     customer_filter.place(x=430, y=14)
 
-    def apply_filter_with_validation():
-        """اعمال فیلتر با اعتبارسنجی شماره تماس"""
-        phone = customer_filter.get()
-
-        # اگر شماره تماس وارد شده، اعتبارسنجی کن
-        if phone and phone.strip():
-            if not validate_phone_input(phone.strip()):
-                return False
             
     # --- دکمه اعمال فیلتر (بدون اعتبارسنجی پیچیده) ---
 
     def simple_search():
-        """تابع ساده برای جستجو"""
-        print(f"جستجو با: تاریخ={date_filter.get()}, فاکتور={invoice_filter.get()}, مشتری={customer_filter.get()}")
         load_invoice_history(
         invoice_treeview,
         date_filter.get() if date_filter.get() != "همه" else None,
-        invoice_filter.get() if invoice_filter.get().strip() else None,
-        customer_filter.get() if customer_filter.get().strip() else None,
+        invoice_filter.get().strip() if invoice_filter.get().strip() else None,
+        customer_filter.get().strip() if customer_filter.get().strip() else None,
+
     )
+
 
     apply_filter_button = Button(
     filter_frame,

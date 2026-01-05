@@ -32,7 +32,7 @@ def export_supplier_to_csv(treeview):
             writer.writerow(treeview.item(item)["values"])
 
     messagebox.showinfo("موفقیت", "خروجی CSV با موفقیت انجام شد")
-    show_all_btn.focus_set()
+    
 
     
 
