@@ -11,7 +11,6 @@ def move_focus(widget):
     return "break"
 
 
-
 def export_to_excel(treeview):
     """
     تابع برای ذخیره داده‌های treeview در فایل CSV
@@ -37,7 +36,9 @@ def export_to_excel(treeview):
         if file_path:
             with open(file_path, "w", newline="", encoding="utf-8-sig") as file:
                 writer = csv.writer(file)
-                writer.writerow(["شناسه", "دسته‌بندی", "تأمین‌کننده", "نام", "قیمت", "مقدار", "وضعیت"])
+                writer.writerow(
+                    ["شناسه", "دسته‌بندی", "تأمین‌کننده", "نام", "قیمت", "مقدار", "وضعیت"]
+                )
                 writer.writerows(data)
 
             messagebox.showinfo(
@@ -55,100 +56,115 @@ def import_from_csv(treeview, category_combobox, supplier_combobox):
     try:
         file_path = filedialog.askopenfilename(
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
-            title="انتخاب فایل CSV برای وارد کردن"
+            title="انتخاب فایل CSV برای وارد کردن",
         )
-        
+
         if not file_path:
             return
-            
+
         cursor, connection = connect_database()
         if not cursor or not connection:
             return
-            
+
         cursor.execute("USE inventory_system")
-        
+
         imported_count = 0
         skipped_count = 0
         errors = []
-        
-        with open(file_path, 'r', encoding='utf-8-sig') as file:
+
+        with open(file_path, "r", encoding="utf-8-sig") as file:
             reader = csv.reader(file)
             next(reader)  # رد کردن هدر
-            
+
             for idx, row in enumerate(reader, start=2):  # start=2 چون سطر 1 هدر است
                 if len(row) < 7:
                     skipped_count += 1
                     errors.append(f"سطر {idx}: تعداد ستون‌ها ناکافی است")
                     continue
-                    
+
                 try:
                     # چک کردن وجود دسته‌بندی
                     category = row[1].strip()
-                    cursor.execute("SELECT name FROM category_data WHERE name=%s", (category,))
+                    cursor.execute(
+                        "SELECT name FROM category_data WHERE name=%s", (category,)
+                    )
                     if not cursor.fetchone():
                         skipped_count += 1
                         errors.append(f"سطر {idx}: دسته‌بندی '{category}' وجود ندارد")
                         continue
-                    
+
                     # چک کردن وجود تأمین‌کننده
                     supplier = row[2].strip()
-                    cursor.execute("SELECT name FROM supplier_data WHERE name=%s", (supplier,))
+                    cursor.execute(
+                        "SELECT name FROM supplier_data WHERE name=%s", (supplier,)
+                    )
                     if not cursor.fetchone():
                         skipped_count += 1
                         errors.append(f"سطر {idx}: تأمین‌کننده '{supplier}' وجود ندارد")
                         continue
-                    
+
                     # چک کردن وجود محصول
                     product_name = row[3].strip()
                     cursor.execute(
                         "SELECT * FROM product_data WHERE name=%s AND category=%s AND supplier=%s",
-                        (product_name, category, supplier)
+                        (product_name, category, supplier),
                     )
-                    
+
                     if cursor.fetchone():
                         skipped_count += 1
-                        errors.append(f"سطر {idx}: محصول '{product_name}' از قبل وجود دارد")
+                        errors.append(
+                            f"سطر {idx}: محصول '{product_name}' از قبل وجود دارد"
+                        )
                         continue
-                        
+
                     # وارد کردن محصول جدید
                     cursor.execute(
                         "INSERT INTO product_data (category, supplier, name, price, quantity, status) VALUES (%s, %s, %s, %s, %s, %s)",
-                        (category, supplier, product_name, float(row[4]), int(row[5]), row[6].strip())
+                        (
+                            category,
+                            supplier,
+                            product_name,
+                            float(row[4]),
+                            int(row[5]),
+                            row[6].strip(),
+                        ),
                     )
                     imported_count += 1
-                    
+
                 except ValueError as ve:
                     skipped_count += 1
                     errors.append(f"سطر {idx}: خطا در فرمت داده‌ها - {str(ve)}")
                 except Exception as e:
                     skipped_count += 1
                     errors.append(f"سطر {idx}: خطای عمومی - {str(e)}")
-        
+
         connection.commit()
-        
+
         # تازه‌سازی Comboboxها
         fetch_supplier_category(category_combobox, supplier_combobox)
-        
+
         # نمایش نتایج
         result_message = f"عملیات وارد کردن تکمیل شد:\n\n"
         result_message += f"تعداد وارد شده: {imported_count}\n"
         result_message += f"تعداد رد شده: {skipped_count}\n"
-        
+
         if errors and len(errors) <= 10:  # نمایش حداکثر 10 خطا
             result_message += "\nخطاها:\n"
             for error in errors[:10]:
                 result_message += f"• {error}\n"
         elif errors:
-            result_message += f"\n{len(errors)} خطا رخ داده است (اولین 10 خطا نمایش داده شد)"
-        
+            result_message += (
+                f"\n{len(errors)} خطا رخ داده است (اولین 10 خطا نمایش داده شد)"
+            )
+
         messagebox.showinfo("عملیات وارد کردن", result_message)
-        
+
         # تازه‌سازی داده‌ها
         load_product_data(treeview)
-        
+
         cursor.close()
         connection.close()
-        
+
     except Exception as e:
         messagebox.showerror("خطا", f"خطا در وارد کردن فایل: {str(e)}")
 
@@ -331,11 +347,18 @@ def load_product_data(treeview):
             "CREATE TABLE IF NOT EXISTS product_data (id INT AUTO_INCREMENT PRIMARY KEY, category VARCHAR(50), "
             "supplier VARCHAR(50), name VARCHAR(100), price DECIMAL(10,2),quantity INT,status VARCHAR(50))"
         )
-        cursor.execute("Select * from product_data")
+        cursor.execute("Select * from product_data ORDER BY id")
         records = cursor.fetchall()
         treeview.delete(*treeview.get_children())
+
+        # نمایش با شماره‌های مرتب
+        counter = 1
         for record in records:
-            treeview.insert("", END, values=record)
+            # ایجاد رکورد جدید با شماره نمایشی
+            display_record = (counter,) + record[1:]
+            treeview.insert("", END, values=display_record)
+            counter += 1
+
     except Exception as e:
         messagebox.showerror("خطا", f"خطا به دلیل {e}")
     finally:
@@ -438,9 +461,9 @@ def product_form(window):
         command=lambda: product_frame.place_forget(),
     )
     back_button.place(x=10, y=0)
-    
+
     left_frame = Frame(product_frame, bg="white", bd=2, relief=RIDGE)
-    left_frame.place(x=window.winfo_width() - 700, y=40,height=490)
+    left_frame.place(x=window.winfo_width() - 700, y=40, height=490)
 
     # تنظیم ستون‌ها برای RTL
     left_frame.grid_columnconfigure(0, minsize=200)
@@ -642,8 +665,6 @@ def product_form(window):
     )
     export_button.grid(row=0, column=1, padx=5)
 
-
-
     # ================= KEYBOARD SHORTCUTS (PRODUCTS) =================
 
     def add_shortcut(event=None):
@@ -685,7 +706,6 @@ def product_form(window):
     def focus_filter_shortcut(event=None):
         filter_category.focus_force()
 
-
     # Bind shortcuts
     window.bind("<Control-a>", add_shortcut)
     window.bind("<Control-A>", add_shortcut)
@@ -724,7 +744,6 @@ def product_form(window):
 
     window.bind("<Control-f>", focus_filter_shortcut)
     window.bind("<Control-F>", focus_filter_shortcut)
-
 
     product_frame.focus_set()
 
@@ -868,10 +887,10 @@ def product_form(window):
     filter_category.bind("<Tab>", lambda e: move_focus(filter_supplier))
     filter_supplier.bind("<Tab>", lambda e: move_focus(filter_status))
 
-# ---- جستجو / نمایش همه ----
+    # ---- جستجو / نمایش همه ----
     filter_status.bind("<Tab>", lambda e: move_focus(search_button))
     search_button.bind("<Tab>", lambda e: move_focus(show_all_button))
 
-# ---- جدول ----
+    # ---- جدول ----
     show_all_button.bind("<Tab>", lambda e: move_focus(treeview))
     treeview.bind("<Tab>", lambda e: move_focus(category_combobox))
