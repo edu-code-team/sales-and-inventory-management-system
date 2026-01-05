@@ -446,6 +446,10 @@ def add_employee(
     ):
         messagebox.showerror("خطا", "هیچ فیلدی نباید خالی باشد")
     else:
+        if len(contact) != 11:
+            messagebox.showerror("خطا", "شماره تماس باید دقیقاً ۱۱ رقم باشد")
+            return
+
         cursor, connection = connect_database()
         if not cursor or not connection:
             return
@@ -473,10 +477,10 @@ def add_employee(
             )
             connection.commit()
             treeview_data()
+            # نمایش پیام موفقیت
             messagebox.showinfo("عملیات موفق", "اطلاعات کارمند با موفقیت ثبت شد")
-            if len(contact) != 11:
-                messagebox.showerror("خطا", "شماره تماس باید دقیقاً ۱۱ رقم باشد")
-            return
+            return True  # اضافه کردن return True برای نشان دادن موفقیت
+
         except Exception as e:
             messagebox.showerror("خطا", f"{e} خطای")
         finally:
@@ -519,17 +523,50 @@ def update_employee(
     selected = employee_treeview.selection()
     if not selected:
         messagebox.showerror("خطا", "هیچ ردیفی برای بروزرسانی انتخاب نشده")
-    else:
-        cursor, connection = connect_database()
-        if not cursor or not connection:
-            return
-        try:
-            cursor.execute("USE inventory_system")
-            cursor.execute("SELECT * FROM employee_data WHERE empid = %s", (empid,))
-            current_data = cursor.fetchone()
-            current_data = current_data[1:]
-            address = address.strip()
-            new_data = (
+        return
+
+    # اول بررسی کن که آیا اصلاً تغییری وجود داره
+    # گرفتن مقدار فعلی از فیلدهای فرم
+    current_item = employee_treeview.item(selected[0])
+    current_values = current_item["values"]
+
+    # آماده‌سازی داده‌های فرم
+    address = address.strip()
+    form_data = [
+        int(empid) if empid.isdigit() else empid,
+        name,
+        email,
+        gender,
+        dob,
+        contact,
+        work_shift,
+        address,
+        usertype,
+        password,
+    ]
+
+    # تبدیل به لیست برای مقایسه
+    current_list = list(current_values)
+
+    # دیباگ
+    print(f"From TreeView: {current_list}")
+    print(f"From form: {form_data}")
+
+    # مقایسه
+    if current_list == form_data:
+        messagebox.showinfo("توجه", "تغییری در اطلاعات کارمند ایجاد نشده است")
+        return
+
+    # بقیه کد رو بیا اینجا...
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return
+    try:
+        cursor.execute("USE inventory_system")
+        cursor.execute(
+            "UPDATE employee_data SET name = %s, email = %s, gender = %s, dob = %s, contact = %s,"
+            "work_shift = %s, address = %s, usertype = %s, password = %s WHERE empid = %s",
+            (
                 name,
                 email,
                 gender,
@@ -539,37 +576,19 @@ def update_employee(
                 address,
                 usertype,
                 password,
-            )
-
-            if current_data == new_data:
-                messagebox.showinfo("توجه", "تغییری در اطلاعات کارمند ایجاد نشده است")
-                return
-            cursor.execute(
-                "UPDATE employee_data SET name = %s, email = %s, gender = %s, dob = %s, contact = %s,"
-                "work_shift = %s, address = %s, usertype = %s, password = %s WHERE empid = %s",
-                (
-                    name,
-                    email,
-                    gender,
-                    dob,
-                    contact,
-                    work_shift,
-                    address,
-                    usertype,
-                    password,
-                    empid,
-                ),
-            )
-            connection.commit()
-            treeview_data()
-            messagebox.showinfo(
-                "عملیات موفق", "اطلاعات کارمند مدنظر با موفقیت بروزرسانی شد"
-            )
-        except Exception as e:
-            messagebox.showerror("خطا", f"{e} خطای")
-        finally:
-            cursor.close()
-            connection.close()
+                empid,
+            ),
+        )
+        connection.commit()
+        treeview_data()
+        messagebox.showinfo(
+            "عملیات موفق", "اطلاعات کارمند مدنظر با موفقیت بروزرسانی شد"
+        )
+    except Exception as e:
+        messagebox.showerror("خطا", f"{e} خطای")
+    finally:
+        cursor.close()
+        connection.close()
 
 
 def delete_employee(
